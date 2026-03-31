@@ -9,6 +9,7 @@ export interface Product {
   stock: number;
   sizes?: string[];
   volumes?: string[];
+  isLatest?: boolean;
 }
 
 export interface CartItem extends Product {
@@ -25,6 +26,8 @@ export interface Order {
   items: CartItem[];
   total: number;
   status: 'Pending' | 'Processing' | 'Shipped' | 'Delivered' | 'Cancelled';
+  paymentMethod: 'Cash on Delivery' | 'bKash' | 'Nagad' | 'Rocket';
+  transactionId?: string;
   createdAt: string;
 }
 
@@ -33,4 +36,15 @@ export interface User {
   name: string;
   password?: string;
   address?: string;
+  photoURL?: string;
+  phone?: string;
+}
+
+export interface AppSettings {
+  categories: string[];
+  paymentNumbers: {
+    bKash: string;
+    Nagad: string;
+    Rocket: string;
+  };
 }

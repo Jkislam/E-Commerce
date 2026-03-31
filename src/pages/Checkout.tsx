@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion } from 'motion/react';
 import { ShoppingBag, ArrowLeft, CheckCircle2, Truck, CreditCard, MapPin } from 'lucide-react';
-import { CartItem, Order, User } from '../types';
+import { CartItem, Order, User, AppSettings } from '../types';
 
 interface CheckoutProps {
   cart: CartItem[];
@@ -10,10 +10,12 @@ interface CheckoutProps {
   clearCart: () => void;
   placeOrder: (orderData: Omit<Order, 'id' | 'status' | 'createdAt'>) => Order;
   currentUser: User | null;
+  settings: AppSettings;
 }
 
-export default function Checkout({ cart, cartTotal, clearCart, placeOrder, currentUser }: CheckoutProps) {
+export default function Checkout({ cart, cartTotal, clearCart, placeOrder, currentUser, settings }: CheckoutProps) {
   const navigate = useNavigate();
+  const [step, setStep] = useState<1 | 2>(1);
   const [isOrderPlaced, setIsOrderPlaced] = useState(false);
   const [orderInfo, setOrderInfo] = useState<Order | null>(null);
   const [formData, setFormData] = useState({
@@ -23,7 +25,8 @@ export default function Checkout({ cart, cartTotal, clearCart, placeOrder, curre
     address: currentUser?.address || '',
     city: '',
     area: '',
-    paymentMethod: 'cod'
+    paymentMethod: 'Cash on Delivery' as Order['paymentMethod'],
+    transactionId: ''
   });
 
   if (cart.length === 0 && !isOrderPlaced) {
@@ -49,6 +52,17 @@ export default function Checkout({ cart, cartTotal, clearCart, placeOrder, curre
     setFormData(prev => ({ ...prev, [name]: value }));
   };
 
+  const nextStep = (e: React.FormEvent) => {
+    e.preventDefault();
+    setStep(2);
+    window.scrollTo(0, 0);
+  };
+
+  const prevStep = () => {
+    setStep(1);
+    window.scrollTo(0, 0);
+  };
+
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     
@@ -59,6 +73,8 @@ export default function Checkout({ cart, cartTotal, clearCart, placeOrder, curre
       customerAddress: `${formData.address}, ${formData.area}, ${formData.city}`,
       items: cart,
       total: cartTotal,
+      paymentMethod: formData.paymentMethod,
+      transactionId: formData.paymentMethod !== 'Cash on Delivery' ? formData.transactionId : undefined,
     });
 
     setOrderInfo(order);
@@ -94,6 +110,12 @@ export default function Checkout({ cart, cartTotal, clearCart, placeOrder, curre
               <span>Payment:</span>
               <span className="font-bold uppercase">{formData.paymentMethod}</span>
             </div>
+            {formData.transactionId && (
+              <div className="flex justify-between">
+                <span>TrxID:</span>
+                <span className="font-bold">{formData.transactionId}</span>
+              </div>
+            )}
             <div className="pt-4 border-t border-black/5 flex justify-between text-base font-bold">
               <span>Total Paid:</span>
               <span>৳{cartTotal.toFixed(0)}</span>
@@ -120,142 +142,209 @@ export default function Checkout({ cart, cartTotal, clearCart, placeOrder, curre
 
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
-      <button 
-        onClick={() => navigate(-1)}
-        className="flex items-center text-sm font-medium text-black/60 hover:text-black mb-8 transition-colors group"
-      >
-        <ArrowLeft className="w-4 h-4 mr-2 group-hover:-translate-x-1 transition-transform" />
-        Back to Cart
-      </button>
+      <div className="flex items-center justify-between mb-8">
+        <button 
+          onClick={() => step === 1 ? navigate(-1) : prevStep()}
+          className="flex items-center text-sm font-medium text-black/60 hover:text-black transition-colors group"
+        >
+          <ArrowLeft className="w-4 h-4 mr-2 group-hover:-translate-x-1 transition-transform" />
+          {step === 1 ? 'Back to Cart' : 'Back to Delivery'}
+        </button>
+
+        <div className="flex items-center gap-4">
+          <div className={`flex items-center justify-center w-8 h-8 rounded-full text-xs font-bold ${step === 1 ? 'bg-black text-white' : 'bg-green-500 text-white'}`}>
+            {step === 1 ? '1' : <CheckCircle2 className="w-4 h-4" />}
+          </div>
+          <div className="w-8 h-[2px] bg-black/10" />
+          <div className={`flex items-center justify-center w-8 h-8 rounded-full text-xs font-bold ${step === 2 ? 'bg-black text-white' : 'bg-black/5 text-black/20'}`}>
+            2
+          </div>
+        </div>
+      </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-12">
         {/* Checkout Form */}
         <div className="lg:col-span-7">
-          <h1 className="text-3xl font-bold mb-8">Delivery Details</h1>
-          
-          <form onSubmit={handleSubmit} className="space-y-6">
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
-              <div className="space-y-2">
-                <label className="text-xs font-bold uppercase tracking-widest text-black/40">Full Name</label>
-                <input 
-                  required
-                  type="text"
-                  name="fullName"
-                  value={formData.fullName}
-                  onChange={handleInputChange}
-                  placeholder="Enter your full name"
-                  className="w-full px-5 py-4 bg-black/5 rounded-2xl focus:outline-none focus:ring-2 focus:ring-black/5 transition-all"
-                />
-              </div>
-              <div className="space-y-2">
-                <label className="text-xs font-bold uppercase tracking-widest text-black/40">Phone Number</label>
-                <input 
-                  required
-                  type="tel"
-                  name="phone"
-                  value={formData.phone}
-                  onChange={handleInputChange}
-                  placeholder="01XXXXXXXXX"
-                  className="w-full px-5 py-4 bg-black/5 rounded-2xl focus:outline-none focus:ring-2 focus:ring-black/5 transition-all"
-                />
-              </div>
-            </div>
-
-            <div className="space-y-2">
-              <label className="text-xs font-bold uppercase tracking-widest text-black/40">Email Address (Optional)</label>
-              <input 
-                type="email"
-                name="email"
-                value={formData.email}
-                onChange={handleInputChange}
-                placeholder="email@example.com"
-                className="w-full px-5 py-4 bg-black/5 rounded-2xl focus:outline-none focus:ring-2 focus:ring-black/5 transition-all"
-              />
-            </div>
-
-            <div className="space-y-2">
-              <label className="text-xs font-bold uppercase tracking-widest text-black/40">Full Delivery Address</label>
-              <textarea 
-                required
-                name="address"
-                value={formData.address}
-                onChange={handleInputChange}
-                rows={3}
-                placeholder="House no, Road no, Village/Area"
-                className="w-full px-5 py-4 bg-black/5 rounded-2xl focus:outline-none focus:ring-2 focus:ring-black/5 transition-all resize-none"
-              />
-            </div>
-
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
-              <div className="space-y-2">
-                <label className="text-xs font-bold uppercase tracking-widest text-black/40">City</label>
-                <input 
-                  required
-                  type="text"
-                  name="city"
-                  value={formData.city}
-                  onChange={handleInputChange}
-                  placeholder="e.g. Dhaka"
-                  className="w-full px-5 py-4 bg-black/5 rounded-2xl focus:outline-none focus:ring-2 focus:ring-black/5 transition-all"
-                />
-              </div>
-              <div className="space-y-2">
-                <label className="text-xs font-bold uppercase tracking-widest text-black/40">Area/Post Code</label>
-                <input 
-                  required
-                  type="text"
-                  name="area"
-                  value={formData.area}
-                  onChange={handleInputChange}
-                  placeholder="e.g. Dhanmondi"
-                  className="w-full px-5 py-4 bg-black/5 rounded-2xl focus:outline-none focus:ring-2 focus:ring-black/5 transition-all"
-                />
-              </div>
-            </div>
-
-            <div className="pt-6 border-t border-black/5">
-              <h3 className="text-sm font-bold uppercase tracking-widest mb-4">Payment Method</h3>
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <label className={`relative flex items-center p-4 border-2 rounded-2xl cursor-pointer transition-all ${formData.paymentMethod === 'cod' ? 'border-black bg-black/5' : 'border-black/5 hover:border-black/20'}`}>
-                  <input 
-                    type="radio" 
-                    name="paymentMethod" 
-                    value="cod" 
-                    checked={formData.paymentMethod === 'cod'}
-                    onChange={handleInputChange}
-                    className="hidden"
-                  />
-                  <Truck className="w-5 h-5 mr-3" />
-                  <div>
-                    <p className="font-bold text-sm">Cash on Delivery</p>
-                    <p className="text-[10px] text-black/40">Pay when you receive</p>
-                  </div>
-                </label>
-                <label className={`relative flex items-center p-4 border-2 rounded-2xl cursor-pointer transition-all ${formData.paymentMethod === 'online' ? 'border-black bg-black/5' : 'border-black/5 hover:border-black/20'}`}>
-                  <input 
-                    type="radio" 
-                    name="paymentMethod" 
-                    value="online" 
-                    checked={formData.paymentMethod === 'online'}
-                    onChange={handleInputChange}
-                    className="hidden"
-                  />
-                  <CreditCard className="w-5 h-5 mr-3" />
-                  <div>
-                    <p className="font-bold text-sm">Online Payment</p>
-                    <p className="text-[10px] text-black/40">bKash / Nagad / Card</p>
-                  </div>
-                </label>
-              </div>
-            </div>
-
-            <button 
-              type="submit"
-              className="w-full py-5 bg-black text-white rounded-2xl font-bold text-lg hover:bg-black/90 transition-all shadow-xl mt-8"
+          {step === 1 ? (
+            <motion.div
+              initial={{ opacity: 0, x: -20 }}
+              animate={{ opacity: 1, x: 0 }}
             >
-              Place Order • ৳{cartTotal.toFixed(0)}
-            </button>
-          </form>
+              <h1 className="text-3xl font-bold mb-8">Delivery Details</h1>
+              
+              <form onSubmit={nextStep} className="space-y-6">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
+                  <div className="space-y-2">
+                    <label className="text-xs font-bold uppercase tracking-widest text-black/40">Full Name</label>
+                    <input 
+                      required
+                      type="text"
+                      name="fullName"
+                      value={formData.fullName}
+                      onChange={handleInputChange}
+                      placeholder="Enter your full name"
+                      className="w-full px-5 py-4 bg-black/5 rounded-2xl focus:outline-none focus:ring-2 focus:ring-black/5 transition-all"
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <label className="text-xs font-bold uppercase tracking-widest text-black/40">Phone Number</label>
+                    <input 
+                      required
+                      type="tel"
+                      name="phone"
+                      value={formData.phone}
+                      onChange={handleInputChange}
+                      placeholder="01XXXXXXXXX"
+                      className="w-full px-5 py-4 bg-black/5 rounded-2xl focus:outline-none focus:ring-2 focus:ring-black/5 transition-all"
+                    />
+                  </div>
+                </div>
+
+                <div className="space-y-2">
+                  <label className="text-xs font-bold uppercase tracking-widest text-black/40">Email Address (Optional)</label>
+                  <input 
+                    type="email"
+                    name="email"
+                    value={formData.email}
+                    onChange={handleInputChange}
+                    placeholder="email@example.com"
+                    className="w-full px-5 py-4 bg-black/5 rounded-2xl focus:outline-none focus:ring-2 focus:ring-black/5 transition-all"
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <label className="text-xs font-bold uppercase tracking-widest text-black/40">Full Delivery Address</label>
+                  <textarea 
+                    required
+                    name="address"
+                    value={formData.address}
+                    onChange={handleInputChange}
+                    rows={3}
+                    placeholder="House no, Road no, Village/Area"
+                    className="w-full px-5 py-4 bg-black/5 rounded-2xl focus:outline-none focus:ring-2 focus:ring-black/5 transition-all resize-none"
+                  />
+                </div>
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
+                  <div className="space-y-2">
+                    <label className="text-xs font-bold uppercase tracking-widest text-black/40">City</label>
+                    <input 
+                      required
+                      type="text"
+                      name="city"
+                      value={formData.city}
+                      onChange={handleInputChange}
+                      placeholder="e.g. Dhaka"
+                      className="w-full px-5 py-4 bg-black/5 rounded-2xl focus:outline-none focus:ring-2 focus:ring-black/5 transition-all"
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <label className="text-xs font-bold uppercase tracking-widest text-black/40">Area/Post Code</label>
+                    <input 
+                      required
+                      type="text"
+                      name="area"
+                      value={formData.area}
+                      onChange={handleInputChange}
+                      placeholder="e.g. Dhanmondi"
+                      className="w-full px-5 py-4 bg-black/5 rounded-2xl focus:outline-none focus:ring-2 focus:ring-black/5 transition-all"
+                    />
+                  </div>
+                </div>
+
+                <button 
+                  type="submit"
+                  className="w-full py-5 bg-black text-white rounded-2xl font-bold text-lg hover:bg-black/90 transition-all shadow-xl mt-8"
+                >
+                  Continue to Payment
+                </button>
+              </form>
+            </motion.div>
+          ) : (
+            <motion.div
+              initial={{ opacity: 0, x: 20 }}
+              animate={{ opacity: 1, x: 0 }}
+            >
+              <h1 className="text-3xl font-bold mb-8">Payment Method</h1>
+              
+              <form onSubmit={handleSubmit} className="space-y-8">
+                <div className="space-y-4">
+                  {[
+                    { id: 'Cash on Delivery', icon: Truck, desc: 'Pay when you receive' },
+                    { id: 'bKash', icon: CreditCard, desc: `Send money to ${settings.paymentNumbers.bKash}` },
+                    { id: 'Nagad', icon: CreditCard, desc: `Send money to ${settings.paymentNumbers.Nagad}` },
+                    { id: 'Rocket', icon: CreditCard, desc: `Send money to ${settings.paymentNumbers.Rocket}` }
+                  ].map((method) => (
+                    <label 
+                      key={method.id}
+                      className={`relative flex items-center p-6 border-2 rounded-2xl cursor-pointer transition-all ${formData.paymentMethod === method.id ? 'border-black bg-black/5' : 'border-black/5 hover:border-black/20'}`}
+                    >
+                      <input 
+                        type="radio" 
+                        name="paymentMethod" 
+                        value={method.id} 
+                        checked={formData.paymentMethod === method.id}
+                        onChange={handleInputChange}
+                        className="hidden"
+                      />
+                      <method.icon className={`w-6 h-6 mr-4 ${formData.paymentMethod === method.id ? 'text-black' : 'text-black/20'}`} />
+                      <div className="flex-1">
+                        <p className="font-bold text-base">{method.id}</p>
+                        <p className="text-xs text-black/40">{method.desc}</p>
+                      </div>
+                      <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center ${formData.paymentMethod === method.id ? 'border-black' : 'border-black/10'}`}>
+                        {formData.paymentMethod === method.id && <div className="w-2.5 h-2.5 bg-black rounded-full" />}
+                      </div>
+                    </label>
+                  ))}
+                </div>
+
+                {formData.paymentMethod !== 'Cash on Delivery' && (
+                  <motion.div 
+                    initial={{ opacity: 0, y: -10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    className="p-6 bg-amber-50 rounded-2xl border border-amber-100 space-y-4"
+                  >
+                    <div className="flex items-start gap-3">
+                      <div className="w-8 h-8 bg-amber-100 rounded-full flex items-center justify-center flex-shrink-0">
+                        <span className="text-amber-700 font-bold text-sm">!</span>
+                      </div>
+                      <div>
+                        <p className="text-sm font-bold text-amber-900">Payment Instructions</p>
+                        <p className="text-xs text-amber-800 mt-1 leading-relaxed">
+                          Please send <strong>৳{cartTotal.toFixed(0)}</strong> to our {formData.paymentMethod} number <strong>{settings.paymentNumbers[formData.paymentMethod as keyof AppSettings['paymentNumbers']]}</strong>. After sending the money, please enter the Transaction ID below to confirm your order.
+                        </p>
+                      </div>
+                    </div>
+                    <div className="space-y-2">
+                      <label className="text-[10px] font-black uppercase tracking-widest text-amber-900/40 ml-1">Transaction ID</label>
+                      <input 
+                        required
+                        type="text"
+                        name="transactionId"
+                        value={formData.transactionId}
+                        onChange={handleInputChange}
+                        placeholder="Enter your Transaction ID"
+                        className="w-full px-5 py-4 bg-white border border-amber-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-amber-500/20 transition-all font-mono text-sm"
+                      />
+                    </div>
+                  </motion.div>
+                )}
+
+                <div className="pt-4">
+                  <button 
+                    type="submit"
+                    className="w-full py-5 bg-black text-white rounded-2xl font-bold text-lg hover:bg-black/90 transition-all shadow-xl"
+                  >
+                    Confirm Order • ৳{cartTotal.toFixed(0)}
+                  </button>
+                  <p className="text-[10px] text-center text-black/40 mt-4 uppercase tracking-widest font-bold">
+                    Secure Checkout Powered by AL-Hurumah
+                  </p>
+                </div>
+              </form>
+            </motion.div>
+          )}
         </div>
 
         {/* Order Summary */}

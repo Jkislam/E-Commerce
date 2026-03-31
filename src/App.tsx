@@ -26,7 +26,7 @@ import {
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { PRODUCTS } from './constants';
-import { Product, CartItem, Order, User } from './types';
+import { Product, CartItem, Order, User, AppSettings } from './types';
 import Home from './pages/Home';
 import ProductDetails from './pages/ProductDetails';
 import Checkout from './pages/Checkout';
@@ -61,6 +61,18 @@ export default function App() {
   const [searchQuery, setSearchQuery] = useState('');
   const [sortBy, setSortBy] = useState<'price-asc' | 'price-desc' | 'rating' | 'default'>('default');
   const [selectedCategory, setSelectedCategory] = useState<string>('All');
+  const [settings, setSettings] = useState<AppSettings>(() => {
+    const saved = localStorage.getItem('al_hurumah_settings');
+    if (saved) return JSON.parse(saved);
+    return {
+      categories: ['Panjabi', 'Attar'],
+      paymentNumbers: {
+        bKash: '017XXXXXXXX',
+        Nagad: '018XXXXXXXX',
+        Rocket: '019XXXXXXXX'
+      }
+    };
+  });
 
   // Sync products to localStorage
   useEffect(() => {
@@ -70,6 +82,10 @@ export default function App() {
   useEffect(() => {
     localStorage.setItem('al_hurumah_orders', JSON.stringify(orders));
   }, [orders]);
+
+  useEffect(() => {
+    localStorage.setItem('al_hurumah_settings', JSON.stringify(settings));
+  }, [settings]);
 
   useEffect(() => {
     if (currentUser) {
@@ -94,7 +110,11 @@ export default function App() {
     return () => window.removeEventListener('scroll', handleScroll);
   }, [isMenuOpen]);
 
-  const categories = ['All', ...new Set(products.map(p => p.category))] as string[];
+  const updateUser = (updatedUser: User) => {
+    setCurrentUser(updatedUser);
+  };
+
+  const categories = ['All', ...settings.categories];
 
   const filteredAndSortedProducts = useMemo(() => {
     let result = products.filter(product => {
@@ -179,12 +199,25 @@ export default function App() {
     ));
   };
 
+  const deleteOrder = (orderId: string) => {
+    if (window.confirm('Are you sure you want to delete this order?')) {
+      setOrders(prev => prev.filter(order => order.id !== orderId));
+    }
+  };
+
   const logout = () => {
     setCurrentUser(null);
   };
 
   const cartCount = cart.reduce((sum, item) => sum + item.quantity, 0);
   const cartTotal = cart.reduce((sum, item) => sum + (item.price * item.quantity), 0);
+
+  const latestProducts = useMemo(() => {
+    const selectedLatest = products.filter(p => p.isLatest);
+    if (selectedLatest.length > 0) return selectedLatest;
+    // Fallback to first 5 products if none are marked as latest
+    return products.slice(0, 5);
+  }, [products]);
 
   return (
     <>
@@ -503,12 +536,12 @@ export default function App() {
                 setSelectedCategory={setSelectedCategory}
                 setSortBy={setSortBy}
                 setSearchQuery={setSearchQuery}
-                latestProducts={products.slice(0, 5)}
+                latestProducts={latestProducts}
               />
             } />
             <Route path="/product/:id" element={<ProductDetails products={products} addToCart={addToCart} />} />
-            <Route path="/checkout" element={<Checkout cart={cart} cartTotal={cartTotal} clearCart={clearCart} placeOrder={placeOrder} currentUser={currentUser} />} />
-            <Route path="/profile" element={<Profile currentUser={currentUser} orders={orders} onLogout={logout} />} />
+            <Route path="/checkout" element={<Checkout cart={cart} cartTotal={cartTotal} clearCart={clearCart} placeOrder={placeOrder} currentUser={currentUser} settings={settings} />} />
+            <Route path="/profile" element={<Profile currentUser={currentUser} orders={orders} onLogout={logout} onUpdateUser={updateUser} />} />
             <Route path="/login" element={<Login setCurrentUser={setCurrentUser} />} />
             <Route path="/admin" element={
               <Admin 
@@ -519,6 +552,9 @@ export default function App() {
                 onReset={resetProducts}
                 orders={orders}
                 updateOrderStatus={updateOrderStatus}
+                onDeleteOrder={deleteOrder}
+                settings={settings}
+                setSettings={setSettings}
               />
             } />
           </Routes>
@@ -538,8 +574,17 @@ export default function App() {
               <div>
                 <h4 className="font-bold text-sm uppercase tracking-widest mb-6">Shop</h4>
                 <ul className="space-y-4 text-sm text-black/50">
-                  <li><Link to="/#shop" className="hover:text-black transition-colors">Panjabi Collection</Link></li>
-                  <li><Link to="/#shop" className="hover:text-black transition-colors">Premium Attars</Link></li>
+                  {settings.categories.map(cat => (
+                    <li key={cat}>
+                      <Link 
+                        to="/#shop" 
+                        onClick={() => setSelectedCategory(cat)}
+                        className="hover:text-black transition-colors"
+                      >
+                        {cat} Collection
+                      </Link>
+                    </li>
+                  ))}
                   <li><a href="#" className="hover:text-black transition-colors">Gift Sets</a></li>
                   <li><a href="#" className="hover:text-black transition-colors">New Arrivals</a></li>
                 </ul>

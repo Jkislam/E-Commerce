@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
-import { ArrowRight, Star, ArrowUpDown } from 'lucide-react';
+import { ArrowRight, Star, ArrowUpDown, ChevronDown } from 'lucide-react';
 import { Product } from '../types';
 import { Link } from 'react-router-dom';
 import { PRODUCTS } from '../constants';
@@ -76,7 +76,7 @@ export default function Home({
             </motion.div>
 
             {/* Right Content - Automatic Product Slider */}
-            <div className="relative hidden lg:block h-[500px]">
+            <div className="relative block h-[400px] sm:h-[500px] mt-12 lg:mt-0">
               <AnimatePresence mode="wait">
                 <motion.div
                   key={latestProducts[currentProductIndex].id}
@@ -86,13 +86,13 @@ export default function Home({
                   transition={{ duration: 0.6, ease: "easeOut" }}
                   className="absolute inset-0"
                 >
-                  <div className="relative h-full w-full max-w-[400px] mx-auto">
+                  <div className="relative h-full w-full max-w-[320px] sm:max-w-[400px] mx-auto">
                     {/* Decorative Elements */}
                     <div className="absolute -top-6 -right-6 w-32 h-32 bg-amber-100 rounded-full -z-10 blur-2xl opacity-60" />
                     <div className="absolute -bottom-10 -left-10 w-48 h-48 bg-black/5 rounded-full -z-10 blur-3xl" />
                     
                     <Link to={`/product/${latestProducts[currentProductIndex].id}`} className="block h-full group">
-                      <div className="relative h-full rounded-[2.5rem] overflow-hidden shadow-2xl border-8 border-white">
+                      <div className="relative h-full rounded-[2.5rem] overflow-hidden shadow-2xl border-4 sm:border-8 border-white">
                         <img 
                           src={latestProducts[currentProductIndex].image} 
                           alt={latestProducts[currentProductIndex].name}
@@ -101,11 +101,11 @@ export default function Home({
                         <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
                         
                         {/* Floating Info Card */}
-                        <div className="absolute bottom-8 left-8 right-8 bg-white/90 backdrop-blur-md p-6 rounded-3xl shadow-lg transform translate-y-4 group-hover:translate-y-0 transition-transform duration-500">
-                          <p className="text-[10px] font-black uppercase tracking-[0.2em] text-amber-600 mb-1">Latest Arrival</p>
-                          <h3 className="text-xl font-bold text-black mb-2">{latestProducts[currentProductIndex].name}</h3>
+                        <div className="absolute bottom-4 left-4 right-4 sm:bottom-8 sm:left-8 sm:right-8 bg-white/90 backdrop-blur-md p-4 sm:p-6 rounded-2xl sm:rounded-3xl shadow-lg transform translate-y-4 group-hover:translate-y-0 transition-transform duration-500">
+                          <p className="text-[8px] sm:text-[10px] font-black uppercase tracking-[0.2em] text-amber-600 mb-1">Latest Arrival</p>
+                          <h3 className="text-base sm:text-xl font-bold text-black mb-1 sm:mb-2">{latestProducts[currentProductIndex].name}</h3>
                           <div className="flex justify-between items-center">
-                            <span className="text-lg font-black">৳{latestProducts[currentProductIndex].price.toFixed(0)}</span>
+                            <span className="text-sm sm:text-lg font-black">৳{latestProducts[currentProductIndex].price.toFixed(0)}</span>
                             <div className="flex items-center gap-1">
                               <Star className="w-3 h-3 fill-black text-black" />
                               <span className="text-xs font-bold">{latestProducts[currentProductIndex].rating}</span>
@@ -116,13 +116,13 @@ export default function Home({
                     </Link>
 
                     {/* Slider Indicators */}
-                    <div className="absolute -right-12 top-1/2 -translate-y-1/2 flex flex-col gap-3">
+                    <div className="absolute -right-6 sm:-right-12 top-1/2 -translate-y-1/2 flex flex-col gap-3">
                       {latestProducts.map((_, idx) => (
                         <button
                           key={idx}
                           onClick={() => setCurrentProductIndex(idx)}
-                          className={`w-1.5 transition-all duration-500 rounded-full ${
-                            idx === currentProductIndex ? 'h-8 bg-black' : 'h-3 bg-black/20 hover:bg-black/40'
+                          className={`w-1 sm:w-1.5 transition-all duration-500 rounded-full ${
+                            idx === currentProductIndex ? 'h-6 sm:h-8 bg-black' : 'h-2 sm:h-3 bg-black/20 hover:bg-black/40'
                           }`}
                         />
                       ))}
@@ -144,9 +144,9 @@ export default function Home({
           </div>
           
           <div className="flex flex-col sm:flex-row items-center gap-4">
-            {/* Category Filter - Scrollable on mobile */}
-            <div className="flex items-center space-x-2 bg-black/5 p-1 rounded-full overflow-x-auto max-w-full no-scrollbar">
-              {categories.map(cat => (
+            {/* Category Filter */}
+            <div className="flex items-center space-x-2 bg-black/5 p-1 rounded-full">
+              {categories.slice(0, 3).map(cat => (
                 <button
                   key={cat}
                   onClick={() => setSelectedCategory(cat)}
@@ -159,6 +159,32 @@ export default function Home({
                   {cat}
                 </button>
               ))}
+              
+              {categories.length > 3 && (
+                <div className="relative group">
+                  <button className={`px-4 py-1.5 rounded-full text-[10px] sm:text-xs font-medium transition-all whitespace-nowrap flex items-center gap-1 ${
+                    categories.slice(3).includes(selectedCategory)
+                      ? 'bg-white text-black shadow-sm'
+                      : 'text-black/60 hover:text-black'
+                  }`}>
+                    <span>More</span>
+                    <ChevronDown className="w-3 h-3" />
+                  </button>
+                  <div className="absolute right-0 sm:right-auto sm:left-0 mt-1 w-40 bg-white border border-black/10 rounded-2xl shadow-2xl opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 origin-top-right sm:origin-top-left scale-95 group-hover:scale-100 z-50 p-2 max-h-64 overflow-y-auto custom-scrollbar">
+                    {categories.slice(3).map(cat => (
+                      <button 
+                        key={cat}
+                        onClick={() => setSelectedCategory(cat)} 
+                        className={`w-full text-left px-3 py-2 text-xs rounded-lg transition-colors ${
+                          selectedCategory === cat ? 'bg-black/5 font-bold' : 'hover:bg-black/5'
+                        }`}
+                      >
+                        {cat}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              )}
             </div>
 
             {/* Sort Dropdown */}

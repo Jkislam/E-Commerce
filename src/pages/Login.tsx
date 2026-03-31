@@ -13,6 +13,7 @@ export default function Login({ setCurrentUser }: LoginProps) {
   const [name, setName] = useState('');
   const [password, setPassword] = useState('');
   const [address, setAddress] = useState('');
+  const [phone, setPhone] = useState('');
   const [isRegistering, setIsRegistering] = useState(false);
   const navigate = useNavigate();
 
@@ -22,7 +23,8 @@ export default function Login({ setCurrentUser }: LoginProps) {
       email, 
       name: name || email.split('@')[0],
       password,
-      address
+      address,
+      phone
     };
     setCurrentUser(user);
     navigate('/profile');
@@ -56,6 +58,20 @@ export default function Login({ setCurrentUser }: LoginProps) {
                     value={name}
                     onChange={(e) => setName(e.target.value)}
                     placeholder="John Doe"
+                    className="w-full pl-11 pr-4 py-4 bg-black/5 rounded-2xl focus:outline-none focus:ring-2 focus:ring-black/10 transition-all"
+                  />
+                </div>
+              </div>
+              <div className="space-y-2">
+                <label className="text-[10px] font-black uppercase tracking-widest text-black/40 ml-1">Phone Number</label>
+                <div className="relative">
+                  <User className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-black/20" />
+                  <input 
+                    required
+                    type="tel"
+                    value={phone}
+                    onChange={(e) => setPhone(e.target.value)}
+                    placeholder="01XXXXXXXXX"
                     className="w-full pl-11 pr-4 py-4 bg-black/5 rounded-2xl focus:outline-none focus:ring-2 focus:ring-black/10 transition-all"
                   />
                 </div>
