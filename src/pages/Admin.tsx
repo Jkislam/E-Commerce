@@ -33,6 +33,7 @@ import {
   PlusCircle
 } from 'lucide-react';
 import { Product, Order, AppSettings } from '../types';
+import { supabase } from '../lib/supabase';
 
 interface AdminProps {
   products: Product[];
@@ -57,39 +58,78 @@ function SettingsView({ settings, setSettings, setSuccessMessage }: SettingsView
   const [newCategory, setNewCategory] = useState('');
   const [paymentNumbers, setPaymentNumbers] = useState(settings.paymentNumbers);
 
-  const handleAddCategory = (e: React.FormEvent) => {
+  const handleAddCategory = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!newCategory.trim()) return;
     if (settings.categories.includes(newCategory.trim())) {
       alert('Category already exists');
       return;
     }
+    const updatedCategories = [...settings.categories, newCategory.trim()];
+    
+    // Update local state (which syncs to localStorage in App.tsx)
     setSettings(prev => ({
       ...prev,
-      categories: [...prev.categories, newCategory.trim()]
+      categories: updatedCategories
     }));
     setNewCategory('');
-    setSuccessMessage('Category added successfully');
+    setSuccessMessage('সফল ভাবে এড হয়েছে।');
   };
 
-  const handleDeleteCategory = (category: string) => {
+  const handleDeleteCategory = async (category: string) => {
     if (window.confirm(`Are you sure you want to delete "${category}"? Products in this category will remain but their category won't be in the list.`)) {
+      const updatedCategories = settings.categories.filter(c => c !== category);
+      
+      // Update local state (which syncs to localStorage in App.tsx)
       setSettings(prev => ({
         ...prev,
-        categories: prev.categories.filter(c => c !== category)
+        categories: updatedCategories
       }));
-      setSuccessMessage('Category deleted successfully');
+      setSuccessMessage('সফল ভাবে ডিলেট হয়েছে।');
     }
   };
 
-  const handleUpdatePayment = (method: keyof AppSettings['paymentNumbers'], value: string) => {
-    const updated = { ...paymentNumbers, [method]: value };
-    setPaymentNumbers(updated);
+  const handleUpdatePayment = async (method: keyof AppSettings['paymentNumbers'], value: string) => {
+    const updatedPaymentNumbers = { ...paymentNumbers, [method]: value };
+    
+    // Update local state (which syncs to localStorage in App.tsx)
+    setPaymentNumbers(updatedPaymentNumbers);
     setSettings(prev => ({
       ...prev,
-      paymentNumbers: updated
+      paymentNumbers: updatedPaymentNumbers
     }));
-    setSuccessMessage(`${method} number updated`);
+    setSuccessMessage(`সফল ভাবে ${method} নাম্বার আপডেট হয়েছে।`);
+  };
+
+  const [heroSettings, setHeroSettings] = useState(settings.hero || {
+    image: 'https://images.unsplash.com/photo-1617114919297-3c8ddb01f599?auto=format&fit=crop&q=80&w=1920',
+    titleLine1: 'Elegance in',
+    titleLine2: 'Tradition.',
+    description: 'Discover our exclusive collection of premium Panjabis and authentic Attars. Crafted for elegance, designed for you.'
+  });
+  const [brandName, setBrandName] = useState(settings.brandName || 'AL-Hurumah');
+  const [footerDescription, setFooterDescription] = useState(settings.footerDescription || 'Your destination for premium traditional wear and authentic fragrances. We bring you the finest Panjabis and Attars from around the world.');
+  const [metaPixelId, setMetaPixelId] = useState(settings.metaPixelId || '');
+
+  const handleUpdateHero = async () => {
+    // Update local state (which syncs to localStorage in App.tsx)
+    // Skipping Supabase update for 'hero' as the column doesn't exist in the current schema
+    setSettings(prev => ({
+      ...prev,
+      hero: heroSettings
+    }));
+    setSuccessMessage('সফল ভাবে আপডেট হয়েছে।');
+  };
+
+  const handleUpdateGeneralSettings = async () => {
+    // Update local state (which syncs to localStorage in App.tsx)
+    setSettings(prev => ({
+      ...prev,
+      brandName,
+      footerDescription,
+      metaPixelId
+    }));
+    setSuccessMessage('সফল ভাবে আপডেট হয়েছে।');
   };
 
   return (
@@ -175,6 +215,141 @@ function SettingsView({ settings, setSettings, setSuccessMessage }: SettingsView
                 </div>
               </div>
             ))}
+          </div>
+        </div>
+
+        {/* General Settings */}
+        <div className="bg-white p-8 rounded-[2.5rem] border border-black/5 shadow-sm lg:col-span-2">
+          <div className="flex items-center gap-3 mb-8">
+            <div className="w-10 h-10 bg-black/5 rounded-xl flex items-center justify-center">
+              <Settings className="w-5 h-5 text-black/40" />
+            </div>
+            <h3 className="text-xl font-black">General Settings</h3>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div className="space-y-2">
+              <label className="text-[10px] font-black uppercase tracking-widest text-black/40 ml-1">Brand Name</label>
+              <input 
+                type="text"
+                value={brandName}
+                onChange={(e) => setBrandName(e.target.value)}
+                className="w-full px-6 py-4 bg-black/5 rounded-2xl focus:outline-none focus:ring-2 focus:ring-black/10 transition-all text-sm font-bold"
+                placeholder="AL-Hurumah"
+              />
+            </div>
+            <div className="space-y-2">
+              <label className="text-[10px] font-black uppercase tracking-widest text-black/40 ml-1">Footer Description</label>
+              <textarea 
+                value={footerDescription}
+                onChange={(e) => setFooterDescription(e.target.value)}
+                className="w-full px-6 py-4 bg-black/5 rounded-2xl focus:outline-none focus:ring-2 focus:ring-black/10 transition-all text-sm font-bold resize-none h-24"
+                placeholder="Your destination for premium traditional wear..."
+              />
+            </div>
+            <div className="space-y-2 md:col-span-2">
+              <label className="text-[10px] font-black uppercase tracking-widest text-black/40 ml-1">Meta Pixel ID</label>
+              <input 
+                type="text"
+                value={metaPixelId}
+                onChange={(e) => setMetaPixelId(e.target.value)}
+                className="w-full px-6 py-4 bg-black/5 rounded-2xl focus:outline-none focus:ring-2 focus:ring-black/10 transition-all text-sm font-bold"
+                placeholder="e.g. 123456789012345"
+              />
+              <p className="text-xs text-black/40 ml-1 mt-1">Leave empty to disable Meta Pixel tracking.</p>
+            </div>
+            <div className="md:col-span-2 flex justify-end">
+              <motion.button 
+                onClick={handleUpdateGeneralSettings}
+                whileHover={{ scale: 1.02 }}
+                whileTap={{ scale: 0.95 }}
+                className="px-8 py-4 bg-black text-white rounded-2xl font-bold text-sm hover:bg-black/90 transition-all shadow-lg"
+              >
+                Save General Settings
+              </motion.button>
+            </div>
+          </div>
+        </div>
+
+        {/* Hero Section Settings */}
+        <div className="bg-white p-8 rounded-[2.5rem] border border-black/5 shadow-sm lg:col-span-2">
+          <div className="flex items-center gap-3 mb-8">
+            <div className="w-10 h-10 bg-black/5 rounded-xl flex items-center justify-center">
+              <ImageIcon className="w-5 h-5 text-black/40" />
+            </div>
+            <h3 className="text-xl font-black">Hero Section Settings</h3>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div className="space-y-2">
+              <label className="text-[10px] font-black uppercase tracking-widest text-black/40 ml-1">Cover Image (URL or Upload)</label>
+              <div className="flex flex-col sm:flex-row gap-3">
+                <input 
+                  type="text"
+                  value={heroSettings.image}
+                  onChange={(e) => setHeroSettings(prev => ({ ...prev, image: e.target.value }))}
+                  className="flex-1 min-w-0 px-6 py-4 bg-black/5 rounded-2xl focus:outline-none focus:ring-2 focus:ring-black/10 transition-all text-sm font-bold"
+                  placeholder="https://..."
+                />
+                <label className="cursor-pointer px-6 py-4 bg-black/5 hover:bg-black/10 rounded-2xl flex items-center justify-center transition-all shrink-0">
+                  <Upload className="w-5 h-5 text-black/60 sm:mr-0 mr-2" />
+                  <span className="sm:hidden text-sm font-bold text-black/60">Upload Image</span>
+                  <input 
+                    type="file" 
+                    accept="image/*" 
+                    className="hidden" 
+                    onChange={(e) => {
+                      const file = e.target.files?.[0];
+                      if (file) {
+                        const reader = new FileReader();
+                        reader.onloadend = () => {
+                          setHeroSettings(prev => ({ ...prev, image: reader.result as string }));
+                        };
+                        reader.readAsDataURL(file);
+                      }
+                    }}
+                  />
+                </label>
+              </div>
+            </div>
+            <div className="space-y-2">
+              <label className="text-[10px] font-black uppercase tracking-widest text-black/40 ml-1">Title (Line 1)</label>
+              <input 
+                type="text"
+                value={heroSettings.titleLine1}
+                onChange={(e) => setHeroSettings(prev => ({ ...prev, titleLine1: e.target.value }))}
+                className="w-full px-6 py-4 bg-black/5 rounded-2xl focus:outline-none focus:ring-2 focus:ring-black/10 transition-all text-sm font-bold"
+              />
+            </div>
+            <div className="space-y-2">
+              <label className="text-[10px] font-black uppercase tracking-widest text-black/40 ml-1">Title (Line 2 / Highlight)</label>
+              <input 
+                type="text"
+                value={heroSettings.titleLine2}
+                onChange={(e) => setHeroSettings(prev => ({ ...prev, titleLine2: e.target.value }))}
+                className="w-full px-6 py-4 bg-black/5 rounded-2xl focus:outline-none focus:ring-2 focus:ring-black/10 transition-all text-sm font-bold"
+              />
+            </div>
+            <div className="space-y-2">
+              <label className="text-[10px] font-black uppercase tracking-widest text-black/40 ml-1">Description</label>
+              <textarea 
+                value={heroSettings.description}
+                onChange={(e) => setHeroSettings(prev => ({ ...prev, description: e.target.value }))}
+                className="w-full px-6 py-4 bg-black/5 rounded-2xl focus:outline-none focus:ring-2 focus:ring-black/10 transition-all text-sm font-bold resize-none h-14"
+              />
+            </div>
+          </div>
+          
+          <div className="mt-6 flex justify-end">
+            <motion.button 
+              onClick={handleUpdateHero}
+              whileHover={{ scale: 1.02 }}
+              whileTap={{ scale: 0.95 }}
+              className="px-8 py-4 bg-black text-white rounded-2xl font-bold text-sm hover:bg-black/90 transition-all shadow-lg flex items-center gap-2"
+            >
+              <Save className="w-4 h-4" />
+              Save Hero Settings
+            </motion.button>
           </div>
         </div>
       </div>
@@ -295,7 +470,7 @@ export default function Admin({
                   </div>
                   <div>
                     <p className="text-[10px] font-black uppercase tracking-widest text-black/40 mb-1">Customer Name</p>
-                    <p className="text-sm font-bold">{order.customerName}</p>
+                    <p className="text-sm font-bold">{order.customername}</p>
                   </div>
                 </div>
                 <div className="flex gap-4">
@@ -304,7 +479,7 @@ export default function Admin({
                   </div>
                   <div>
                     <p className="text-[10px] font-black uppercase tracking-widest text-black/40 mb-1">Delivery Address</p>
-                    <p className="text-sm font-bold leading-relaxed">{order.customerAddress}</p>
+                    <p className="text-sm font-bold leading-relaxed">{order.customeraddress}</p>
                   </div>
                 </div>
                 <div className="flex gap-4">
@@ -313,7 +488,7 @@ export default function Admin({
                   </div>
                   <div>
                     <p className="text-[10px] font-black uppercase tracking-widest text-black/40 mb-1">Phone Number</p>
-                    <p className="text-sm font-bold">{order.customerPhone}</p>
+                    <p className="text-sm font-bold">{order.customerphone}</p>
                   </div>
                 </div>
               </div>
@@ -332,10 +507,10 @@ export default function Admin({
                   </div>
                   <div>
                     <p className="text-[10px] font-black uppercase tracking-widest text-black/40 mb-1">Method</p>
-                    <p className="text-sm font-bold">{order.paymentMethod}</p>
+                    <p className="text-sm font-bold">{order.paymentmethod}</p>
                   </div>
                 </div>
-                {order.transactionId && (
+                {order.transactionid && (
                   <div className="flex gap-4">
                     <div className="w-10 h-10 rounded-xl bg-black/5 flex items-center justify-center flex-shrink-0">
                       <Hash className="w-5 h-5 text-black/40" />
@@ -343,7 +518,7 @@ export default function Admin({
                     <div>
                       <p className="text-[10px] font-black uppercase tracking-widest text-black/40 mb-1">Transaction ID</p>
                       <p className="text-sm font-mono font-bold bg-black/5 px-3 py-1.5 rounded-xl inline-block mt-1 border border-black/5">
-                        {order.transactionId}
+                        {order.transactionid}
                       </p>
                     </div>
                   </div>
@@ -354,7 +529,7 @@ export default function Admin({
                   </div>
                   <div>
                     <p className="text-[10px] font-black uppercase tracking-widest text-black/40 mb-1">Order Date</p>
-                    <p className="text-sm font-bold">{new Date(order.createdAt).toLocaleString()}</p>
+                    <p className="text-sm font-bold">{new Date(order.createdat).toLocaleString()}</p>
                   </div>
                 </div>
               </div>
@@ -395,7 +570,7 @@ export default function Admin({
     stock: 0,
     sizes: [],
     volumes: [],
-    isLatest: false
+    islatest: false
   };
 
   const [newProduct, setNewProduct] = useState<Omit<Product, 'id'>>(initialProductState);
@@ -429,7 +604,7 @@ export default function Admin({
     if (window.confirm('Are you sure you want to delete this product?')) {
       onDelete(id);
       setSelectedIds(prev => prev.filter(selectedId => Number(selectedId) !== Number(id)));
-      setSuccessMessage('Product deleted successfully');
+      setSuccessMessage('সফল ভাবে ডিলেট হয়েছে।');
     }
   };
 
@@ -438,7 +613,7 @@ export default function Admin({
     if (window.confirm(`Are you sure you want to delete ${selectedIds.length} selected products?`)) {
       onBulkDelete(selectedIds);
       setSelectedIds([]);
-      setSuccessMessage(`${selectedIds.length} products deleted successfully`);
+      setSuccessMessage(`সফল ভাবে ${selectedIds.length} টি ডিলেট হয়েছে।`);
     }
   };
 
@@ -456,21 +631,28 @@ export default function Admin({
     );
   };
 
-  const handleSaveEdit = (e: React.FormEvent) => {
+  const handleSaveEdit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!editingProduct) return;
+
+    // Update local state (which syncs to localStorage in App.tsx)
     setProducts(prev => prev.map(p => p.id === editingProduct.id ? editingProduct : p));
     setEditingProduct(null);
-    setSuccessMessage('Product updated successfully');
+    setSuccessMessage('সফল ভাবে আপডেট হয়েছে।');
   };
 
-  const handleAddNew = (e: React.FormEvent) => {
+  const handleAddNew = async (e: React.FormEvent) => {
     e.preventDefault();
-    const id = Math.max(...products.map(p => p.id), 0) + 1;
-    setProducts(prev => [...prev, { ...newProduct, id }]);
+    
+    // Generate a new ID locally
+    const newId = products.length > 0 ? Math.max(...products.map(p => p.id)) + 1 : 1;
+    const productToAdd = { ...newProduct, id: newId } as Product;
+    
+    // Update local state (which syncs to localStorage in App.tsx)
+    setProducts(prev => [...prev, productToAdd]);
     setIsAddingNew(false);
     setNewProduct(initialProductState);
-    setSuccessMessage('Product added successfully');
+    setSuccessMessage('সফল ভাবে এড হয়েছে।');
   };
 
   const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>, isEdit: boolean) => {
@@ -517,7 +699,7 @@ export default function Admin({
               <LayoutDashboard className="w-8 h-8" />
             </div>
             <h1 className="text-3xl font-bold">Admin Login</h1>
-            <p className="text-black/40 mt-2">Secure access to AL-Hurumah Dashboard</p>
+            <p className="text-black/40 mt-2">Secure access to {settings.brandName || 'AL-Hurumah'} Dashboard</p>
           </div>
 
           <form onSubmit={handleLogin} className="space-y-6">
@@ -719,13 +901,15 @@ export default function Admin({
                           </span>
                         </td>
                         <td className="px-6 py-4">
-                          <div className={`w-8 h-4 rounded-full relative transition-colors cursor-pointer ${product.isLatest ? 'bg-black' : 'bg-black/10'}`}
-                            onClick={() => {
-                              setProducts(prev => prev.map(p => p.id === product.id ? { ...p, isLatest: !p.isLatest } : p));
-                              setSuccessMessage(`Product ${product.isLatest ? 'removed from' : 'added to'} latest`);
+                          <div className={`w-8 h-4 rounded-full relative transition-colors cursor-pointer ${product.islatest ? 'bg-black' : 'bg-black/10'}`}
+                            onClick={async () => {
+                              const newIsLatest = !product.islatest;
+                              // Update local state (which syncs to localStorage in App.tsx)
+                              setProducts(prev => prev.map(p => p.id === product.id ? { ...p, islatest: newIsLatest } : p));
+                              setSuccessMessage(`সফল ভাবে ${newIsLatest ? 'এড' : 'রিমুভ'} হয়েছে।`);
                             }}
                           >
-                            <div className={`absolute top-0.5 w-3 h-3 bg-white rounded-full transition-all ${product.isLatest ? 'left-4.5' : 'left-0.5'}`} />
+                            <div className={`absolute top-0.5 w-3 h-3 bg-white rounded-full transition-all ${product.islatest ? 'left-4.5' : 'left-0.5'}`} />
                           </div>
                         </td>
                         <td className="px-6 py-4 font-bold text-sm">৳{product.price}</td>
@@ -769,7 +953,7 @@ export default function Admin({
                     <div className="flex items-center gap-2 mt-1">
                       <span className="text-[10px] font-bold text-black/40 uppercase tracking-widest">{product.category}</span>
                       <span className="w-1 h-1 bg-black/10 rounded-full" />
-                      <span className={`text-[10px] font-bold uppercase tracking-widest ${product.isLatest ? 'text-black' : 'text-black/20'}`}>Latest</span>
+                      <span className={`text-[10px] font-bold uppercase tracking-widest ${product.islatest ? 'text-black' : 'text-black/20'}`}>Latest</span>
                       <span className="w-1 h-1 bg-black/10 rounded-full" />
                       <span className="text-xs font-bold">৳{product.price}</span>
                     </div>
@@ -824,7 +1008,7 @@ export default function Admin({
                   <tbody className="divide-y divide-black/5">
                     {orders.filter(o => 
                       o.id.toLowerCase().includes(searchTerm.toLowerCase()) || 
-                      o.customerName.toLowerCase().includes(searchTerm.toLowerCase())
+                      o.customername.toLowerCase().includes(searchTerm.toLowerCase())
                     ).map(order => (
                       <tr key={order.id} className="hover:bg-black/[0.02] transition-colors">
                         <td className="px-6 py-4">
@@ -836,7 +1020,7 @@ export default function Admin({
                               </span>
                             )}
                           </div>
-                          <p className="text-[10px] text-black/40 mt-1">{new Date(order.createdAt).toLocaleDateString()}</p>
+                          <p className="text-[10px] text-black/40 mt-1">{new Date(order.createdat).toLocaleDateString()}</p>
                         </td>
                         <td className="px-6 py-4">
                           <div className="flex flex-col gap-2">
@@ -857,19 +1041,19 @@ export default function Admin({
                         </td>
                         <td className="px-6 py-4">
                           <div className="flex flex-col">
-                            <span className="font-bold text-sm">{order.customerName}</span>
-                            <span className="text-[10px] text-black/40">{order.customerPhone}</span>
+                            <span className="font-bold text-sm">{order.customername}</span>
+                            <span className="text-[10px] text-black/40">{order.customerphone}</span>
                           </div>
                         </td>
                         <td className="px-6 py-4 font-bold text-sm">৳{order.total}</td>
                         <td className="px-6 py-4">
                           <div className="flex flex-col">
                             <span className="text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 bg-black/5 rounded-md inline-block w-fit">
-                              {order.paymentMethod}
+                              {order.paymentmethod}
                             </span>
-                            {order.transactionId && (
+                            {order.transactionid && (
                               <span className="text-[9px] text-black/40 font-mono mt-1">
-                                ID: {order.transactionId}
+                                ID: {order.transactionid}
                               </span>
                             )}
                           </div>
@@ -919,7 +1103,7 @@ export default function Admin({
             <div className="md:hidden space-y-4">
               {orders.filter(o => 
                 o.id.toLowerCase().includes(searchTerm.toLowerCase()) || 
-                o.customerName.toLowerCase().includes(searchTerm.toLowerCase())
+                o.customername.toLowerCase().includes(searchTerm.toLowerCase())
               ).map(order => (
                 <div key={order.id} className="bg-white p-5 rounded-3xl border border-black/5 shadow-sm space-y-4">
                   <div className="flex justify-between items-start">
@@ -932,7 +1116,7 @@ export default function Admin({
                           </span>
                         )}
                       </div>
-                      <p className="text-[10px] text-black/40 mt-1">{new Date(order.createdAt).toLocaleDateString()}</p>
+                      <p className="text-[10px] text-black/40 mt-1">{new Date(order.createdat).toLocaleDateString()}</p>
                     </div>
                     <div className={`flex items-center gap-1.5 px-3 py-1 rounded-full text-[10px] font-bold ${
                       order.status === 'Delivered' ? 'bg-green-50 text-green-600' :
@@ -968,8 +1152,8 @@ export default function Admin({
                   <div className="flex justify-between items-end">
                     <div className="space-y-1">
                       <p className="text-[10px] font-black uppercase tracking-widest text-black/40">Customer</p>
-                      <p className="text-xs font-bold">{order.customerName}</p>
-                      <p className="text-[10px] text-black/40">{order.customerPhone}</p>
+                      <p className="text-xs font-bold">{order.customername}</p>
+                      <p className="text-[10px] text-black/40">{order.customerphone}</p>
                     </div>
                     <div className="flex flex-col items-end gap-2">
                       <div className="flex gap-2 w-full">
@@ -1169,15 +1353,15 @@ export default function Admin({
                 <div className="flex items-center gap-3 p-4 bg-black/5 rounded-2xl border border-black/5">
                   <div 
                     onClick={() => isAddingNew 
-                      ? setNewProduct({...newProduct, isLatest: !newProduct.isLatest})
-                      : setEditingProduct({...editingProduct!, isLatest: !editingProduct?.isLatest})
+                      ? setNewProduct({...newProduct, islatest: !newProduct.islatest})
+                      : setEditingProduct({...editingProduct!, islatest: !editingProduct?.islatest})
                     }
                     className={`w-10 h-5 rounded-full relative transition-colors cursor-pointer ${
-                      (isAddingNew ? newProduct.isLatest : editingProduct?.isLatest) ? 'bg-black' : 'bg-black/10'
+                      (isAddingNew ? newProduct.islatest : editingProduct?.islatest) ? 'bg-black' : 'bg-black/10'
                     }`}
                   >
                     <div className={`absolute top-1 w-3 h-3 bg-white rounded-full transition-all ${
-                      (isAddingNew ? newProduct.isLatest : editingProduct?.isLatest) ? 'left-6' : 'left-1'
+                      (isAddingNew ? newProduct.islatest : editingProduct?.islatest) ? 'left-6' : 'left-1'
                     }`} />
                   </div>
                   <div>

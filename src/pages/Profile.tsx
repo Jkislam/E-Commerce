@@ -22,25 +22,26 @@ import { User, Order } from '../types';
 
 interface ProfileProps {
   currentUser: User | null;
+  isAuthLoading: boolean;
   orders: Order[];
   onLogout: () => void;
   onUpdateUser: (user: User) => void;
 }
 
-export default function Profile({ currentUser, orders, onLogout, onUpdateUser }: ProfileProps) {
+export default function Profile({ currentUser, isAuthLoading, orders, onLogout, onUpdateUser }: ProfileProps) {
   const navigate = useNavigate();
   const [isEditing, setIsEditing] = useState(false);
   const [editName, setEditName] = useState(currentUser?.name || '');
   const [editAddress, setEditAddress] = useState(currentUser?.address || '');
   const [editPhone, setEditPhone] = useState(currentUser?.phone || '');
-  const [editPhoto, setEditPhoto] = useState(currentUser?.photoURL || '');
+  const [editPhoto, setEditPhoto] = useState(currentUser?.photourl || '');
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
-    if (!currentUser) {
+    if (!isAuthLoading && !currentUser) {
       navigate('/login');
     }
-  }, [currentUser, navigate]);
+  }, [currentUser, isAuthLoading, navigate]);
 
   const handlePhotoUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -62,18 +63,29 @@ export default function Profile({ currentUser, orders, onLogout, onUpdateUser }:
       name: editName,
       address: editAddress,
       phone: editPhone,
-      photoURL: editPhoto
+      photourl: editPhoto
     };
 
     onUpdateUser(updatedUser);
     setIsEditing(false);
   };
 
+  if (isAuthLoading) {
+    return (
+      <div className="min-h-[60vh] flex items-center justify-center">
+        <div className="text-center">
+          <div className="w-12 h-12 border-4 border-black/10 border-t-black rounded-full animate-spin mx-auto mb-4"></div>
+          <p className="text-black/40 font-bold uppercase tracking-widest text-xs">Loading Profile...</p>
+        </div>
+      </div>
+    );
+  }
+
   if (!currentUser) {
     return null;
   }
 
-  const userOrders = orders.filter(o => o.customerEmail === currentUser?.email);
+  const userOrders = orders.filter(o => o.customeremail === currentUser?.email);
 
   const getStatusIcon = (status: Order['status']) => {
     switch (status) {
@@ -108,8 +120,8 @@ export default function Profile({ currentUser, orders, onLogout, onUpdateUser }:
             <div className="flex items-center gap-4 mb-8">
               <div className="relative group">
                 <div className="w-16 h-16 bg-black text-white rounded-2xl flex items-center justify-center text-2xl font-bold shadow-lg overflow-hidden">
-                  {currentUser.photoURL ? (
-                    <img src={currentUser.photoURL} alt={currentUser.name} className="w-full h-full object-cover" />
+                  {currentUser.photourl ? (
+                    <img src={currentUser.photourl} alt={currentUser.name} className="w-full h-full object-cover" />
                   ) : (
                     currentUser.name[0]
                   )}
@@ -205,7 +217,7 @@ export default function Profile({ currentUser, orders, onLogout, onUpdateUser }:
                       </div>
                       <div>
                         <p className="text-[10px] font-black uppercase tracking-widest text-black/40 mb-1">Date</p>
-                        <p className="font-bold text-sm">{new Date(order.createdAt).toLocaleDateString()}</p>
+                        <p className="font-bold text-sm">{new Date(order.createdat).toLocaleDateString()}</p>
                       </div>
                       <div>
                         <p className="text-[10px] font-black uppercase tracking-widest text-black/40 mb-1">Total Amount</p>
@@ -214,9 +226,9 @@ export default function Profile({ currentUser, orders, onLogout, onUpdateUser }:
                       <div>
                         <p className="text-[10px] font-black uppercase tracking-widest text-black/40 mb-1">Payment</p>
                         <div className="flex flex-col">
-                          <p className="font-bold text-sm uppercase">{order.paymentMethod}</p>
-                          {order.transactionId && (
-                            <p className="text-[9px] text-black/40 font-mono">ID: {order.transactionId}</p>
+                          <p className="font-bold text-sm uppercase">{order.paymentmethod}</p>
+                          {order.transactionid && (
+                            <p className="text-[9px] text-black/40 font-mono">ID: {order.transactionid}</p>
                           )}
                         </div>
                       </div>

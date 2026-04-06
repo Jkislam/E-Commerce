@@ -70,9 +70,51 @@ export default function App() {
         bKash: '017XXXXXXXX',
         Nagad: '018XXXXXXXX',
         Rocket: '019XXXXXXXX'
-      }
+      },
+      hero: {
+        image: 'https://images.unsplash.com/photo-1617114919297-3c8ddb01f599?auto=format&fit=crop&q=80&w=1920',
+        titleLine1: 'Elegance in',
+        titleLine2: 'Tradition.',
+        description: 'Discover our exclusive collection of premium Panjabis and authentic Attars. Crafted for elegance, designed for you.'
+      },
+      brandName: 'AL-Hurumah',
+      footerDescription: 'Your destination for premium traditional wear and authentic fragrances. We bring you the finest Panjabis and Attars from around the world.',
+      metaPixelId: ''
     };
   });
+
+  // Update document title when brandName changes
+  useEffect(() => {
+    document.title = settings.brandName || 'AL-Hurumah';
+  }, [settings.brandName]);
+
+  // Inject Meta Pixel
+  useEffect(() => {
+    if (!settings.metaPixelId) return;
+
+    const pixelId = settings.metaPixelId;
+
+    // @ts-ignore
+    !function(f,b,e,v,n,t,s)
+    // @ts-ignore
+    {if(f.fbq)return;n=f.fbq=function(){n.callMethod?
+    // @ts-ignore
+    n.callMethod.apply(n,arguments):n.queue.push(arguments)};
+    // @ts-ignore
+    if(!f._fbq)f._fbq=n;n.push=n;n.loaded=!0;n.version='2.0';
+    // @ts-ignore
+    n.queue=[];t=b.createElement(e);t.async=!0;
+    // @ts-ignore
+    t.src=v;s=b.getElementsByTagName(e)[0];
+    // @ts-ignore
+    s.parentNode.insertBefore(t,s)}(window, document,'script',
+    'https://connect.facebook.net/en_US/fbevents.js');
+
+    // @ts-ignore
+    fbq('init', pixelId);
+    // @ts-ignore
+    fbq('track', 'PageView');
+  }, [settings.metaPixelId]);
 
   // Sync products to localStorage
   useEffect(() => {
@@ -226,10 +268,10 @@ export default function App() {
         {/* Header */}
         <header className="fixed top-0 left-0 right-0 z-50 px-4 py-4 sm:px-6 lg:px-8">
           <div className="max-w-7xl mx-auto">
-            <div className="bg-white/70 backdrop-blur-xl border border-black/5 rounded-2xl px-6 h-16 flex justify-between items-center shadow-sm">
+            <div className="bg-white/20 backdrop-blur-xl border border-black/5 rounded-2xl px-6 h-16 flex justify-between items-center shadow-sm">
               {/* Logo */}
               <div className="flex-shrink-0 flex items-center">
-                <Link to="/" onClick={() => setIsMenuOpen(false)} className="text-2xl font-bold tracking-tighter text-black cursor-pointer">AL-Hurumah.</Link>
+                <Link to="/" onClick={() => setIsMenuOpen(false)} className="text-2xl font-bold tracking-tighter text-black cursor-pointer">{settings.brandName || 'AL-Hurumah'}.</Link>
               </div>
 
               {/* Desktop Nav */}
@@ -328,7 +370,7 @@ export default function App() {
                   className="fixed left-0 top-0 bottom-0 w-full max-w-[300px] bg-white z-[70] shadow-2xl flex flex-col lg:hidden"
                 >
                   <div className="p-6 border-b border-black/5 flex justify-between items-center">
-                    <span className="text-2xl font-bold tracking-tighter text-black">AL-Hurumah.</span>
+                    <span className="text-2xl font-bold tracking-tighter text-black">{settings.brandName || 'AL-Hurumah'}.</span>
                     <button 
                       onClick={() => setIsMenuOpen(false)}
                       className="p-2 hover:bg-black/5 rounded-full transition-colors"
@@ -407,7 +449,7 @@ export default function App() {
 
                   <div className="p-8 border-t border-black/5 bg-gray-50/50">
                     <p className="text-xs text-black/40 leading-relaxed">
-                      © 2026 AL-Hurumah. All rights reserved. <br />
+                      © 2026 {settings.brandName || 'AL-Hurumah'}. All rights reserved. <br />
                       Curating the finest essentials.
                     </p>
                   </div>
@@ -537,6 +579,7 @@ export default function App() {
                 setSortBy={setSortBy}
                 setSearchQuery={setSearchQuery}
                 latestProducts={latestProducts}
+                settings={settings}
               />
             } />
             <Route path="/product/:id" element={<ProductDetails products={products} addToCart={addToCart} />} />
@@ -565,9 +608,9 @@ export default function App() {
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <div className="grid grid-cols-1 md:grid-cols-4 gap-12 mb-16">
               <div className="col-span-1 md:col-span-1">
-                <span className="text-2xl font-bold tracking-tighter mb-6 block">AL-Hurumah.</span>
-                <p className="text-sm text-black/50 leading-relaxed">
-                  Your destination for premium traditional wear and authentic fragrances. We bring you the finest Panjabis and Attars from around the world.
+                <span className="text-2xl font-bold tracking-tighter mb-6 block">{settings.brandName || 'AL-Hurumah'}.</span>
+                <p className="text-sm text-black/50 leading-relaxed whitespace-pre-wrap">
+                  {settings.footerDescription || 'Your destination for premium traditional wear and authentic fragrances. We bring you the finest Panjabis and Attars from around the world.'}
                 </p>
               </div>
               
@@ -612,7 +655,7 @@ export default function App() {
             </div>
             
             <div className="pt-8 border-t border-black/5 flex flex-col md:flex-row justify-between items-center gap-4">
-              <p className="text-xs text-black/40">© 2026 AL-Hurumah. All rights reserved.</p>
+              <p className="text-xs text-black/40">© 2026 {settings.brandName || 'AL-Hurumah'}. All rights reserved.</p>
               <div className="flex space-x-6 text-xs text-black/40">
                 <Link to="/admin" className="hover:text-black">Admin Login</Link>
                 <a href="#" className="hover:text-black">Privacy Policy</a>

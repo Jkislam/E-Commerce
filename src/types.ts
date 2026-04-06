@@ -9,7 +9,7 @@ export interface Product {
   stock: number;
   sizes?: string[];
   volumes?: string[];
-  isLatest?: boolean;
+  islatest?: boolean;
 }
 
 export interface CartItem extends Product {
@@ -19,16 +19,16 @@ export interface CartItem extends Product {
 
 export interface Order {
   id: string;
-  customerName: string;
-  customerEmail: string;
-  customerPhone: string;
-  customerAddress: string;
+  customername: string;
+  customeremail: string;
+  customerphone: string;
+  customeraddress: string;
   items: CartItem[];
   total: number;
   status: 'Pending' | 'Processing' | 'Shipped' | 'Delivered' | 'Cancelled';
-  paymentMethod: 'Cash on Delivery' | 'bKash' | 'Nagad' | 'Rocket';
-  transactionId?: string;
-  createdAt: string;
+  paymentmethod: 'Cash on Delivery' | 'bKash' | 'Nagad' | 'Rocket';
+  transactionid?: string;
+  createdat: string;
 }
 
 export interface User {
@@ -36,15 +36,25 @@ export interface User {
   name: string;
   password?: string;
   address?: string;
-  photoURL?: string;
+  photourl?: string;
   phone?: string;
 }
 
 export interface AppSettings {
+  id?: number;
   categories: string[];
   paymentNumbers: {
     bKash: string;
     Nagad: string;
     Rocket: string;
   };
+  hero?: {
+    image: string;
+    titleLine1: string;
+    titleLine2: string;
+    description: string;
+  };
+  brandName?: string;
+  footerDescription?: string;
+  metaPixelId?: string;
 }

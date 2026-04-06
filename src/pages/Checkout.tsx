@@ -8,7 +8,7 @@ interface CheckoutProps {
   cart: CartItem[];
   cartTotal: number;
   clearCart: () => void;
-  placeOrder: (orderData: Omit<Order, 'id' | 'status' | 'createdAt'>) => Order;
+  placeOrder: (orderData: Omit<Order, 'id' | 'status' | 'createdat'>) => Promise<Order>;
   currentUser: User | null;
   settings: AppSettings;
 }
@@ -25,7 +25,7 @@ export default function Checkout({ cart, cartTotal, clearCart, placeOrder, curre
     address: currentUser?.address || '',
     city: '',
     area: '',
-    paymentMethod: 'Cash on Delivery' as Order['paymentMethod'],
+    paymentMethod: 'Cash on Delivery' as Order['paymentmethod'],
     transactionId: ''
   });
 
@@ -63,22 +63,26 @@ export default function Checkout({ cart, cartTotal, clearCart, placeOrder, curre
     window.scrollTo(0, 0);
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    const order = placeOrder({
-      customerName: formData.fullName,
-      customerEmail: formData.email,
-      customerPhone: formData.phone,
-      customerAddress: `${formData.address}, ${formData.area}, ${formData.city}`,
-      items: cart,
-      total: cartTotal,
-      paymentMethod: formData.paymentMethod,
-      transactionId: formData.paymentMethod !== 'Cash on Delivery' ? formData.transactionId : undefined,
-    });
+    try {
+      const order = await placeOrder({
+        customername: formData.fullName,
+        customeremail: formData.email,
+        customerphone: formData.phone,
+        customeraddress: `${formData.address}, ${formData.area}, ${formData.city}`,
+        items: cart,
+        total: cartTotal,
+        paymentmethod: formData.paymentMethod,
+        transactionid: formData.paymentMethod !== 'Cash on Delivery' ? formData.transactionId : undefined,
+      });
 
-    setOrderInfo(order);
-    setIsOrderPlaced(true);
+      setOrderInfo(order);
+      setIsOrderPlaced(true);
+    } catch (error) {
+      alert('Failed to place order. Please try again.');
+    }
   };
 
   if (isOrderPlaced && orderInfo) {
@@ -93,7 +97,7 @@ export default function Checkout({ cart, cartTotal, clearCart, placeOrder, curre
         </motion.div>
         <h2 className="text-3xl font-bold mb-4">Order Placed Successfully!</h2>
         <p className="text-black/60 mb-8 max-w-md">
-          Thank you for shopping with AL-Hurumah. Your order ID is <span className="font-bold text-black">{orderInfo.id}</span>. You can track your order in your profile.
+          Thank you for shopping with {settings.brandName || 'AL-Hurumah'}. Your order ID is <span className="font-bold text-black">{orderInfo.id}</span>. You can track your order in your profile.
         </p>
         <div className="bg-black/5 p-6 rounded-2xl mb-8 w-full max-w-sm text-left">
           <p className="text-xs font-bold uppercase tracking-widest text-black/40 mb-4">Order Summary</p>
@@ -339,7 +343,7 @@ export default function Checkout({ cart, cartTotal, clearCart, placeOrder, curre
                     Confirm Order • ৳{cartTotal.toFixed(0)}
                   </button>
                   <p className="text-[10px] text-center text-black/40 mt-4 uppercase tracking-widest font-bold">
-                    Secure Checkout Powered by AL-Hurumah
+                    Secure Checkout Powered by {settings.brandName || 'AL-Hurumah'}
                   </p>
                 </div>
               </form>
