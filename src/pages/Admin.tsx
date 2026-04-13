@@ -30,7 +30,9 @@ import {
   ChevronRight,
   Settings,
   CreditCard as PaymentIcon,
-  PlusCircle
+  PlusCircle,
+  Eye,
+  EyeOff
 } from 'lucide-react';
 import { Product, Order, AppSettings } from '../types';
 import { supabase } from '../lib/supabase';
@@ -373,6 +375,7 @@ export default function Admin({
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [loginError, setLoginError] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
 
   const [editingProduct, setEditingProduct] = useState<Product | null>(null);
   const [isAddingNew, setIsAddingNew] = useState(false);
@@ -716,14 +719,23 @@ export default function Admin({
             </div>
             <div className="space-y-2">
               <label className="text-xs font-bold uppercase tracking-widest text-black/40 ml-1">Password</label>
-              <input 
-                required
-                type="password"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                placeholder="••••••••"
-                className="w-full px-6 py-4 bg-black/5 rounded-2xl focus:outline-none focus:ring-2 focus:ring-black/10 transition-all"
-              />
+              <div className="relative">
+                <input 
+                  required
+                  type={showPassword ? "text" : "password"}
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  placeholder="••••••••"
+                  className="w-full pl-6 pr-12 py-4 bg-black/5 rounded-2xl focus:outline-none focus:ring-2 focus:ring-black/10 transition-all"
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowPassword(!showPassword)}
+                  className="absolute right-4 top-1/2 -translate-y-1/2 text-black/40 hover:text-black transition-colors"
+                >
+                  {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                </button>
+              </div>
             </div>
 
             {loginError && (

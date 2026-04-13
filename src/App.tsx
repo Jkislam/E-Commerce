@@ -307,11 +307,15 @@ export default function App() {
                 <div className="h-4 w-[1px] bg-black/10 mx-2" />
                 <Link 
                   to={currentUser ? "/profile" : "/login"} 
-                  className="p-2 hover:bg-black/5 rounded-full transition-all active:scale-95 group relative"
+                  className="p-2 hover:bg-black/5 rounded-full transition-all active:scale-95 group relative flex items-center justify-center"
                   title={currentUser ? "Profile" : "Login"}
                 >
-                  <UserIcon className="w-5 h-5" />
-                  {currentUser && (
+                  {currentUser?.photourl ? (
+                    <img src={currentUser.photourl} alt={currentUser.name} className="w-6 h-6 rounded-full object-cover" referrerPolicy="no-referrer" />
+                  ) : (
+                    <UserIcon className="w-5 h-5" />
+                  )}
+                  {currentUser && !currentUser.photourl && (
                     <span className="absolute top-1.5 right-1.5 w-2 h-2 bg-green-500 border-2 border-white rounded-full" />
                   )}
                 </Link>
@@ -381,8 +385,12 @@ export default function App() {
 
                   <div className="flex-1 overflow-y-auto p-8 space-y-8">
                     <div className="flex items-center gap-4 p-4 bg-black/5 rounded-2xl">
-                      <div className="w-12 h-12 bg-black text-white rounded-xl flex items-center justify-center shadow-lg">
-                        <UserIcon className="w-6 h-6" />
+                      <div className="w-12 h-12 bg-black text-white rounded-xl flex items-center justify-center shadow-lg overflow-hidden">
+                        {currentUser?.photourl ? (
+                          <img src={currentUser.photourl} alt={currentUser.name} className="w-full h-full object-cover" referrerPolicy="no-referrer" />
+                        ) : (
+                          <UserIcon className="w-6 h-6" />
+                        )}
                       </div>
                       <div>
                         {currentUser ? (
