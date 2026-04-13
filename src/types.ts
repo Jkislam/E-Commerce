@@ -57,4 +57,5 @@ export interface AppSettings {
   brandName?: string;
   footerDescription?: string;
   metaPixelId?: string;
+  seoKeywords?: string;
 }

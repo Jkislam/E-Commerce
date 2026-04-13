@@ -79,14 +79,28 @@ export default function App() {
       },
       brandName: 'AL-Hurumah',
       footerDescription: 'Your destination for premium traditional wear and authentic fragrances. We bring you the finest Panjabis and Attars from around the world.',
-      metaPixelId: ''
+      metaPixelId: '',
+      seoKeywords: 'AL-Hurumah, Panjabi, Attar, Traditional Wear, Fragrances, Premium Panjabi, Authentic Attar'
     };
   });
 
-  // Update document title when brandName changes
+  // Update document title and SEO meta tags when settings change
   useEffect(() => {
+    // Update Title
     document.title = settings.brandName || 'AL-Hurumah';
-  }, [settings.brandName]);
+
+    // Update Meta Description
+    let metaDescription = document.querySelector('meta[name="description"]');
+    if (metaDescription) {
+      metaDescription.setAttribute('content', settings.footerDescription || 'Your destination for premium traditional wear and authentic fragrances. We bring you the finest Panjabis and Attars from around the world.');
+    }
+
+    // Update Meta Keywords
+    let metaKeywords = document.querySelector('meta[name="keywords"]');
+    if (metaKeywords) {
+      metaKeywords.setAttribute('content', settings.seoKeywords || 'AL-Hurumah, Panjabi, Attar, Traditional Wear, Fragrances, Premium Panjabi, Authentic Attar');
+    }
+  }, [settings.brandName, settings.footerDescription, settings.seoKeywords]);
 
   // Inject Meta Pixel
   useEffect(() => {

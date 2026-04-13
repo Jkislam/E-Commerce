@@ -112,6 +112,7 @@ function SettingsView({ settings, setSettings, setSuccessMessage }: SettingsView
   const [brandName, setBrandName] = useState(settings.brandName || 'AL-Hurumah');
   const [footerDescription, setFooterDescription] = useState(settings.footerDescription || 'Your destination for premium traditional wear and authentic fragrances. We bring you the finest Panjabis and Attars from around the world.');
   const [metaPixelId, setMetaPixelId] = useState(settings.metaPixelId || '');
+  const [seoKeywords, setSeoKeywords] = useState(settings.seoKeywords || 'AL-Hurumah, Panjabi, Attar, Traditional Wear, Fragrances, Premium Panjabi, Authentic Attar');
 
   const handleUpdateHero = async () => {
     // Update local state (which syncs to localStorage in App.tsx)
@@ -129,7 +130,8 @@ function SettingsView({ settings, setSettings, setSuccessMessage }: SettingsView
       ...prev,
       brandName,
       footerDescription,
-      metaPixelId
+      metaPixelId,
+      seoKeywords
     }));
     setSuccessMessage('সফল ভাবে আপডেট হয়েছে।');
   };
@@ -259,6 +261,17 @@ function SettingsView({ settings, setSettings, setSuccessMessage }: SettingsView
                 placeholder="e.g. 123456789012345"
               />
               <p className="text-xs text-black/40 ml-1 mt-1">Leave empty to disable Meta Pixel tracking.</p>
+            </div>
+            <div className="space-y-2 md:col-span-2">
+              <label className="text-[10px] font-black uppercase tracking-widest text-black/40 ml-1">SEO Keywords</label>
+              <input 
+                type="text"
+                value={seoKeywords}
+                onChange={(e) => setSeoKeywords(e.target.value)}
+                className="w-full px-6 py-4 bg-black/5 rounded-2xl focus:outline-none focus:ring-2 focus:ring-black/10 transition-all text-sm font-bold"
+                placeholder="e.g. AL-Hurumah, Panjabi, Attar, Traditional Wear"
+              />
+              <p className="text-xs text-black/40 ml-1 mt-1">Comma-separated keywords for search engines.</p>
             </div>
             <div className="md:col-span-2 flex justify-end">
               <motion.button 
