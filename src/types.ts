@@ -1,5 +1,5 @@
 export interface Product {
-  id: number;
+  id: string | number;
   name: string;
   price: number;
   rating: number;
@@ -32,12 +32,14 @@ export interface Order {
 }
 
 export interface User {
+  id?: string;
   email: string;
   name: string;
   password?: string;
   address?: string;
   photourl?: string;
   phone?: string;
+  role?: 'admin' | 'customer';
 }
 
 export interface AppSettings {
@@ -55,7 +57,18 @@ export interface AppSettings {
     description: string;
   };
   brandName?: string;
+  logo?: string;
   footerDescription?: string;
   metaPixelId?: string;
   seoKeywords?: string;
+  aboutText1?: string;
+  aboutText2?: string;
+  aboutMission?: string;
+  aboutVision?: string;
+  contactEmail?: string;
+  contactPhone?: string;
+  contactAddress?: string;
+  contactHours?: string;
+  contactImageTop?: string;
+  contactImageBottom?: string;
 }

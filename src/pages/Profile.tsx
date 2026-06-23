@@ -19,23 +19,35 @@ import {
   Save 
 } from 'lucide-react';
 import { User, Order } from '../types';
+import { supabase } from '../lib/supabase';
 
 interface ProfileProps {
   currentUser: User | null;
   isAuthLoading: boolean;
   orders: Order[];
   onLogout: () => void;
-  onUpdateUser: (user: User) => void;
+  onUpdateUser: () => Promise<void>;
 }
 
 export default function Profile({ currentUser, isAuthLoading, orders, onLogout, onUpdateUser }: ProfileProps) {
   const navigate = useNavigate();
   const [isEditing, setIsEditing] = useState(false);
+  const [isSaving, setIsSaving] = useState(false);
   const [editName, setEditName] = useState(currentUser?.name || '');
   const [editAddress, setEditAddress] = useState(currentUser?.address || '');
   const [editPhone, setEditPhone] = useState(currentUser?.phone || '');
   const [editPhoto, setEditPhoto] = useState(currentUser?.photourl || '');
   const fileInputRef = useRef<HTMLInputElement>(null);
+
+  // Update local state when currentUser changes (e.g. after refresh)
+  useEffect(() => {
+    if (currentUser) {
+      setEditName(currentUser.name || '');
+      setEditAddress(currentUser.address || '');
+      setEditPhone(currentUser.phone || '');
+      setEditPhoto(currentUser.photourl || '');
+    }
+  }, [currentUser]);
 
   useEffect(() => {
     if (!isAuthLoading && !currentUser) {
@@ -43,31 +55,89 @@ export default function Profile({ currentUser, isAuthLoading, orders, onLogout, 
     }
   }, [currentUser, isAuthLoading, navigate]);
 
+  const compressImage = (base64Str: string): Promise<string> => {
+    return new Promise((resolve) => {
+      const img = new Image();
+      img.src = base64Str;
+      img.onload = () => {
+        const canvas = document.createElement('canvas');
+        const MAX_WIDTH = 300;
+        const MAX_HEIGHT = 300;
+        let width = img.width;
+        let height = img.height;
+
+        if (width > height) {
+          if (width > MAX_WIDTH) {
+            height *= MAX_WIDTH / width;
+            width = MAX_WIDTH;
+          }
+        } else {
+          if (height > MAX_HEIGHT) {
+            width *= MAX_HEIGHT / height;
+            height = MAX_HEIGHT;
+          }
+        }
+        canvas.width = width;
+        canvas.height = height;
+        const ctx = canvas.getContext('2d');
+        ctx?.drawImage(img, 0, 0, width, height);
+        resolve(canvas.toDataURL('image/jpeg', 0.7)); // Compress to 70% quality JPEG
+      };
+    });
+  };
+
   const handlePhotoUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
+      if (file.size > 5 * 1024 * 1024) {
+        alert("৫ মেগাবাইটের চেয়ে ছোট ছবি আপলোড করুন।");
+        return;
+      }
       const reader = new FileReader();
-      reader.onloadend = () => {
-        setEditPhoto(reader.result as string);
+      reader.onloadend = async () => {
+        const compressed = await compressImage(reader.result as string);
+        setEditPhoto(compressed);
       };
       reader.readAsDataURL(file);
     }
   };
 
-  const handleUpdateProfile = (e: React.FormEvent) => {
+  const handleUpdateProfile = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!currentUser) return;
+    if (!currentUser || !currentUser.id || isSaving) return;
 
-    const updatedUser: User = {
-      ...currentUser,
-      name: editName,
-      address: editAddress,
-      phone: editPhone,
-      photourl: editPhoto
-    };
+    setIsSaving(true);
+    try {
+      // Update profiles table
+      const { error } = await supabase.from('profiles').update({
+        name: editName,
+        phone: editPhone,
+        address: editAddress,
+        photourl: editPhoto,
+      }).eq('id', currentUser.id);
 
-    onUpdateUser(updatedUser);
-    setIsEditing(false);
+      if (error) throw error;
+
+      // Also update auth metadata for faster UI sync
+      const { error: authError } = await supabase.auth.updateUser({
+        data: {
+          name: editName,
+          phone: editPhone,
+          address: editAddress,
+          photourl: editPhoto
+        }
+      });
+
+      if (authError) console.warn('Auth metadata sync failed:', authError.message);
+
+      await onUpdateUser();
+      setIsEditing(false);
+    } catch(err: any) {
+      console.error('Update error:', err);
+      alert("প্রোফাইল আপডেট করতে সমস্যা হয়েছে: " + (err.message || 'Unknown error'));
+    } finally {
+      setIsSaving(false);
+    }
   };
 
   if (isAuthLoading) {
@@ -85,7 +155,10 @@ export default function Profile({ currentUser, isAuthLoading, orders, onLogout, 
     return null;
   }
 
-  const userOrders = orders.filter(o => o.customeremail === currentUser?.email);
+  // Filter orders to show only the logged-in user's orders even if they are an admin
+  const userOrders = orders.filter(
+    order => order.customeremail === currentUser.email
+  );
 
   const getStatusIcon = (status: Order['status']) => {
     switch (status) {
@@ -376,10 +449,20 @@ export default function Profile({ currentUser, isAuthLoading, orders, onLogout, 
                   </button>
                   <button 
                     type="submit"
-                    className="flex-1 py-4 bg-black text-white rounded-2xl font-bold hover:bg-black/90 transition-all shadow-xl flex items-center justify-center gap-2"
+                    disabled={isSaving}
+                    className={`flex-1 py-4 bg-black text-white rounded-2xl font-bold hover:bg-black/90 transition-all shadow-xl flex items-center justify-center gap-2 ${isSaving ? 'opacity-70 cursor-not-allowed' : ''}`}
                   >
-                    <Save className="w-5 h-5" />
-                    Save Changes
+                    {isSaving ? (
+                      <>
+                        <div className="w-5 h-5 border-2 border-white/20 border-t-white rounded-full animate-spin" />
+                        Saving...
+                      </>
+                    ) : (
+                      <>
+                        <Save className="w-5 h-5" />
+                        Save Changes
+                      </>
+                    )}
                   </button>
                 </div>
               </form>

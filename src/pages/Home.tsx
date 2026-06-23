@@ -29,6 +29,7 @@ export default function Home({
   const [currentProductIndex, setCurrentProductIndex] = useState(0);
 
   useEffect(() => {
+    if (latestProducts.length === 0) return;
     const timer = setInterval(() => {
       setCurrentProductIndex((prev) => (prev + 1) % latestProducts.length);
     }, 4000);
@@ -38,101 +39,106 @@ export default function Home({
   return (
     <>
       {/* Hero Section */}
-      <section className="relative min-h-[85vh] flex items-center overflow-hidden bg-[#FDFCFB]">
+      <section className="relative min-h-[90vh] flex items-center overflow-hidden bg-[#FDFCFB]">
         {/* Background Image with Overlay */}
-        <div className="absolute inset-0 z-0 flex items-center justify-center">
+        <div className="absolute inset-0 z-0">
           <img 
             src={settings.hero?.image || "https://images.unsplash.com/photo-1617114919297-3c8ddb01f599?auto=format&fit=crop&q=80&w=1920"} 
             alt="Panjabi Fashion Designer Collection"
-            className="w-full h-full object-contain object-center opacity-60"
+            className="w-full h-full object-cover object-[center_25%] opacity-70 lg:opacity-85"
             referrerPolicy="no-referrer"
           />
-          <div className="absolute inset-0 bg-gradient-to-r from-[#FDFCFB]/70 via-[#FDFCFB]/40 to-transparent" />
+          <div className="absolute inset-0 bg-gradient-to-r from-[#FDFCFB] via-[#FDFCFB]/60 to-transparent lg:from-[#FDFCFB] lg:via-[#FDFCFB]/20 lg:to-transparent" />
         </div>
         
-        <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 w-full py-12">
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
+        <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 w-full py-16 lg:py-24">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-16 lg:gap-24 items-center">
             {/* Left Content */}
             <motion.div 
-              initial={{ opacity: 0, x: -30 }}
-              animate={{ opacity: 1, x: 0 }}
-              transition={{ duration: 0.8 }}
+              initial={{ opacity: 0, y: 30 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 1, ease: [0.22, 1, 0.36, 1] }}
               className="text-center lg:text-left"
             >
-              <h1 className="text-4xl sm:text-6xl md:text-7xl lg:text-8xl font-bold tracking-tight text-black mb-6 leading-tight sm:leading-[1.1] break-words">
+              <h1 className="text-5xl sm:text-7xl md:text-8xl lg:text-[10rem] font-bold tracking-tight text-black mb-8 leading-tight break-words">
                 {settings.hero?.titleLine1 || "Elegance in"} <br />
-                <span className="italic font-serif text-amber-600">{settings.hero?.titleLine2 || "Tradition."}</span>
+                <span className="italic font-serif text-amber-600 block mt-6 transform rotate-[-2deg] origin-left">{settings.hero?.titleLine2 || "Tradition."}</span>
               </h1>
-              <p className="text-base sm:text-lg md:text-xl text-black/60 mb-10 max-w-lg mx-auto lg:mx-0 leading-relaxed break-words">
+              <p className="text-base sm:text-lg md:text-xl text-black/50 mb-12 max-w-lg mx-auto lg:mx-0 leading-relaxed font-medium">
                 {settings.hero?.description || "Discover our exclusive collection of premium Panjabis and authentic Attars. Crafted for elegance, designed for you."}
               </p>
-              <div className="flex flex-col sm:flex-row gap-4 justify-center lg:justify-start">
+              <div className="flex flex-col sm:flex-row gap-6 justify-center lg:justify-start">
                 <a 
                   href="#shop"
-                  className="inline-flex items-center justify-center px-10 py-5 bg-black text-white font-bold rounded-2xl hover:bg-black/90 transition-all group shadow-xl"
+                  className="group relative inline-flex items-center justify-center px-12 py-6 bg-black text-white font-bold rounded-2xl overflow-hidden transition-all shadow-[0_20px_50px_rgba(0,0,0,0.2)] hover:shadow-[0_20px_50px_rgba(0,0,0,0.3)] active:scale-95"
                 >
-                  Shop Collection
-                  <ArrowRight className="ml-2 w-5 h-5 group-hover:translate-x-1 transition-transform" />
+                  <span className="relative z-10 flex items-center">
+                    Explore Collection
+                    <ArrowRight className="ml-3 w-5 h-5 group-hover:translate-x-2 transition-transform duration-500" />
+                  </span>
+                  <div className="absolute inset-0 bg-gradient-to-r from-amber-600 to-amber-400 opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
                 </a>
               </div>
             </motion.div>
 
             {/* Right Content - Automatic Product Slider */}
-            <div className="relative block h-[400px] sm:h-[500px] mt-12 lg:mt-0">
-              <AnimatePresence mode="wait">
-                <motion.div
-                  key={latestProducts[currentProductIndex].id}
-                  initial={{ opacity: 0, scale: 0.9, x: 50 }}
-                  animate={{ opacity: 1, scale: 1, x: 0 }}
-                  exit={{ opacity: 0, scale: 1.1, x: -50 }}
-                  transition={{ duration: 0.6, ease: "easeOut" }}
-                  className="absolute inset-0"
-                >
-                  <div className="relative h-full w-full max-w-[320px] sm:max-w-[400px] mx-auto">
-                    {/* Decorative Elements */}
-                    <div className="absolute -top-6 -right-6 w-32 h-32 bg-amber-100 rounded-full -z-10 blur-2xl opacity-60" />
-                    <div className="absolute -bottom-10 -left-10 w-48 h-48 bg-black/5 rounded-full -z-10 blur-3xl" />
-                    
-                    <Link to={`/product/${latestProducts[currentProductIndex].id}`} className="block h-full group">
-                      <div className="relative h-full rounded-[2.5rem] overflow-hidden shadow-2xl border-4 sm:border-8 border-white">
-                        <img 
-                          src={latestProducts[currentProductIndex].image} 
-                          alt={latestProducts[currentProductIndex].name}
-                          className="w-full h-full object-cover transition-transform duration-1000 group-hover:scale-110"
-                        />
-                        <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
-                        
-                        {/* Floating Info Card */}
-                        <div className="absolute bottom-4 left-4 right-4 sm:bottom-8 sm:left-8 sm:right-8 bg-white/90 backdrop-blur-md p-4 sm:p-6 rounded-2xl sm:rounded-3xl shadow-lg transform translate-y-4 group-hover:translate-y-0 transition-transform duration-500">
-                          <p className="text-[8px] sm:text-[10px] font-black uppercase tracking-[0.2em] text-amber-600 mb-1">Latest Arrival</p>
-                          <h3 className="text-base sm:text-xl font-bold text-black mb-1 sm:mb-2">{latestProducts[currentProductIndex].name}</h3>
-                          <div className="flex justify-between items-center">
-                            <span className="text-sm sm:text-lg font-black">৳{latestProducts[currentProductIndex].price.toFixed(0)}</span>
-                            <div className="flex items-center gap-1">
-                              <Star className="w-3 h-3 fill-black text-black" />
-                              <span className="text-xs font-bold">{latestProducts[currentProductIndex].rating}</span>
+            {latestProducts.length > 0 && latestProducts[currentProductIndex] && (
+              <div className="relative block h-[400px] sm:h-[500px] mt-12 lg:mt-0">
+                <AnimatePresence mode="wait">
+                  <motion.div
+                    key={latestProducts[currentProductIndex].id}
+                    initial={{ opacity: 0, scale: 0.9, x: 50 }}
+                    animate={{ opacity: 1, scale: 1, x: 0 }}
+                    exit={{ opacity: 0, scale: 1.1, x: -50 }}
+                    transition={{ duration: 0.6, ease: "easeOut" }}
+                    className="absolute inset-0"
+                  >
+                    <div className="relative h-full w-full max-w-[340px] sm:max-w-[460px] mx-auto">
+                      {/* Decorative Elements */}
+                      <div className="absolute -top-6 -right-6 w-32 h-32 bg-amber-100 rounded-full -z-10 blur-2xl opacity-60" />
+                      <div className="absolute -bottom-10 -left-10 w-48 h-48 bg-black/5 rounded-full -z-10 blur-3xl" />
+                      
+                      <Link to={`/product/${latestProducts[currentProductIndex].id}`} className="block h-full group">
+                        <div className="relative h-full rounded-[2.5rem] overflow-hidden shadow-2xl border-4 sm:border-8 border-white">
+                          <img 
+                            src={latestProducts[currentProductIndex].image} 
+                            alt={latestProducts[currentProductIndex].name}
+                            className="w-full h-full object-cover transition-transform duration-1000 group-hover:scale-110"
+                          />
+                          <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
+                          
+                          {/* Floating Info Card */}
+                          <div className="absolute bottom-4 left-4 right-4 sm:bottom-8 sm:left-8 sm:right-8 bg-white/90 backdrop-blur-md p-4 sm:p-6 rounded-2xl sm:rounded-3xl shadow-lg transform translate-y-4 group-hover:translate-y-0 transition-transform duration-500">
+                            <p className="text-[8px] sm:text-[10px] font-black uppercase tracking-[0.2em] text-amber-600 mb-1">Latest Arrival</p>
+                            <h3 className="text-base sm:text-xl font-bold text-black mb-1 sm:mb-2">{latestProducts[currentProductIndex].name}</h3>
+                            <div className="flex justify-between items-center">
+                              <span className="text-sm sm:text-lg font-black">৳{Number(latestProducts[currentProductIndex].price || 0).toFixed(0)}</span>
+                              <div className="flex items-center gap-1">
+                                <Star className="w-3 h-3 fill-black text-black" />
+                                <span className="text-xs font-bold">{latestProducts[currentProductIndex].rating}</span>
+                              </div>
                             </div>
                           </div>
                         </div>
-                      </div>
-                    </Link>
+                      </Link>
 
-                    {/* Slider Indicators */}
-                    <div className="absolute -right-6 sm:-right-12 top-1/2 -translate-y-1/2 flex flex-col gap-3">
-                      {latestProducts.map((_, idx) => (
-                        <button
-                          key={idx}
-                          onClick={() => setCurrentProductIndex(idx)}
-                          className={`w-1 sm:w-1.5 transition-all duration-500 rounded-full ${
-                            idx === currentProductIndex ? 'h-6 sm:h-8 bg-black' : 'h-2 sm:h-3 bg-black/20 hover:bg-black/40'
-                          }`}
-                        />
-                      ))}
+                      {/* Slider Indicators */}
+                      <div className="absolute -right-6 sm:-right-12 top-1/2 -translate-y-1/2 flex flex-col gap-3">
+                        {latestProducts.map((_, idx) => (
+                          <button
+                            key={idx}
+                            onClick={() => setCurrentProductIndex(idx)}
+                            className={`w-1 sm:w-1.5 transition-all duration-500 rounded-full ${
+                              idx === currentProductIndex ? 'h-6 sm:h-8 bg-black' : 'h-2 sm:h-3 bg-black/20 hover:bg-black/40'
+                            }`}
+                          />
+                        ))}
+                      </div>
                     </div>
-                  </div>
-                </motion.div>
-              </AnimatePresence>
-            </div>
+                  </motion.div>
+                </AnimatePresence>
+              </div>
+            )}
           </div>
         </div>
       </section>
@@ -206,42 +212,56 @@ export default function Home({
         </div>
 
         {/* Product Grid */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-x-8 gap-y-12">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-x-10 gap-y-16">
           {filteredAndSortedProducts.map((product, index) => (
             <motion.div 
               key={product.id}
-              initial={{ opacity: 0, y: 20 }}
+              initial={{ opacity: 0, y: 40 }}
               whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: true }}
-              transition={{ delay: index * 0.1 }}
-              className="group"
+              viewport={{ once: true, margin: "-100px" }}
+              transition={{ duration: 0.8, delay: index * 0.05, ease: [0.22, 1, 0.36, 1] }}
+              className="group cursor-pointer"
             >
-              <Link to={`/product/${product.id}`}>
-                <div className="relative aspect-[4/5] mb-4 overflow-hidden rounded-2xl bg-black/5">
+              <Link to={`/product/${product.id}`} className="block">
+                <div className="relative aspect-[4/5] mb-6 overflow-hidden rounded-[2.5rem] bg-gray-100 shadow-sm group-hover:shadow-2xl transition-all duration-700">
                   <img 
                     src={product.image} 
                     alt={product.name}
-                    className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110"
+                    className="w-full h-full object-cover transition-transform duration-[1.5s] group-hover:scale-110"
                     referrerPolicy="no-referrer"
                   />
-                  <div className="absolute inset-0 bg-black/0 group-hover:bg-black/10 transition-colors duration-300" />
-                  <div className="absolute bottom-4 left-4 right-4 py-3 bg-white text-black font-semibold rounded-xl translate-y-12 opacity-0 group-hover:translate-y-0 group-hover:opacity-100 transition-all duration-300 shadow-lg text-center">
-                    View Details
+                  <div className="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition-colors duration-500" />
+                  
+                  {/* Floating Action Overlay */}
+                  <div className="absolute inset-x-6 bottom-6 translate-y-4 opacity-0 group-hover:translate-y-0 group-hover:opacity-100 transition-all duration-500">
+                    <div className="bg-white/90 backdrop-blur-md py-4 rounded-2xl font-black text-[10px] uppercase tracking-[0.2em] text-center shadow-2xl">
+                      Quick View Details
+                    </div>
+                  </div>
+                  
+                  {/* Category Tag */}
+                  <div className="absolute top-6 left-6 px-4 py-1.5 bg-white/90 backdrop-blur-md rounded-full text-[8px] font-black uppercase tracking-widest shadow-sm">
+                    {product.category}
                   </div>
                 </div>
               </Link>
-              <div className="flex justify-between items-start">
-                <div>
-                  <p className="text-[10px] uppercase tracking-widest text-black/40 font-bold mb-1">{product.category}</p>
+              <div className="flex justify-between items-end px-2">
+                <div className="flex-1 min-w-0 pr-4">
                   <Link to={`/product/${product.id}`}>
-                    <h3 className="text-lg font-semibold group-hover:text-black/60 transition-colors">{product.name}</h3>
+                    <h3 className="text-xl font-bold mb-1 truncate group-hover:text-amber-600 transition-colors duration-300">{product.name}</h3>
                   </Link>
-                  <div className="flex items-center mt-1 space-x-1">
-                    <Star className="w-3 h-3 fill-black text-black" />
-                    <span className="text-xs font-medium">{product.rating}</span>
+                  <div className="flex items-center gap-3">
+                    <div className="flex items-center gap-1">
+                      <Star className="w-3.5 h-3.5 fill-amber-400 text-amber-400" />
+                      <span className="text-xs font-black">{product.rating}</span>
+                    </div>
+                    <div className="w-1 h-1 bg-black/10 rounded-full" />
+                    <span className="text-[10px] font-black uppercase tracking-widest text-black/30">Free Delivery</span>
                   </div>
                 </div>
-                <p className="text-lg font-bold">৳{product.price.toFixed(0)}</p>
+                <div className="text-right">
+                  <p className="text-2xl font-black tracking-tight italic">৳{Number(product.price || 0).toFixed(0)}</p>
+                </div>
               </div>
             </motion.div>
           ))}

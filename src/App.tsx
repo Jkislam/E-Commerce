@@ -8,6 +8,7 @@ import {
   Routes, 
   Route, 
   Link,
+  Navigate,
   useLocation
 } from 'react-router-dom';
 import { 
@@ -26,13 +27,17 @@ import {
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { PRODUCTS } from './constants';
-import { Product, CartItem, Order, User, AppSettings } from './types';
+import { Product, CartItem, Order, AppSettings } from './types';
+import { useAuth } from './context/AuthContext';
+import { supabase } from './lib/supabase';
 import Home from './pages/Home';
 import ProductDetails from './pages/ProductDetails';
 import Checkout from './pages/Checkout';
 import Admin from './pages/Admin';
 import Profile from './pages/Profile';
 import Login from './pages/Login';
+import About from './pages/About';
+import Contact from './pages/Contact';
 
 function ScrollToTop() {
   const { pathname } = useLocation();
@@ -43,18 +48,11 @@ function ScrollToTop() {
 }
 
 export default function App() {
-  const [products, setProducts] = useState<Product[]>(() => {
-    const saved = localStorage.getItem('al_hurumah_products');
-    return saved ? JSON.parse(saved) : PRODUCTS;
-  });
-  const [orders, setOrders] = useState<Order[]>(() => {
-    const saved = localStorage.getItem('al_hurumah_orders');
-    return saved ? JSON.parse(saved) : [];
-  });
-  const [currentUser, setCurrentUser] = useState<User | null>(() => {
-    const saved = localStorage.getItem('al_hurumah_user');
-    return saved ? JSON.parse(saved) : null;
-  });
+  const { currentUser, logout, loading: authLoading, refreshUser } = useAuth();
+  const [products, setProducts] = useState<Product[]>([]);
+  const [orders, setOrders] = useState<Order[]>([]);
+  const [dataLoading, setDataLoading] = useState(true);
+  const [dataError, setDataError] = useState<string | null>(null);
   const [cart, setCart] = useState<CartItem[]>([]);
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [isCartOpen, setIsCartOpen] = useState(false);
@@ -62,9 +60,7 @@ export default function App() {
   const [sortBy, setSortBy] = useState<'price-asc' | 'price-desc' | 'rating' | 'default'>('default');
   const [selectedCategory, setSelectedCategory] = useState<string>('All');
   const [settings, setSettings] = useState<AppSettings>(() => {
-    const saved = localStorage.getItem('al_hurumah_settings');
-    if (saved) return JSON.parse(saved);
-    return {
+    const defaultSettings: AppSettings = {
       categories: ['Panjabi', 'Attar'],
       paymentNumbers: {
         bKash: '017XXXXXXXX',
@@ -80,8 +76,29 @@ export default function App() {
       brandName: 'AL-Hurumah',
       footerDescription: 'Your destination for premium traditional wear and authentic fragrances. We bring you the finest Panjabis and Attars from around the world.',
       metaPixelId: '',
-      seoKeywords: 'AL-Hurumah, Panjabi, Attar, Traditional Wear, Fragrances, Premium Panjabi, Authentic Attar'
+      seoKeywords: 'AL-Hurumah, Panjabi, Attar, Traditional Wear, Fragrances, Premium Panjabi, Authentic Attar',
+      aboutText1: 'Founded in 2024, AL-Hurumah began with a simple yet profound vision: to bridge the gap between traditional craftsmanship and contemporary style. Our journey started in the heart of the artisan community, where we discovered the timeless beauty of hand-stitched Panjabis and the mystical allure of organic Attars.',
+      aboutText2: 'We believe that clothing and fragrance are more than just products; they are reflections of identity and culture. That\'s why we source only the finest materials—from premium Egyptian cotton to the rarest essential oils—ensuring that every piece carries the legacy of quality.',
+      aboutMission: 'To preserve and promote traditional artistry by crafting premium attire and fragrances that inspire confidence and celebrate authenticity in a modern world.',
+      aboutVision: 'To become a global symbol of refined traditionalism, where every thread and scent tells a story of heritage, quality, and timeless grace.',
+      contactEmail: 'concierge@alhurumah.com',
+      contactPhone: '+880 1234 567890',
+      contactAddress: 'Gulshan-2, Dhaka',
+      contactHours: '10:00 AM - 09:00 PM',
+      contactImageTop: 'https://images.unsplash.com/photo-1534536281715-e28d76689b4d?auto=format&fit=crop&q=80&w=2000',
+      contactImageBottom: 'https://images.unsplash.com/photo-1497366754035-f200968a6e72?auto=format&fit=crop&q=80&w=2000'
     };
+
+    const saved = localStorage.getItem('al_hurumah_settings');
+    if (saved) {
+      try {
+        const parsed = JSON.parse(saved);
+        return { ...defaultSettings, ...parsed };
+      } catch (e) {
+        console.error('Failed to parse settings');
+      }
+    }
+    return defaultSettings;
   });
 
   // Update document title and SEO meta tags when settings change
@@ -106,50 +123,294 @@ export default function App() {
   useEffect(() => {
     if (!settings.metaPixelId) return;
 
-    const pixelId = settings.metaPixelId;
+    try {
+      const pixelId = settings.metaPixelId;
 
-    // @ts-ignore
-    !function(f,b,e,v,n,t,s)
-    // @ts-ignore
-    {if(f.fbq)return;n=f.fbq=function(){n.callMethod?
-    // @ts-ignore
-    n.callMethod.apply(n,arguments):n.queue.push(arguments)};
-    // @ts-ignore
-    if(!f._fbq)f._fbq=n;n.push=n;n.loaded=!0;n.version='2.0';
-    // @ts-ignore
-    n.queue=[];t=b.createElement(e);t.async=!0;
-    // @ts-ignore
-    t.src=v;s=b.getElementsByTagName(e)[0];
-    // @ts-ignore
-    s.parentNode.insertBefore(t,s)}(window, document,'script',
-    'https://connect.facebook.net/en_US/fbevents.js');
+      // @ts-ignore
+      !function(f,b,e,v,n,t,s)
+      // @ts-ignore
+      {if(f.fbq)return;n=f.fbq=function(){n.callMethod?
+      // @ts-ignore
+      n.callMethod.apply(n,arguments):n.queue.push(arguments)};
+      // @ts-ignore
+      if(!f._fbq)f._fbq=n;n.push=n;n.loaded=!0;n.version='2.0';
+      // @ts-ignore
+      n.queue=[];t=b.createElement(e);t.async=!0;
+      // @ts-ignore
+      t.src=v;s=b.getElementsByTagName(e)[0];
+      // @ts-ignore
+      if(s && s.parentNode) s.parentNode.insertBefore(t,s)}(window, document,'script',
+      'https://connect.facebook.net/en_US/fbevents.js');
 
-    // @ts-ignore
-    fbq('init', pixelId);
-    // @ts-ignore
-    fbq('track', 'PageView');
+      // @ts-ignore
+      if ((window as any).fbq) {
+        (window as any).fbq('init', pixelId);
+        (window as any).fbq('track', 'PageView');
+      }
+    } catch (e) {
+      console.warn("Meta Pixel injection failed", e);
+    }
   }, [settings.metaPixelId]);
 
-  // Sync products to localStorage
+  // Fetch products from Supabase on Mount
   useEffect(() => {
-    localStorage.setItem('al_hurumah_products', JSON.stringify(products));
-  }, [products]);
+    let retryCount = 0;
+    const maxRetries = 2; // Reduced from 3 for faster failure recovery
 
-  useEffect(() => {
-    localStorage.setItem('al_hurumah_orders', JSON.stringify(orders));
-  }, [orders]);
+    const loadData = async (retry = 0) => {
+      if (!isSubscribed) return;
+      
+      // Only set global loading for the first time or if products list is empty
+      if (retry === 0 && products.length === 0) setDataLoading(true);
+      setDataError(null);
+      
+      // Safety timeout: force loading to false after 20 seconds
+      const timeoutId = setTimeout(() => {
+        if (isSubscribed) {
+          setDataLoading(false);
+          if (products.length === 0) {
+            setDataError("Connection is slow. Showing fallback products.");
+            // Fallback to local constants if remote fails
+            setProducts(PRODUCTS.map(p => ({
+              ...p,
+              id: String(p.id),
+              islatest: (p as any).islatest || false,
+              stock: (p as any).stock || 0
+            })) as Product[]);
+          }
+        }
+      }, 10000);
 
+      try {
+        console.log(`Fetching data... (Attempt ${retry + 1}/${maxRetries})`);
+        
+        // Exponential backoff for retries
+        if (retry > 0) {
+          const delay = Math.pow(2, retry) * 1000;
+          await new Promise(r => setTimeout(r, delay));
+        }
+
+        // Load settings from Supabase
+        try {
+          const { data: settingsData, error: settingsError } = await supabase
+            .from('site_settings')
+            .select('*')
+            .eq('id', 'global_settings')
+            .single();
+          
+          if (!settingsError && settingsData && isSubscribed) {
+            console.log('Successfully fetched settings from Supabase:', settingsData);
+            let loadedSettings: Partial<AppSettings> = {};
+            
+            // Check if it's the old schema with nested JSON
+            if ('settings' in settingsData && settingsData.settings) {
+              loadedSettings = settingsData.settings;
+            } else {
+              // Otherwise, map from individual columns
+              loadedSettings = {
+                brandName: settingsData.brand_name,
+                categories: settingsData.categories,
+                paymentNumbers: {
+                  bKash: settingsData.bkash_number || '',
+                  Nagad: settingsData.nagad_number || '',
+                  Rocket: settingsData.rocket_number || '',
+                },
+                hero: {
+                  image: settingsData.hero_image || '',
+                  titleLine1: settingsData.hero_title_line_1 || '',
+                  titleLine2: settingsData.hero_title_line_2 || '',
+                  description: settingsData.hero_description || '',
+                },
+                footerDescription: settingsData.footer_description,
+                metaPixelId: settingsData.meta_pixel_id,
+                seoKeywords: settingsData.seo_keywords,
+                aboutText1: settingsData.about_text_1,
+                aboutText2: settingsData.about_text_2,
+                aboutMission: settingsData.about_mission,
+                aboutVision: settingsData.about_vision,
+                contactEmail: settingsData.contact_email,
+                contactPhone: settingsData.contact_phone,
+                contactAddress: settingsData.contact_address,
+                contactHours: settingsData.contact_hours,
+                contactImageTop: settingsData.contact_image_top,
+                contactImageBottom: settingsData.contact_image_bottom,
+              };
+            }
+            setSettings(prev => ({ ...prev, ...loadedSettings }));
+          } else if (settingsError && settingsError.code !== 'PGRST116') {
+            console.log('Settings table may not be initialized yet:', settingsError);
+          }
+        } catch (settingsErr) {
+          console.log('Failed to fetch settings from Supabase, using localStorage:', settingsErr);
+        }
+
+        // Use a persistent health check or just wrap the select in a shorter timeout if possible
+        // But Supabase client doesn't support easy per-request timeouts
+        const { data: productsData, error: productsError } = await supabase
+          .from('products')
+          .select('*')
+          .order('created_at', { ascending: false });
+
+        if (productsError) {
+          // If it's a specific Supabase error like "Failed to fetch" (network error)
+          throw productsError;
+        }
+
+        if (isSubscribed && productsData) {
+          console.log(`Successfully fetched ${productsData.length} products.`);
+          setProducts(productsData.map(p => ({
+            ...p,
+            id: p.id,
+            name: p.name || 'Unknown Product',
+            price: Number(p.price) || 0,
+            rating: Number(p.rating) || 0,
+            category: p.category || 'Uncategorized',
+            image: p.image || '',
+            description: p.description || '',
+            islatest: p.is_latest ?? p.details?.is_latest ?? false,
+            sizes: p.details?.sizes,
+            volumes: p.details?.volumes,
+            stock: Number(p.details?.stock) || 0
+          })));
+        }
+
+        if (currentUser && isSubscribed) {
+          let query = supabase.from('orders').select('*, order_items(*)');
+          if (currentUser.role !== 'admin' && currentUser.id) {
+            query = query.eq('user_id', currentUser.id);
+          }
+
+          const { data: ordersData, error: ordersError } = await query.order('created_at', { ascending: false });
+          if (ordersError) throw ordersError;
+          
+          if (isSubscribed && ordersData) {
+            setOrders(ordersData.map(o => ({
+              id: o.id,
+              customername: o.customer_name,
+              customeremail: o.customer_email,
+              customerphone: o.customer_phone,
+              customeraddress: o.customer_address,
+              total: Number(o.total || 0),
+              status: o.status,
+              paymentmethod: o.payment_method || 'Cash on Delivery',
+              transactionid: o.transaction_id,
+              createdat: o.created_at,
+              items: o.order_items?.map((item: any) => ({
+                id: item.product_id,
+                name: item.product_name,
+                quantity: item.quantity,
+                price: Number(item.price || 0),
+                selectedAttr: item.selected_attr,
+                image: item.image_url || ''
+              })) || []
+            } as Order)));
+          }
+        }
+        
+        // If we reached here, loading succeeded
+        setDataLoading(false);
+      } catch (err: any) {
+        const errorMessage = err.message || String(err);
+        const isNetworkError = errorMessage.includes('Failed to fetch') || errorMessage.includes('network');
+        
+        if (isNetworkError) {
+          console.warn(`Data fetch connection issue (Attempt ${retry + 1}): ${errorMessage}`);
+        } else {
+          console.error(`Data fetch error (Attempt ${retry + 1}):`, errorMessage);
+        }
+        
+        // Immediately load fallback products on first failure so page is not empty during retries
+        if (isSubscribed && products.length === 0) {
+          console.log("Loading static products fallback immediately due to fetch failure.");
+          setProducts(PRODUCTS.map(p => ({
+            ...p,
+            id: String(p.id),
+            islatest: (p as any).islatest || false,
+            stock: (p as any).stock || 0
+          })) as Product[]);
+        }
+
+        if (isSubscribed && retry < maxRetries - 1) {
+          console.log(`Scheduling retry ${retry + 2}...`);
+          clearTimeout(timeoutId);
+          await loadData(retry + 1);
+          return;
+        }
+
+        if (isSubscribed) {
+          const userFriendlyError = isNetworkError 
+            ? "Network connection issue. Showing fallback product catalog."
+            : `System error: ${errorMessage}`;
+            
+          setDataError(userFriendlyError);
+          setDataLoading(false);
+        }
+      } finally {
+        clearTimeout(timeoutId);
+        if (isSubscribed && retry === 0) {
+          setDataLoading(false);
+        }
+      }
+    };
+
+    let isSubscribed = true;
+    if (!authLoading) {
+      loadData();
+    }
+    return () => { isSubscribed = false; };
+  }, [currentUser, authLoading]);
+
+  // Sync settings to localStorage and Supabase (if user is admin)
   useEffect(() => {
     localStorage.setItem('al_hurumah_settings', JSON.stringify(settings));
-  }, [settings]);
 
-  useEffect(() => {
-    if (currentUser) {
-      localStorage.setItem('al_hurumah_user', JSON.stringify(currentUser));
-    } else {
-      localStorage.removeItem('al_hurumah_user');
-    }
-  }, [currentUser]);
+    const syncToSupabaseSettings = async () => {
+      if (currentUser?.role === 'admin') {
+        try {
+          const flatRow = {
+            id: 'global_settings',
+            brand_name: settings.brandName,
+            categories: settings.categories,
+            bkash_number: settings.paymentNumbers?.bKash,
+            nagad_number: settings.paymentNumbers?.Nagad,
+            rocket_number: settings.paymentNumbers?.Rocket,
+            hero_image: settings.hero?.image,
+            hero_title_line_1: settings.hero?.titleLine1,
+            hero_title_line_2: settings.hero?.titleLine2,
+            hero_description: settings.hero?.description,
+            footer_description: settings.footerDescription,
+            meta_pixel_id: settings.metaPixelId,
+            seo_keywords: settings.seoKeywords,
+            about_text_1: settings.aboutText1,
+            about_text_2: settings.aboutText2,
+            about_mission: settings.aboutMission,
+            about_vision: settings.aboutVision,
+            contact_email: settings.contactEmail,
+            contact_phone: settings.contactPhone,
+            contact_address: settings.contactAddress,
+            contact_hours: settings.contactHours,
+            contact_image_top: settings.contactImageTop,
+            contact_image_bottom: settings.contactImageBottom,
+            updated_at: new Date().toISOString()
+          };
+
+          const { error } = await supabase
+            .from('site_settings')
+            .upsert(flatRow);
+          
+          if (error) {
+            console.warn('Upserting with flat columns failed. Please run the SQL schema in Supabase to create the flat site_settings table columns:', error);
+          } else {
+            console.log('Successfully synced settings to Supabase flat columns.');
+          }
+        } catch (err) {
+          console.error('Error during Supabase settings sync:', err);
+        }
+      }
+    };
+
+    syncToSupabaseSettings();
+  }, [settings, currentUser]);
 
   // Close mobile menu on scroll (with threshold)
   useEffect(() => {
@@ -166,11 +427,7 @@ export default function App() {
     return () => window.removeEventListener('scroll', handleScroll);
   }, [isMenuOpen]);
 
-  const updateUser = (updatedUser: User) => {
-    setCurrentUser(updatedUser);
-  };
-
-  const categories = ['All', ...settings.categories];
+  const categories = ['All', ...(settings?.categories || [])];
 
   const filteredAndSortedProducts = useMemo(() => {
     let result = products.filter(product => {
@@ -204,11 +461,11 @@ export default function App() {
     setIsCartOpen(true);
   };
 
-  const removeFromCart = (productId: number) => {
+  const removeFromCart = (productId: string | number) => {
     setCart(prev => prev.filter(item => item.id !== productId));
   };
 
-  const updateQuantity = (productId: number, delta: number) => {
+  const updateQuantity = (productId: string | number, delta: number) => {
     setCart(prev => prev.map(item => {
       if (item.id === productId) {
         const newQty = Math.max(1, item.quantity + delta);
@@ -220,14 +477,26 @@ export default function App() {
 
   const clearCart = () => setCart([]);
 
-  const deleteProduct = (id: number) => {
-    const targetId = Number(id);
-    setProducts(prev => prev.filter(p => Number(p.id) !== targetId));
+  const deleteProduct = async (id: number | string) => {
+    if (window.confirm('Are you sure you want to delete this product?')) {
+      const { error } = await supabase.from('products').delete().eq('id', id);
+      if (!error) {
+        setProducts(prev => prev.filter(p => String(p.id) !== String(id)));
+      } else {
+        alert('Failed to delete product: ' + error.message);
+      }
+    }
   };
 
-  const bulkDeleteProducts = (ids: number[]) => {
-    const targetIds = ids.map(id => Number(id));
-    setProducts(prev => prev.filter(p => !targetIds.includes(Number(p.id))));
+  const bulkDeleteProducts = async (ids: (number | string)[]) => {
+    if (window.confirm(`Are you sure you want to delete ${ids.length} products?`)) {
+      const { error } = await supabase.from('products').delete().in('id', ids);
+      if (!error) {
+        setProducts(prev => prev.filter(p => !ids.map(String).includes(String(p.id))));
+      } else {
+        alert('Failed to delete products: ' + error.message);
+      }
+    }
   };
 
   const resetProducts = () => {
@@ -237,44 +506,172 @@ export default function App() {
     }
   };
 
-  const placeOrder = (orderData: Omit<Order, 'id' | 'status' | 'createdAt'>) => {
-    const newOrder: Order = {
-      ...orderData,
-      id: `ORD-${Math.random().toString(36).substr(2, 9).toUpperCase()}`,
-      status: 'Pending',
-      createdAt: new Date().toISOString(),
-    };
-    setOrders(prev => [newOrder, ...prev]);
-    clearCart();
-    return newOrder;
-  };
+  const placeOrder = async (orderData: Omit<Order, 'id' | 'status' | 'createdat'>) => {
+    const userId = currentUser?.id || null;
 
-  const updateOrderStatus = (orderId: string, status: Order['status']) => {
-    setOrders(prev => prev.map(order => 
-      order.id === orderId ? { ...order, status } : order
-    ));
-  };
+    try {
+      // Prepare items for RPC - mapping fields to database column names
+      const orderItems = orderData.items.map(item => ({
+        p_id: item.id,
+        p_name: item.name,
+        p_qty: item.quantity,
+        p_price: Number(item.price || 0),
+        p_attr: item.selectedAttr || null,
+        p_image: item.image || null
+      }));
 
-  const deleteOrder = (orderId: string) => {
-    if (window.confirm('Are you sure you want to delete this order?')) {
-      setOrders(prev => prev.filter(order => order.id !== orderId));
+      // Call Atomic RPC function in Supabase
+      // This handles: Order entry, Order Items entry, and Stock deduction in ONE transaction
+      const { data, error } = await supabase.rpc('create_order_v1', {
+        p_user_id: userId,
+        p_customer_name: orderData.customername,
+        p_customer_email: orderData.customeremail,
+        p_customer_phone: orderData.customerphone,
+        p_customer_address: orderData.customeraddress,
+        p_total: Number(orderData.total || 0),
+        p_payment_method: orderData.paymentmethod,
+        p_transaction_id: orderData.transactionid || null,
+        p_order_items: orderItems
+      });
+
+      if (error) {
+        // Handle specific stock error or general error
+        if (error.message.includes('Insufficient stock')) {
+          throw new Error('দুঃখিত, কিছু প্রোডাক্টের পর্যাপ্ত স্টক নেই। অনুগ্রহ করে আপনার কার্ট চেক করুন।');
+        }
+        throw error;
+      }
+
+      if (!data) throw new Error('অর্ডার প্রসেস করতে সমস্যা হয়েছে।');
+
+      const newOrder: Order = {
+        ...orderData,
+        id: data.order_id,
+        status: 'Pending',
+        createdat: data.created_at,
+      };
+      
+      setOrders(prev => [newOrder, ...prev]);
+      
+      // Update local products stock state to reflect changes immediately
+      setProducts(prev => prev.map(p => {
+        const orderedItem = orderData.items.find(item => item.id === p.id);
+        if (orderedItem) {
+          return { ...p, stock: Math.max(0, (p.stock || 0) - orderedItem.quantity) };
+        }
+        return p;
+      }));
+
+      clearCart();
+      return newOrder;
+    } catch (err: any) {
+      console.error('Order placement exception:', err);
+      throw err; 
     }
   };
 
-  const logout = () => {
-    setCurrentUser(null);
+  const updateOrderStatus = async (orderId: string, status: Order['status']) => {
+    const { error } = await supabase.from('orders').update({ status }).eq('id', orderId);
+    if (!error) {
+      setOrders(prev => prev.map(order => 
+        order.id === orderId ? { ...order, status } : order
+      ));
+    } else {
+      alert('Failed to update order: ' + error.message);
+    }
+  };
+
+  const deleteOrder = async (orderId: string) => {
+    if (window.confirm('Are you sure you want to delete this order?')) {
+      const { error } = await supabase.from('orders').delete().eq('id', orderId);
+      if (!error) {
+        setOrders(prev => prev.filter(order => order.id !== orderId));
+      } else {
+        alert('Failed to delete order: ' + error.message);
+      }
+    }
   };
 
   const cartCount = cart.reduce((sum, item) => sum + item.quantity, 0);
-  const cartTotal = cart.reduce((sum, item) => sum + (item.price * item.quantity), 0);
+  const cartTotal = useMemo(() => {
+    return cart.reduce((sum, item) => sum + (Number(item.price || 0) * item.quantity), 0);
+  }, [cart]);
 
   const latestProducts = useMemo(() => {
-    const selectedLatest = products.filter(p => p.isLatest);
+    const selectedLatest = products.filter(p => p.islatest);
     if (selectedLatest.length > 0) return selectedLatest;
     // Fallback to first 5 products if none are marked as latest
     return products.slice(0, 5);
   }, [products]);
 
+  const location = useLocation();
+  const isAdminPage = location.pathname.startsWith('/admin');
+
+  const adminNavLinks = [
+    { name: 'Home', href: '/' },
+    { name: 'Analytics', href: '/admin?view=analytics' },
+    { name: 'Inventory', href: '/admin?view=inventory' },
+    { name: 'Orders', href: '/admin?view=orders' },
+    { name: 'Users', href: '/admin?view=users' },
+    { name: 'Settings', href: '/admin?view=settings' }
+  ];
+
+  const mainNavLinks = [
+    { name: 'Home', href: '/' },
+    { name: 'Shop', href: '/#shop' },
+    { name: 'About', href: '/about' },
+    { name: 'Contact', href: '/contact' }
+  ];
+
+  if (authLoading || (dataLoading && products.length === 0)) {
+    return (
+      <div className="min-h-screen bg-[#FDFCFB] flex flex-col items-center justify-center p-6 text-center">
+        <div className="w-16 h-16 border-4 border-black/5 border-t-black rounded-full animate-spin mb-4" />
+        <p className="text-[10px] font-black uppercase tracking-[0.2em] text-black/40 animate-pulse">
+          {authLoading ? 'Initializing Secure Connection...' : `Loading ${settings.brandName || 'AL-Hurumah'}`}
+        </p>
+        
+        <div className="mt-8 max-w-xs animate-in fade-in duration-1000" style={{ animationDelay: '10s', animationFillMode: 'both' }}>
+          <p className="text-xs text-black/30 mb-4">
+            {dataError ? (
+              <span className="text-red-500/60 block font-bold mb-2">{dataError}</span>
+            ) : null}
+            {authLoading 
+              ? 'Authentication is taking longer than expected. This could be due to a slow connection or a service issue.'
+              : 'Wait while we fetch the latest products for you.'}
+          </p>
+          <div className="flex flex-col gap-3">
+            <button 
+              onClick={() => window.location.reload()}
+              className="px-6 py-2 bg-black/5 rounded-full text-[10px] font-bold hover:bg-black/10 transition-colors"
+            >
+              Retry Connection
+            </button>
+            {authLoading && (
+              <button 
+                onClick={() => {
+                  alert('The connection is being forced. Please wait a moment...');
+                }}
+                className="text-[10px] text-black/40 font-bold hover:text-black"
+              >
+                Continue as Guest
+              </button>
+            )}
+          </div>
+        </div>
+        
+        <style>{`
+          @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+          }
+          .animate-in {
+            animation: fadeIn 1s ease-in forwards;
+          }
+        `}</style>
+      </div>
+    );
+  }
   return (
     <>
       <ScrollToTop />
@@ -285,17 +682,17 @@ export default function App() {
             <div className="bg-white/20 backdrop-blur-xl border border-black/5 rounded-2xl px-6 h-16 flex justify-between items-center shadow-sm">
               {/* Logo */}
               <div className="flex-shrink-0 flex items-center">
-                <Link to="/" onClick={() => setIsMenuOpen(false)} className="text-2xl font-bold tracking-tighter text-black cursor-pointer">{settings.brandName || 'AL-Hurumah'}.</Link>
+                <Link to="/" onClick={() => setIsMenuOpen(false)} className="flex items-center gap-2 group cursor-pointer">
+                  {settings.logo && (
+                    <img src={settings.logo} alt={settings.brandName || 'Logo'} className="h-10 w-auto object-contain transition-transform group-hover:scale-105" />
+                  )}
+                  <span className="text-2xl font-bold tracking-tighter text-black">{settings.brandName || 'AL-Hurumah'}.</span>
+                </Link>
               </div>
 
               {/* Desktop Nav */}
               <nav className="hidden lg:flex items-center space-x-10">
-                {[
-                  { name: 'Home', href: '/' },
-                  { name: 'Shop', href: '/#shop' },
-                  { name: 'About', href: '#' },
-                  { name: 'Contact', href: '#' }
-                ].map((link) => (
+                {(isAdminPage ? adminNavLinks : mainNavLinks).map((link) => (
                   <Link 
                     key={link.name}
                     to={link.href} 
@@ -333,32 +730,36 @@ export default function App() {
                     <span className="absolute top-1.5 right-1.5 w-2 h-2 bg-green-500 border-2 border-white rounded-full" />
                   )}
                 </Link>
-                <button 
-                  onClick={() => setIsCartOpen(true)}
-                  className="relative p-2 hover:bg-black/5 rounded-full transition-all active:scale-95"
-                >
-                  <ShoppingBag className="w-5 h-5" />
-                  {cartCount > 0 && (
-                    <span className="absolute -top-0.5 -right-0.5 bg-black text-white text-[9px] font-black w-4 h-4 rounded-full flex items-center justify-center shadow-lg">
-                      {cartCount}
-                    </span>
-                  )}
-                </button>
+                {!isAdminPage && (
+                  <button 
+                    onClick={() => setIsCartOpen(true)}
+                    className="relative p-2 hover:bg-black/5 rounded-full transition-all active:scale-95"
+                  >
+                    <ShoppingBag className="w-5 h-5" />
+                    {cartCount > 0 && (
+                      <span className="absolute -top-0.5 -right-0.5 bg-black text-white text-[9px] font-black w-4 h-4 rounded-full flex items-center justify-center shadow-lg">
+                        {cartCount}
+                      </span>
+                    )}
+                  </button>
+                )}
               </div>
 
               {/* Mobile/Tablet menu button */}
               <div className="lg:hidden flex items-center space-x-1 sm:space-x-2">
-                <button 
-                  onClick={() => setIsCartOpen(true)}
-                  className="relative p-2 active:scale-90 transition-transform"
-                >
-                  <ShoppingBag className="w-5 h-5" />
-                  {cartCount > 0 && (
-                    <span className="absolute top-1 right-1 bg-black text-white text-[9px] font-black w-4 h-4 rounded-full flex items-center justify-center">
-                      {cartCount}
-                    </span>
-                  )}
-                </button>
+                {!isAdminPage && (
+                  <button 
+                    onClick={() => setIsCartOpen(true)}
+                    className="relative p-2 active:scale-90 transition-transform"
+                  >
+                    <ShoppingBag className="w-5 h-5" />
+                    {cartCount > 0 && (
+                      <span className="absolute top-1 right-1 bg-black text-white text-[9px] font-black w-4 h-4 rounded-full flex items-center justify-center">
+                        {cartCount}
+                      </span>
+                    )}
+                  </button>
+                )}
                 <button 
                   onClick={() => setIsMenuOpen(!isMenuOpen)}
                   className="p-2 active:scale-90 transition-transform"
@@ -388,7 +789,12 @@ export default function App() {
                   className="fixed left-0 top-0 bottom-0 w-full max-w-[300px] bg-white z-[70] shadow-2xl flex flex-col lg:hidden"
                 >
                   <div className="p-6 border-b border-black/5 flex justify-between items-center">
-                    <span className="text-2xl font-bold tracking-tighter text-black">{settings.brandName || 'AL-Hurumah'}.</span>
+                    <div className="flex items-center gap-2">
+                      {settings.logo && (
+                        <img src={settings.logo} alt={settings.brandName || 'Logo'} className="h-8 w-auto object-contain" />
+                      )}
+                      <span className="text-2xl font-bold tracking-tighter text-black">{settings.brandName || 'AL-Hurumah'}.</span>
+                    </div>
                     <button 
                       onClick={() => setIsMenuOpen(false)}
                       className="p-2 hover:bg-black/5 rounded-full transition-colors"
@@ -422,12 +828,7 @@ export default function App() {
                     </div>
 
                     <nav className="space-y-6">
-                      {[
-                        { name: 'Home', href: '/' },
-                        { name: 'Shop', href: '/#shop' },
-                        { name: 'About', href: '#' },
-                        { name: 'Contact', href: '#' }
-                      ].map((item, i) => (
+                      {(isAdminPage ? adminNavLinks : mainNavLinks).map((item, i) => (
                         <motion.div
                           key={item.name}
                           initial={{ opacity: 0, x: -20 }}
@@ -561,7 +962,7 @@ export default function App() {
                                 <Plus className="w-3 h-3" />
                               </button>
                             </div>
-                            <p className="font-bold text-sm">৳{(item.price * item.quantity).toFixed(0)}</p>
+                            <p className="font-bold text-sm">৳{(Number(item.price || 0) * item.quantity).toFixed(0)}</p>
                           </div>
                         </div>
                       </div>
@@ -573,7 +974,7 @@ export default function App() {
                   <div className="p-6 border-t border-black/5 bg-gray-50/50 space-y-4">
                     <div className="flex justify-between items-center">
                       <span className="text-black/50">Subtotal</span>
-                      <span className="text-xl font-bold">৳{cartTotal.toFixed(0)}</span>
+                      <span className="text-xl font-bold">৳{Number(cartTotal || 0).toFixed(0)}</span>
                     </div>
                     <p className="text-[10px] text-black/40 text-center">Shipping and taxes calculated at checkout.</p>
                     <Link 
@@ -604,10 +1005,24 @@ export default function App() {
                 settings={settings}
               />
             } />
+            <Route path="/shop" element={
+              <Home 
+                filteredAndSortedProducts={filteredAndSortedProducts}
+                categories={categories}
+                selectedCategory={selectedCategory}
+                setSelectedCategory={setSelectedCategory}
+                setSortBy={setSortBy}
+                setSearchQuery={setSearchQuery}
+                latestProducts={latestProducts}
+                settings={settings}
+              />
+            } />
             <Route path="/product/:id" element={<ProductDetails products={products} addToCart={addToCart} />} />
             <Route path="/checkout" element={<Checkout cart={cart} cartTotal={cartTotal} clearCart={clearCart} placeOrder={placeOrder} currentUser={currentUser} settings={settings} />} />
-            <Route path="/profile" element={<Profile currentUser={currentUser} orders={orders} onLogout={logout} onUpdateUser={updateUser} />} />
-            <Route path="/login" element={<Login setCurrentUser={setCurrentUser} />} />
+            <Route path="/profile" element={<Profile currentUser={currentUser} isAuthLoading={authLoading} orders={orders} onLogout={logout} onUpdateUser={refreshUser} />} />
+            <Route path="/login" element={<Login />} />
+            <Route path="/about" element={<About settings={settings} />} />
+            <Route path="/contact" element={<Contact settings={settings} />} />
             <Route path="/admin" element={
               <Admin 
                 products={products} 
@@ -630,7 +1045,12 @@ export default function App() {
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <div className="grid grid-cols-1 md:grid-cols-4 gap-12 mb-16">
               <div className="col-span-1 md:col-span-1">
-                <span className="text-2xl font-bold tracking-tighter mb-6 block">{settings.brandName || 'AL-Hurumah'}.</span>
+                <div className="mb-6 flex items-center gap-2">
+                  {settings.logo && (
+                    <img src={settings.logo} alt={settings.brandName || 'Logo'} className="h-10 w-auto object-contain" />
+                  )}
+                  <span className="text-2xl font-bold tracking-tighter block">{settings.brandName || 'AL-Hurumah'}.</span>
+                </div>
                 <p className="text-sm text-black/50 leading-relaxed whitespace-pre-wrap">
                   {settings.footerDescription || 'Your destination for premium traditional wear and authentic fragrances. We bring you the finest Panjabis and Attars from around the world.'}
                 </p>
@@ -639,7 +1059,7 @@ export default function App() {
               <div>
                 <h4 className="font-bold text-sm uppercase tracking-widest mb-6">Shop</h4>
                 <ul className="space-y-4 text-sm text-black/50">
-                  {settings.categories.map(cat => (
+                  {(settings?.categories || []).map(cat => (
                     <li key={cat}>
                       <Link 
                         to="/#shop" 
@@ -658,6 +1078,8 @@ export default function App() {
               <div>
                 <h4 className="font-bold text-sm uppercase tracking-widest mb-6">Support</h4>
                 <ul className="space-y-4 text-sm text-black/50">
+                  <li><Link to="/about" className="hover:text-black transition-colors">Our Story</Link></li>
+                  <li><Link to="/contact" className="hover:text-black transition-colors">Contact Us</Link></li>
                   <li><a href="#" className="hover:text-black transition-colors">Shipping Policy</a></li>
                   <li><a href="#" className="hover:text-black transition-colors">Returns & Exchanges</a></li>
                   <li><a href="#" className="hover:text-black transition-colors">FAQs</a></li>

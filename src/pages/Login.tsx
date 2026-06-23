@@ -3,12 +3,9 @@ import { useNavigate } from 'react-router-dom';
 import { motion } from 'motion/react';
 import { User, Mail, Lock, ArrowRight, MapPin, Eye, EyeOff } from 'lucide-react';
 import { User as UserType } from '../types';
+import { supabase } from '../lib/supabase';
 
-interface LoginProps {
-  setCurrentUser: (user: UserType) => void;
-}
-
-export default function Login({ setCurrentUser }: LoginProps) {
+export default function Login() {
   const [email, setEmail] = useState('');
   const [name, setName] = useState('');
   const [password, setPassword] = useState('');
@@ -28,41 +25,72 @@ export default function Login({ setCurrentUser }: LoginProps) {
     setSuccess('');
 
     try {
-      // Simulate network request
-      await new Promise(resolve => setTimeout(resolve, 800));
-
-      const users: UserType[] = JSON.parse(localStorage.getItem('al_hurumah_users') || '[]');
-
       if (isRegistering) {
-        // Sign Up
-        const existingUser = users.find(u => u.email === email);
-        if (existingUser) {
-          throw new Error('User with this email already exists.');
+        // Phone Validation
+        if (!/^01\d{9}$/.test(phone)) {
+          throw new Error('সঠিক মোবাইল নম্বর দিন (যেমন: 01XXXXXXXXX)');
         }
 
-        const newUser: UserType = {
+        // Sign Up with Supabase
+        const { data, error: signUpError } = await supabase.auth.signUp({
           email,
-          name,
-          password, // In a real app, never store plain text passwords
-          address,
-          phone
-        };
+          password,
+          options: {
+            data: {
+              name,
+              phone,
+              address
+            }
+          }
+        });
 
-        users.push(newUser);
-        localStorage.setItem('al_hurumah_users', JSON.stringify(users));
-
-        setSuccess('Registration successful! You are now signed in.');
-        setCurrentUser(newUser);
-        navigate('/profile');
-      } else {
-        // Sign In
-        const user = users.find(u => u.email === email && u.password === password);
-        
-        if (!user) {
-          throw new Error('Invalid email or password. Please make sure you have signed up first.');
+        if (signUpError) {
+          if (signUpError.message.includes('User already registered')) {
+            throw new Error('এই ইমেইল দিয়ে ইমেধ্যেই অ্যাকাউন্ট খোলা হয়েছে।');
+          }
+          throw new Error(signUpError.message);
         }
 
-        setCurrentUser(user);
+        if (data.user) {
+          // Ensure profile is created in profiles table
+          const { error: profileError } = await supabase
+            .from('profiles')
+            .upsert({
+              id: data.user.id,
+              name,
+              phone,
+              address,
+              email,
+              role: 'customer'
+            });
+
+          if (profileError) {
+            console.error('Error creating profile:', profileError);
+          }
+
+          if (data.session) {
+            setSuccess('অ্যাকাউন্ট তৈরি সফল হয়েছে!');
+            navigate('/profile');
+          } else {
+            setSuccess('সফলভাবে রেজিস্ট্রেশন হয়েছে! দয়া করে আপনার ইমেইল চেক করুন।');
+            setIsRegistering(false);
+          }
+        }
+      } else {
+        // Sign In with Supabase
+        const { error: signInError } = await supabase.auth.signInWithPassword({
+          email,
+          password,
+        });
+
+        if (signInError) {
+          if (signInError.message === 'Invalid login credentials') {
+            throw new Error('ভুল ইমেইল অথবা পাসওয়ার্ড। আবার চেষ্টা করুন।');
+          }
+          throw new Error(signInError.message);
+        }
+
+        // AuthContext will handle state update via onAuthStateChange
         navigate('/profile');
       }
     } catch (err: any) {
@@ -71,10 +99,6 @@ export default function Login({ setCurrentUser }: LoginProps) {
     } finally {
       setLoading(false);
     }
-  };
-
-  const handleForgotPassword = () => {
-    setError('Password reset functionality is coming soon. Please contact support if you need immediate assistance.');
   };
 
   return (
@@ -166,15 +190,6 @@ export default function Login({ setCurrentUser }: LoginProps) {
           <div className="space-y-2">
             <div className="flex justify-between items-center ml-1">
               <label className="text-[10px] font-black uppercase tracking-widest text-black/40">Password</label>
-              {!isRegistering && (
-                <button 
-                  type="button"
-                  onClick={handleForgotPassword}
-                  className="text-[10px] font-black uppercase tracking-widest text-black/20 hover:text-black transition-colors"
-                >
-                  Forgot?
-                </button>
-              )}
             </div>
             <div className="relative">
               <Lock className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-black/20" />

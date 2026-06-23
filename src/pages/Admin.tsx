@@ -32,16 +32,35 @@ import {
   CreditCard as PaymentIcon,
   PlusCircle,
   Eye,
-  EyeOff
+  EyeOff,
+  TrendingUp,
+  Users,
+  BarChart3,
+  Info,
+  Mail,
+  Phone
 } from 'lucide-react';
 import { Product, Order, AppSettings } from '../types';
+import { useAuth } from '../context/AuthContext';
 import { supabase } from '../lib/supabase';
+import { useSearchParams } from 'react-router-dom';
+import { 
+  BarChart, 
+  Bar, 
+  XAxis, 
+  YAxis, 
+  CartesianGrid, 
+  Tooltip, 
+  ResponsiveContainer,
+  AreaChart,
+  Area
+} from 'recharts';
 
 interface AdminProps {
   products: Product[];
   setProducts: React.Dispatch<React.SetStateAction<Product[]>>;
-  onDelete: (id: number) => void;
-  onBulkDelete: (ids: number[]) => void;
+  onDelete: (id: number | string) => void;
+  onBulkDelete: (ids: (number | string)[]) => void;
   onReset: () => void;
   orders: Order[];
   updateOrderStatus: (orderId: string, status: Order['status']) => void;
@@ -59,6 +78,7 @@ interface SettingsViewProps {
 function SettingsView({ settings, setSettings, setSuccessMessage }: SettingsViewProps) {
   const [newCategory, setNewCategory] = useState('');
   const [paymentNumbers, setPaymentNumbers] = useState(settings.paymentNumbers);
+  const [categoryToDelete, setCategoryToDelete] = useState<string | null>(null);
 
   const handleAddCategory = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -78,17 +98,21 @@ function SettingsView({ settings, setSettings, setSuccessMessage }: SettingsView
     setSuccessMessage('সফল ভাবে এড হয়েছে।');
   };
 
-  const handleDeleteCategory = async (category: string) => {
-    if (window.confirm(`Are you sure you want to delete "${category}"? Products in this category will remain but their category won't be in the list.`)) {
-      const updatedCategories = settings.categories.filter(c => c !== category);
-      
-      // Update local state (which syncs to localStorage in App.tsx)
-      setSettings(prev => ({
-        ...prev,
-        categories: updatedCategories
-      }));
-      setSuccessMessage('সফল ভাবে ডিলেট হয়েছে।');
-    }
+  const handleDeleteCategory = (category: string) => {
+    setCategoryToDelete(category);
+  };
+
+  const confirmDeleteCategory = () => {
+    if (!categoryToDelete) return;
+    const updatedCategories = settings.categories.filter(c => c !== categoryToDelete);
+    
+    // Update local state (which syncs to localStorage in App.tsx)
+    setSettings(prev => ({
+      ...prev,
+      categories: updatedCategories
+    }));
+    setSuccessMessage('ক্যাটাগরি সফল ভাবে ডিলেট হয়েছে।');
+    setCategoryToDelete(null);
   };
 
   const handleUpdatePayment = async (method: keyof AppSettings['paymentNumbers'], value: string) => {
@@ -113,13 +137,15 @@ function SettingsView({ settings, setSettings, setSuccessMessage }: SettingsView
   const [footerDescription, setFooterDescription] = useState(settings.footerDescription || 'Your destination for premium traditional wear and authentic fragrances. We bring you the finest Panjabis and Attars from around the world.');
   const [metaPixelId, setMetaPixelId] = useState(settings.metaPixelId || '');
   const [seoKeywords, setSeoKeywords] = useState(settings.seoKeywords || 'AL-Hurumah, Panjabi, Attar, Traditional Wear, Fragrances, Premium Panjabi, Authentic Attar');
+  const [logo, setLogo] = useState(settings.logo || '');
 
   const handleUpdateHero = async () => {
     // Update local state (which syncs to localStorage in App.tsx)
     // Skipping Supabase update for 'hero' as the column doesn't exist in the current schema
     setSettings(prev => ({
       ...prev,
-      hero: heroSettings
+      hero: heroSettings,
+      logo: logo
     }));
     setSuccessMessage('সফল ভাবে আপডেট হয়েছে।');
   };
@@ -136,15 +162,102 @@ function SettingsView({ settings, setSettings, setSuccessMessage }: SettingsView
     setSuccessMessage('সফল ভাবে আপডেট হয়েছে।');
   };
 
+  const [aboutText1, setAboutText1] = useState(settings.aboutText1 || 'Founded in 2024, AL-Hurumah began with a simple yet profound vision: to bridge the gap between traditional craftsmanship and contemporary style. Our journey started in the heart of the artisan community, where we discovered the timeless beauty of hand-stitched Panjabis and the mystical allure of organic Attars.');
+  const [aboutText2, setAboutText2] = useState(settings.aboutText2 || 'We believe that clothing and fragrance are more than just products; they are reflections of identity and culture. That\'s why we source only the finest materials—from premium Egyptian cotton to the rarest essential oils—ensuring that every piece carries the legacy of quality.');
+  const [aboutMission, setAboutMission] = useState(settings.aboutMission || 'To preserve and promote traditional artistry by crafting premium attire and fragrances that inspire confidence and celebrate authenticity in a modern world.');
+  const [aboutVision, setAboutVision] = useState(settings.aboutVision || 'To become a global symbol of refined traditionalism, where every thread and scent tells a story of heritage, quality, and timeless grace.');
+
+  const [contactEmail, setContactEmail] = useState(settings.contactEmail || 'concierge@alhurumah.com');
+  const [contactPhone, setContactPhone] = useState(settings.contactPhone || '+880 1234 567890');
+  const [contactAddress, setContactAddress] = useState(settings.contactAddress || 'Gulshan-2, Dhaka');
+  const [contactHours, setContactHours] = useState(settings.contactHours || '10:00 AM - 09:00 PM');
+  const [contactImageTop, setContactImageTop] = useState(settings.contactImageTop || 'https://images.unsplash.com/photo-1534536281715-e28d76689b4d?auto=format&fit=crop&q=80&w=2000');
+  const [contactImageBottom, setContactImageBottom] = useState(settings.contactImageBottom || 'https://images.unsplash.com/photo-1497366754035-f200968a6e72?auto=format&fit=crop&q=80&w=2000');
+
+  const handleUpdateAboutSettings = async () => {
+    setSettings(prev => ({
+      ...prev,
+      aboutText1,
+      aboutText2,
+      aboutMission,
+      aboutVision
+    }));
+    setSuccessMessage('About এর তর্থ্য সফল ভাবে আপডেট হয়েছে।');
+  };
+
+  const handleUpdateContactSettings = async () => {
+    setSettings(prev => ({
+      ...prev,
+      contactEmail,
+      contactPhone,
+      contactAddress,
+      contactHours,
+      contactImageTop,
+      contactImageBottom
+    }));
+    setSuccessMessage('Contact এর তর্থ্য সফল ভাবে আপডেট হয়েছে।');
+  };
+
   return (
     <motion.div 
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
       className="space-y-8"
     >
+      <AnimatePresence>
+        {categoryToDelete && (
+          <div className="fixed inset-0 z-[10000] flex items-center justify-center p-4">
+            <motion.div 
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              onClick={() => setCategoryToDelete(null)}
+              className="absolute inset-0 bg-black/60 backdrop-blur-sm"
+            />
+            
+            <motion.div 
+              initial={{ opacity: 0, scale: 0.95, y: 20 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.95, y: 20 }}
+              className="relative bg-white w-full max-w-sm p-8 rounded-[2.5rem] border border-black/5 shadow-2xl z-10"
+            >
+              <div className="flex flex-col items-center text-center">
+                <div className="w-16 h-16 bg-red-50 rounded-2xl flex items-center justify-center mb-6 border border-red-100">
+                  <Trash2 className="w-8 h-8 text-red-500" />
+                </div>
+                
+                <h3 className="text-xl font-black text-black tracking-tight">আপনি কি নিশ্চিত?</h3>
+                <p className="text-sm font-bold text-black/50 mt-3 leading-relaxed">
+                  আপনি কি সত্যিই <span className="text-red-500 font-black">"{categoryToDelete}"</span> ক্যাটাগরিটি ডিলেট করতে চান?
+                  <br />
+                  ক্যাটাগরিটি ডিলেট করলেও এই ক্যাটাগরির প্রোডাক্টগুলো ডিলিট হবে না।
+                </p>
+                
+                <div className="flex gap-4 w-full mt-8">
+                  <button 
+                    onClick={() => setCategoryToDelete(null)}
+                    type="button"
+                    className="flex-1 py-4 bg-black/5 hover:bg-black/10 text-black/60 font-black text-sm rounded-2xl transition-all"
+                  >
+                    বাতিল
+                  </button>
+                  <button 
+                    onClick={confirmDeleteCategory}
+                    type="button"
+                    className="flex-1 py-4 bg-red-500 hover:bg-red-600 text-white font-black text-sm rounded-2xl transition-all shadow-lg shadow-red-500/10"
+                  >
+                    ডিলেট করুন
+                  </button>
+                </div>
+              </div>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
+
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
         {/* Categories Management */}
-        <div className="bg-white p-8 rounded-[2.5rem] border border-black/5 shadow-sm">
+        <div className="bg-white p-6 sm:p-8 rounded-[2.5rem] border border-black/5 shadow-sm">
           <div className="flex items-center gap-3 mb-8">
             <div className="w-10 h-10 bg-black/5 rounded-xl flex items-center justify-center">
               <Tag className="w-5 h-5 text-black/40" />
@@ -172,7 +285,7 @@ function SettingsView({ settings, setSettings, setSuccessMessage }: SettingsView
           </form>
 
           <div className="space-y-3">
-            {settings.categories.map(category => (
+            {(settings?.categories || []).map(category => (
               <div key={category} className="flex items-center justify-between p-4 bg-black/[0.02] rounded-2xl border border-black/5">
                 <span className="font-bold text-sm">{category}</span>
                 <motion.button 
@@ -189,7 +302,7 @@ function SettingsView({ settings, setSettings, setSuccessMessage }: SettingsView
         </div>
 
         {/* Payment Methods Management */}
-        <div className="bg-white p-8 rounded-[2.5rem] border border-black/5 shadow-sm">
+        <div className="bg-white p-6 sm:p-8 rounded-[2.5rem] border border-black/5 shadow-sm">
           <div className="flex items-center gap-3 mb-8">
             <div className="w-10 h-10 bg-black/5 rounded-xl flex items-center justify-center">
               <PaymentIcon className="w-5 h-5 text-black/40" />
@@ -223,7 +336,7 @@ function SettingsView({ settings, setSettings, setSuccessMessage }: SettingsView
         </div>
 
         {/* General Settings */}
-        <div className="bg-white p-8 rounded-[2.5rem] border border-black/5 shadow-sm lg:col-span-2">
+        <div className="bg-white p-6 sm:p-8 rounded-[2.5rem] border border-black/5 shadow-sm lg:col-span-2">
           <div className="flex items-center gap-3 mb-8">
             <div className="w-10 h-10 bg-black/5 rounded-xl flex items-center justify-center">
               <Settings className="w-5 h-5 text-black/40" />
@@ -287,7 +400,7 @@ function SettingsView({ settings, setSettings, setSuccessMessage }: SettingsView
         </div>
 
         {/* Hero Section Settings */}
-        <div className="bg-white p-8 rounded-[2.5rem] border border-black/5 shadow-sm lg:col-span-2">
+        <div className="bg-white p-6 sm:p-8 rounded-[2.5rem] border border-black/5 shadow-sm lg:col-span-2">
           <div className="flex items-center gap-3 mb-8">
             <div className="w-10 h-10 bg-black/5 rounded-xl flex items-center justify-center">
               <ImageIcon className="w-5 h-5 text-black/40" />
@@ -328,13 +441,61 @@ function SettingsView({ settings, setSettings, setSuccessMessage }: SettingsView
               </div>
             </div>
             <div className="space-y-2">
-              <label className="text-[10px] font-black uppercase tracking-widest text-black/40 ml-1">Title (Line 1)</label>
+              <label className="text-[10px] font-black uppercase tracking-widest text-black/40 ml-1">Hero Title (Line 1)</label>
               <input 
                 type="text"
                 value={heroSettings.titleLine1}
                 onChange={(e) => setHeroSettings(prev => ({ ...prev, titleLine1: e.target.value }))}
                 className="w-full px-6 py-4 bg-black/5 rounded-2xl focus:outline-none focus:ring-2 focus:ring-black/10 transition-all text-sm font-bold"
               />
+            </div>
+            <div className="space-y-2 lg:col-span-2">
+              <label className="text-[10px] font-black uppercase tracking-widest text-black/40 ml-1">Website Logo (Upload)</label>
+              <div className="flex flex-col sm:flex-row items-center gap-6 p-4 bg-black/[0.02] rounded-3xl border border-dashed border-black/10">
+                <div className="w-24 h-24 bg-white rounded-2xl border border-black/5 flex items-center justify-center p-2 shadow-sm overflow-hidden flex-shrink-0">
+                  {logo ? (
+                    <img src={logo} alt="Brand Logo" className="w-full h-full object-contain" />
+                  ) : (
+                    <div className="flex flex-col items-center justify-center text-black/20">
+                      <LayoutDashboard className="w-8 h-8 mb-1" />
+                      <span className="text-[8px] font-black uppercase tracking-tighter">No Logo</span>
+                    </div>
+                  )}
+                </div>
+                <div className="flex-1 space-y-3 w-full">
+                  <div className="flex gap-2">
+                    <label className="cursor-pointer flex-1 px-6 py-4 bg-black text-white rounded-2xl font-bold text-xs hover:bg-black/90 transition-all shadow-lg flex items-center justify-center gap-2">
+                      <Upload className="w-4 h-4" />
+                      Upload Logo
+                      <input 
+                        type="file" 
+                        accept="image/*" 
+                        className="hidden" 
+                        onChange={(e) => {
+                          const file = e.target.files?.[0];
+                          if (file) {
+                            const reader = new FileReader();
+                            reader.onloadend = () => {
+                              setLogo(reader.result as string);
+                            };
+                            reader.readAsDataURL(file);
+                          }
+                        }}
+                      />
+                    </label>
+                    {logo && (
+                      <button 
+                        onClick={() => setLogo('')}
+                        className="px-4 py-4 bg-red-50 text-red-500 rounded-2xl font-bold text-xs hover:bg-red-100 transition-all border border-red-100 flex items-center justify-center"
+                        title="Remove Logo"
+                      >
+                        <Trash2 className="w-5 h-5" />
+                      </button>
+                    )}
+                  </div>
+                  <p className="text-[10px] text-black/40 font-medium px-2">Recommended: Square PNG with transparent background.</p>
+                </div>
+              </div>
             </div>
             <div className="space-y-2">
               <label className="text-[10px] font-black uppercase tracking-widest text-black/40 ml-1">Title (Line 2 / Highlight)</label>
@@ -367,8 +528,651 @@ function SettingsView({ settings, setSettings, setSuccessMessage }: SettingsView
             </motion.button>
           </div>
         </div>
+
+        {/* About Settings */}
+        <div className="bg-white p-6 sm:p-8 rounded-[2.5rem] border border-black/5 shadow-sm lg:col-span-2">
+          <div className="flex items-center gap-3 mb-8">
+            <div className="w-10 h-10 bg-black/5 rounded-xl flex items-center justify-center">
+              <Info className="w-5 h-5 text-black/40" />
+            </div>
+            <h3 className="text-xl font-black">About Us Settings</h3>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div className="space-y-2 md:col-span-2">
+              <label className="text-[10px] font-black uppercase tracking-widest text-black/40 ml-1">About Story (Paragraph 1)</label>
+              <textarea 
+                value={aboutText1}
+                onChange={(e) => setAboutText1(e.target.value)}
+                className="w-full px-6 py-4 bg-black/5 rounded-2xl focus:outline-none focus:ring-2 focus:ring-black/10 transition-all text-sm font-bold resize-none h-24"
+                placeholder="Story Paragraph 1..."
+              />
+            </div>
+            <div className="space-y-2 md:col-span-2">
+              <label className="text-[10px] font-black uppercase tracking-widest text-black/40 ml-1">About Story (Paragraph 2)</label>
+              <textarea 
+                value={aboutText2}
+                onChange={(e) => setAboutText2(e.target.value)}
+                className="w-full px-6 py-4 bg-black/5 rounded-2xl focus:outline-none focus:ring-2 focus:ring-black/10 transition-all text-sm font-bold resize-none h-24"
+                placeholder="Story Paragraph 2..."
+              />
+            </div>
+            <div className="space-y-2">
+              <label className="text-[10px] font-black uppercase tracking-widest text-black/40 ml-1">Our Mission</label>
+              <textarea 
+                value={aboutMission}
+                onChange={(e) => setAboutMission(e.target.value)}
+                className="w-full px-6 py-4 bg-black/5 rounded-2xl focus:outline-none focus:ring-2 focus:ring-black/10 transition-all text-sm font-bold resize-none h-24"
+                placeholder="Preserve and promote traditional artistry..."
+              />
+            </div>
+            <div className="space-y-2">
+              <label className="text-[10px] font-black uppercase tracking-widest text-black/40 ml-1">Our Vision</label>
+              <textarea 
+                value={aboutVision}
+                onChange={(e) => setAboutVision(e.target.value)}
+                className="w-full px-6 py-4 bg-black/5 rounded-2xl focus:outline-none focus:ring-2 focus:ring-black/10 transition-all text-sm font-bold resize-none h-24"
+                placeholder="Become a global symbol..."
+              />
+            </div>
+            <div className="md:col-span-2 flex justify-end">
+              <motion.button 
+                onClick={handleUpdateAboutSettings}
+                whileHover={{ scale: 1.02 }}
+                whileTap={{ scale: 0.95 }}
+                className="px-8 py-4 bg-black text-white rounded-2xl font-bold text-sm hover:bg-black/90 transition-all shadow-lg flex items-center gap-2"
+              >
+                <Save className="w-4 h-4" />
+                Save About Settings
+              </motion.button>
+            </div>
+          </div>
+        </div>
+
+        {/* Contact Settings */}
+        <div className="bg-white p-6 sm:p-8 rounded-[2.5rem] border border-black/5 shadow-sm lg:col-span-2">
+          <div className="flex items-center gap-3 mb-8">
+            <div className="w-10 h-10 bg-black/5 rounded-xl flex items-center justify-center">
+              <Phone className="w-5 h-5 text-black/40" />
+            </div>
+            <h3 className="text-xl font-black">Contact Settings</h3>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div className="space-y-2">
+              <label className="text-[10px] font-black uppercase tracking-widest text-black/40 ml-1">Contact Email</label>
+              <input 
+                type="email"
+                value={contactEmail}
+                onChange={(e) => setContactEmail(e.target.value)}
+                className="w-full px-6 py-4 bg-black/5 rounded-2xl focus:outline-none focus:ring-2 focus:ring-black/10 transition-all text-sm font-bold"
+                placeholder="concierge@alhurumah.com"
+              />
+            </div>
+            <div className="space-y-2">
+              <label className="text-[10px] font-black uppercase tracking-widest text-black/40 ml-1">Contact Phone</label>
+              <input 
+                type="text"
+                value={contactPhone}
+                onChange={(e) => setContactPhone(e.target.value)}
+                className="w-full px-6 py-4 bg-black/5 rounded-2xl focus:outline-none focus:ring-2 focus:ring-black/10 transition-all text-sm font-bold"
+                placeholder="+880 1234 567890"
+              />
+            </div>
+            <div className="space-y-2">
+              <label className="text-[10px] font-black uppercase tracking-widest text-black/40 ml-1">Boutique / Office Address</label>
+              <input 
+                type="text"
+                value={contactAddress}
+                onChange={(e) => setContactAddress(e.target.value)}
+                className="w-full px-6 py-4 bg-black/5 rounded-2xl focus:outline-none focus:ring-2 focus:ring-black/10 transition-all text-sm font-bold"
+                placeholder="Gulshan-2, Dhaka"
+              />
+            </div>
+            <div className="space-y-2">
+              <label className="text-[10px] font-black uppercase tracking-widest text-black/40 ml-1">Working Hours</label>
+              <input 
+                type="text"
+                value={contactHours}
+                onChange={(e) => setContactHours(e.target.value)}
+                className="w-full px-6 py-4 bg-black/5 rounded-2xl focus:outline-none focus:ring-2 focus:ring-black/10 transition-all text-sm font-bold"
+                placeholder="10:00 AM - 09:00 PM"
+              />
+            </div>
+            <div className="space-y-2 md:col-span-2">
+              <label className="text-[10px] font-black uppercase tracking-widest text-black/40 ml-1">Contact Page Banner Image (Top) - URL or Upload</label>
+              <div className="flex flex-col sm:flex-row gap-3">
+                <input 
+                  type="text"
+                  value={contactImageTop}
+                  onChange={(e) => setContactImageTop(e.target.value)}
+                  className="flex-1 min-w-0 px-6 py-4 bg-black/5 rounded-2xl focus:outline-none focus:ring-2 focus:ring-black/10 transition-all text-sm font-bold"
+                  placeholder="https://..."
+                />
+                <label className="cursor-pointer px-6 py-4 bg-black/5 hover:bg-black/10 rounded-2xl flex items-center justify-center transition-all shrink-0">
+                  <Upload className="w-5 h-5 text-black/60 sm:mr-0 mr-2" />
+                  <span className="sm:hidden text-sm font-bold text-black/60">Upload Image</span>
+                  <input 
+                    type="file" 
+                    accept="image/*" 
+                    className="hidden" 
+                    onChange={(e) => {
+                      const file = e.target.files?.[0];
+                      if (file) {
+                        const reader = new FileReader();
+                        reader.onloadend = () => {
+                          setContactImageTop(reader.result as string);
+                        };
+                        reader.readAsDataURL(file);
+                      }
+                    }}
+                  />
+                </label>
+              </div>
+            </div>
+            <div className="space-y-2 md:col-span-2">
+              <label className="text-[10px] font-black uppercase tracking-widest text-black/40 ml-1">Contact Page Bottom Image (Office/Map) - URL or Upload</label>
+              <div className="flex flex-col sm:flex-row gap-3">
+                <input 
+                  type="text"
+                  value={contactImageBottom}
+                  onChange={(e) => setContactImageBottom(e.target.value)}
+                  className="flex-1 min-w-0 px-6 py-4 bg-black/5 rounded-2xl focus:outline-none focus:ring-2 focus:ring-black/10 transition-all text-sm font-bold"
+                  placeholder="https://..."
+                />
+                <label className="cursor-pointer px-6 py-4 bg-black/5 hover:bg-black/10 rounded-2xl flex items-center justify-center transition-all shrink-0">
+                  <Upload className="w-5 h-5 text-black/60 sm:mr-0 mr-2" />
+                  <span className="sm:hidden text-sm font-bold text-black/60">Upload Image</span>
+                  <input 
+                    type="file" 
+                    accept="image/*" 
+                    className="hidden" 
+                    onChange={(e) => {
+                      const file = e.target.files?.[0];
+                      if (file) {
+                        const reader = new FileReader();
+                        reader.onloadend = () => {
+                          setContactImageBottom(reader.result as string);
+                        };
+                        reader.readAsDataURL(file);
+                      }
+                    }}
+                  />
+                </label>
+              </div>
+            </div>
+            <div className="md:col-span-2 flex justify-end">
+              <motion.button 
+                onClick={handleUpdateContactSettings}
+                whileHover={{ scale: 1.02 }}
+                whileTap={{ scale: 0.95 }}
+                className="px-8 py-4 bg-black text-white rounded-2xl font-bold text-sm hover:bg-black/90 transition-all shadow-lg flex items-center gap-2"
+              >
+                <Save className="w-4 h-4" />
+                Save Contact Settings
+              </motion.button>
+            </div>
+          </div>
+        </div>
       </div>
     </motion.div>
+  );
+}
+
+function AnalyticsView({ orders, setCurrentView }: { orders: Order[], setCurrentView: (view: any) => void }) {
+  const [stats, setStats] = useState({
+    totalSales: 0,
+    totalOrders: 0,
+    totalUsers: 0,
+    growth: 12.5 // Mock growth for UI
+  });
+  const [chartData, setChartData] = useState<{ date: string; amount: number }[]>([]);
+  const [timeframe, setTimeframe] = useState<'7d' | '30d' | 'month' | 'all'>('7d');
+  const [isLoading, setIsLoading] = useState(true);
+
+  useEffect(() => {
+    const fetchAnalytics = async () => {
+      try {
+        // Fetch Total Users
+        const { count, error: userError } = await supabase
+          .from('profiles')
+          .select('*', { count: 'exact', head: true });
+        
+        if (userError) throw userError;
+
+        // Calculate Stats based on timeframe
+        const now = new Date();
+        let filteredOrders = [...orders];
+
+        if (timeframe === '7d') {
+          const sevenDaysAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
+          filteredOrders = orders.filter(o => {
+            if (!o.createdat) return false;
+            const d = new Date(o.createdat);
+            return !isNaN(d.getTime()) && d >= sevenDaysAgo;
+          });
+        } else if (timeframe === '30d') {
+          const thirtyDaysAgo = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
+          filteredOrders = orders.filter(o => {
+            if (!o.createdat) return false;
+            const d = new Date(o.createdat);
+            return !isNaN(d.getTime()) && d >= thirtyDaysAgo;
+          });
+        } else if (timeframe === 'month') {
+          const startOfOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
+          filteredOrders = orders.filter(o => {
+            if (!o.createdat) return false;
+            const d = new Date(o.createdat);
+            return !isNaN(d.getTime()) && d >= startOfOfMonth;
+          });
+        } else if (timeframe === 'all') {
+          filteredOrders = orders.filter(o => {
+            if (!o.createdat) return false;
+            const d = new Date(o.createdat);
+            return !isNaN(d.getTime());
+          });
+        }
+
+        const totalSales = filteredOrders.reduce((sum, order) => sum + (Number(order.total) || 0), 0);
+        const totalOrders = filteredOrders.length;
+
+        setStats(prev => ({
+          ...prev,
+          totalSales,
+          totalOrders,
+          totalUsers: count || 0
+        }));
+
+        // Prepare Chart Data
+        const dailyData: { [key: string]: number } = {};
+        
+        // Fill dates based on timeframe to avoid gaps
+        const generateDates = () => {
+          const dates: string[] = [];
+          const daysToGen = timeframe === '7d' ? 7 : timeframe === '30d' ? 30 : timeframe === 'month' ? 31 : 14;
+          
+          for (let i = daysToGen - 1; i >= 0; i--) {
+            const date = new Date(now.getTime() - i * 24 * 60 * 60 * 1000);
+            const key = date.toLocaleDateString('en-US', { day: 'numeric', month: 'short' });
+            dates.push(key);
+            dailyData[key] = 0;
+          }
+          return dates;
+        };
+
+        if (timeframe !== 'all') {
+          generateDates();
+        }
+
+        filteredOrders.forEach(order => {
+          if (!order.createdat) return;
+          const parsedDate = new Date(order.createdat);
+          if (isNaN(parsedDate.getTime())) return;
+          
+          const date = parsedDate.toLocaleDateString('en-US', { day: 'numeric', month: 'short' });
+          dailyData[date] = (dailyData[date] || 0) + (Number(order.total) || 0);
+        });
+
+        const formattedChartData = Object.entries(dailyData)
+          .map(([date, amount]) => ({ date, amount }))
+          .sort((a, b) => {
+            const currentYear = new Date().getFullYear();
+            const dateA = new Date(`${a.date} ${currentYear}`);
+            const dateB = new Date(`${b.date} ${currentYear}`);
+            if (isNaN(dateA.getTime()) || isNaN(dateB.getTime())) return 0;
+            return dateA.getTime() - dateB.getTime();
+          });
+
+        // For 'all' we just take the last 14 unique active days if we didn't pre-fill
+        setChartData(timeframe === 'all' ? formattedChartData.slice(-14) : formattedChartData);
+      } catch (err) {
+        console.error('Analytics error:', err);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    fetchAnalytics();
+  }, [orders, timeframe]);
+
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center h-64">
+        <div className="w-8 h-8 border-4 border-black/10 border-t-black rounded-full animate-spin" />
+      </div>
+    );
+  }
+
+  const statCards = [
+    { title: 'Total Sales', value: `৳${stats.totalSales.toLocaleString()}`, icon: DollarSign, color: 'bg-green-500', action: () => setCurrentView('orders') },
+    { title: 'Total Orders', value: stats.totalOrders.toString(), icon: ShoppingBag, color: 'bg-blue-500', action: () => setCurrentView('orders') },
+    { title: 'Total Users', value: stats.totalUsers.toString(), icon: Users, color: 'bg-amber-500', action: () => setCurrentView('users') },
+    { title: 'Growth Rate', value: `${stats.growth}%`, icon: TrendingUp, color: 'bg-purple-500' },
+  ];
+
+  const ranges = [
+    { label: '7D', value: '7d' },
+    { label: '30D', value: '30d' },
+    { label: 'Month', value: 'month' },
+    { label: 'All', value: 'all' },
+  ];
+
+  return (
+    <div className="space-y-8">
+      {/* Stats Grid */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+        {statCards.map((stat, idx) => (
+          <motion.div
+            key={idx}
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: idx * 0.1 }}
+            onClick={stat.action}
+            className={`bg-white p-6 rounded-[2.5rem] border border-black/5 shadow-sm flex items-center gap-6 ${stat.action ? 'cursor-pointer hover:border-black/20 hover:shadow-md transition-all active:scale-[0.98]' : ''}`}
+          >
+            <div className={`w-14 h-14 ${stat.color}/10 rounded-2xl flex items-center justify-center`}>
+              <stat.icon className={`w-7 h-7 text-${stat.color.split('-')[1]}-600`} />
+            </div>
+            <div>
+              <p className="text-[10px] font-black uppercase tracking-widest text-black/40 mb-1">{stat.title}</p>
+              <h3 className="text-2xl font-black">{stat.value}</h3>
+            </div>
+          </motion.div>
+        ))}
+      </div>
+
+      {/* Charts Section */}
+      <div className="grid grid-cols-1 gap-8">
+        <motion.div
+          initial={{ opacity: 0, scale: 0.98 }}
+          animate={{ opacity: 1, scale: 1 }}
+          className="bg-white p-6 sm:p-10 rounded-[3rem] border border-black/5 shadow-premium overflow-hidden"
+        >
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-6 mb-10">
+            <div className="flex items-center gap-4">
+              <div className="w-12 h-12 bg-black text-white rounded-2xl flex items-center justify-center shadow-lg shadow-black/10">
+                <TrendingUp className="w-6 h-6" />
+              </div>
+              <div>
+                <h3 className="text-2xl font-black tracking-tight">Sales Overview</h3>
+                <p className="text-xs font-bold text-black/30 uppercase tracking-widest mt-1">Revenue performance analytics</p>
+              </div>
+            </div>
+            
+            <div className="flex items-center bg-black/5 p-1 rounded-2xl self-start">
+              {ranges.map((r) => (
+                <button
+                  key={r.value}
+                  onClick={() => setTimeframe(r.value as any)}
+                  className={`px-4 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all ${timeframe === r.value ? 'bg-white text-black shadow-sm' : 'text-black/40 hover:text-black/60'}`}
+                >
+                  {r.label}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          <div className="w-full" style={{ height: '400px', minHeight: '400px' }}>
+            <ResponsiveContainer width="100%" height={400}>
+              <AreaChart data={chartData} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
+                <defs>
+                  <linearGradient id="colorSales" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="5%" stopColor="#000" stopOpacity={0.15}/>
+                    <stop offset="95%" stopColor="#000" stopOpacity={0.01}/>
+                  </linearGradient>
+                </defs>
+                <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#00000008" />
+                <XAxis 
+                  dataKey="date" 
+                  axisLine={false} 
+                  tickLine={false} 
+                  tick={{ fontSize: 10, fill: '#00000040', fontWeight: 800 }}
+                  dy={15}
+                />
+                <YAxis 
+                  axisLine={false} 
+                  tickLine={false} 
+                  tick={{ fontSize: 10, fill: '#00000040', fontWeight: 800 }}
+                  tickFormatter={(val) => `৳${val >= 1000 ? (val/1000).toFixed(1) + 'k' : val}`}
+                />
+                <Tooltip 
+                  cursor={{ stroke: '#00000010', strokeWidth: 2 }}
+                  contentStyle={{ 
+                    backgroundColor: '#000', 
+                    borderRadius: '24px', 
+                    border: 'none',
+                    padding: '16px 20px',
+                    boxShadow: '0 20px 40px -10px rgba(0,0,0,0.2)'
+                  }}
+                  itemStyle={{ color: '#fff', fontSize: '14px', fontWeight: '900' }}
+                  labelStyle={{ color: '#ffffff60', fontSize: '10px', fontWeight: 'bold', textTransform: 'uppercase', marginBottom: '6px', letterSpacing: '1px' }}
+                  formatter={(value: any) => [`৳${Number(value).toLocaleString()}`, 'Revenue']}
+                />
+                <Area 
+                  type="step" 
+                  dataKey="amount" 
+                  stroke="#000" 
+                  strokeWidth={4}
+                  fillOpacity={1} 
+                  fill="url(#colorSales)"
+                  animationDuration={1500}
+                />
+              </AreaChart>
+            </ResponsiveContainer>
+          </div>
+          
+          <div className="flex items-center justify-center gap-8 mt-10 pt-8 border-t border-black/5">
+            <div className="flex items-center gap-2">
+              <div className="w-2 h-2 rounded-full bg-black"></div>
+              <span className="text-[10px] font-black uppercase tracking-widest text-black/40">Daily Revenue</span>
+            </div>
+            <div className="flex items-center gap-2">
+              <div className="w-2 h-2 rounded-full bg-black/10"></div>
+              <span className="text-[10px] font-black uppercase tracking-widest text-black/40">Projections</span>
+            </div>
+          </div>
+        </motion.div>
+      </div>
+    </div>
+  );
+}
+
+function UsersView({ setSuccessMessage }: { setSuccessMessage: (msg: string) => void }) {
+  const [users, setUsers] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [searchTerm, setSearchTerm] = useState('');
+  const [updatingId, setUpdatingId] = useState<string | null>(null);
+
+  useEffect(() => {
+    fetchUsers();
+  }, []);
+
+  const fetchUsers = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('profiles')
+        .select('*')
+        .order('created_at', { ascending: false });
+      
+      if (error) throw error;
+      setUsers(data || []);
+    } catch (err: any) {
+      const msg = err?.message || String(err);
+      if (msg.includes('Failed to fetch') || msg.includes('network')) {
+        console.warn('Error fetching users (network):', msg);
+      } else {
+        console.error('Error fetching users:', err);
+      }
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleRoleChange = async (userId: string, newRole: string) => {
+    if (window.confirm(`Are you sure you want to change this user's role to ${newRole}?`)) {
+      setUpdatingId(userId);
+      try {
+        const { error } = await supabase
+          .from('profiles')
+          .update({ role: newRole })
+          .eq('id', userId);
+        
+        if (error) throw error;
+        
+        setUsers(prev => prev.map(u => u.id === userId ? { ...u, role: newRole } : u));
+        setSuccessMessage('ইউজার রোল সফল ভাবে আপডেট হয়েছে।');
+      } catch (err: any) {
+        alert('Error updating role: ' + err.message);
+      } finally {
+        setUpdatingId(null);
+      }
+    }
+  };
+
+  const filteredUsers = users.filter(u => 
+    (u.name || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
+    (u.email || '').toLowerCase().includes(searchTerm.toLowerCase())
+  );
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center h-64">
+        <div className="w-8 h-8 border-4 border-black/10 border-t-black rounded-full animate-spin" />
+      </div>
+    );
+  }
+
+  return (
+    <div className="space-y-6">
+      <div className="relative">
+        <Search className="absolute left-5 top-1/2 -translate-y-1/2 w-5 h-5 text-black/20" />
+        <input 
+          type="text"
+          placeholder="Search by name or email..."
+          value={searchTerm}
+          onChange={(e) => setSearchTerm(e.target.value)}
+          className="w-full min-h-[70px] pl-14 pr-6 bg-white border border-black/5 rounded-3xl focus:outline-none focus:ring-2 focus:ring-black/5 shadow-sm font-bold"
+        />
+      </div>
+
+      {/* Desktop View Table */}
+      <div className="hidden md:block bg-white rounded-[2.5rem] border border-black/5 shadow-sm overflow-hidden">
+        <div className="overflow-x-auto">
+          <table className="w-full text-left border-collapse">
+            <thead>
+              <tr className="bg-black/5">
+                <th className="px-6 py-4 text-[10px] font-black uppercase tracking-widest text-black/40">User</th>
+                <th className="px-6 py-4 text-[10px] font-black uppercase tracking-widest text-black/40">Email</th>
+                <th className="px-6 py-4 text-[10px] font-black uppercase tracking-widest text-black/40">Role</th>
+                <th className="px-6 py-4 text-[10px] font-black uppercase tracking-widest text-black/40 text-right">Actions</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-black/5">
+              {filteredUsers.map(user => (
+                <tr key={user.id} className="hover:bg-black/[0.02] transition-colors">
+                  <td className="px-6 py-4">
+                    <div className="flex items-center gap-4">
+                      <div className="w-10 h-10 rounded-full overflow-hidden bg-black/5 flex-shrink-0 border border-black/5">
+                        {user.photourl ? (
+                          <img src={user.photourl} alt={user.name} className="w-full h-full object-cover" />
+                        ) : (
+                          <div className="w-full h-full flex items-center justify-center text-black/20">
+                            <User className="w-5 h-5" />
+                          </div>
+                        )}
+                      </div>
+                      <div>
+                        <p className="font-bold text-sm leading-none">{user.name || 'No Name'}</p>
+                        <p className="text-[10px] text-black/40 mt-1 uppercase tracking-widest font-black">Member since {new Date(user.created_at).toLocaleDateString()}</p>
+                      </div>
+                    </div>
+                  </td>
+                  <td className="px-6 py-4 text-sm font-medium text-black/60">{user.email}</td>
+                  <td className="px-6 py-4">
+                    <span className={`px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-widest ${user.role === 'admin' ? 'bg-black text-white' : 'bg-black/5 text-black/40'}`}>
+                      {user.role || 'customer'}
+                    </span>
+                  </td>
+                  <td className="px-6 py-4 text-right">
+                    <div className="inline-flex items-center bg-black/5 p-1 rounded-xl">
+                      <button 
+                        disabled={updatingId === user.id}
+                        onClick={() => handleRoleChange(user.id, 'customer')}
+                        className={`px-3 py-1.5 rounded-lg text-[10px] font-black uppercase tracking-widest transition-all ${user.role !== 'admin' ? 'bg-white text-black shadow-sm' : 'text-black/40 hover:text-black'}`}
+                      >
+                        User
+                      </button>
+                      <button 
+                        disabled={updatingId === user.id}
+                        onClick={() => handleRoleChange(user.id, 'admin')}
+                        className={`px-3 py-1.5 rounded-lg text-[10px] font-black uppercase tracking-widest transition-all ${user.role === 'admin' ? 'bg-white text-black shadow-sm' : 'text-black/40 hover:text-black'}`}
+                      >
+                        Admin
+                      </button>
+                    </div>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      {/* Mobile View Cards */}
+      <div className="md:hidden space-y-4">
+        {filteredUsers.map(user => (
+          <motion.div 
+            key={user.id}
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="bg-white p-5 rounded-3xl border border-black/5 shadow-sm space-y-4"
+          >
+            <div className="flex items-center gap-4">
+              <div className="w-12 h-12 rounded-full overflow-hidden bg-black/5 flex-shrink-0 border border-black/5">
+                {user.photourl ? (
+                  <img src={user.photourl} alt={user.name} className="w-full h-full object-cover" />
+                ) : (
+                  <div className="w-full h-full flex items-center justify-center text-black/20">
+                    <User className="w-6 h-6" />
+                  </div>
+                )}
+              </div>
+              <div className="flex-1 min-w-0">
+                <div className="flex items-center justify-between gap-2">
+                  <h4 className="font-bold text-base truncate">{user.name || 'No Name'}</h4>
+                  <span className={`px-2 py-0.5 rounded-full text-[8px] font-black uppercase tracking-widest ${user.role === 'admin' ? 'bg-black text-white' : 'bg-black/5 text-black/40'}`}>
+                    {user.role || 'customer'}
+                  </span>
+                </div>
+                <p className="text-xs text-black/40 truncate">{user.email}</p>
+              </div>
+            </div>
+            
+            <div className="flex items-center justify-between pt-4 border-t border-black/5 gap-3">
+              <p className="text-[9px] font-black uppercase tracking-[0.15em] text-black/20">
+                Member since {new Date(user.created_at).toLocaleDateString()}
+              </p>
+              <div className="flex items-center bg-black/5 p-1 rounded-xl">
+                <button 
+                  disabled={updatingId === user.id}
+                  onClick={() => handleRoleChange(user.id, 'customer')}
+                  className={`px-3 py-1.5 rounded-lg text-[9px] font-black uppercase tracking-widest transition-all ${user.role !== 'admin' ? 'bg-white text-black shadow-sm' : 'text-black/40'}`}
+                >
+                  User
+                </button>
+                <button 
+                  disabled={updatingId === user.id}
+                  onClick={() => handleRoleChange(user.id, 'admin')}
+                  className={`px-3 py-1.5 rounded-lg text-[9px] font-black uppercase tracking-widest transition-all ${user.role === 'admin' ? 'bg-white text-black shadow-sm' : 'text-black/40'}`}
+                >
+                  Admin
+                </button>
+              </div>
+            </div>
+          </motion.div>
+        ))}
+      </div>
+    </div>
   );
 }
 
@@ -384,21 +1188,52 @@ export default function Admin({
   settings,
   setSettings
 }: AdminProps) {
-  const [isLoggedIn, setIsLoggedIn] = useState(false);
+  const { currentUser, loading: authLoading } = useAuth();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [loginError, setLoginError] = useState('');
+  const [isLoggingIn, setIsLoggingIn] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
 
   const [editingProduct, setEditingProduct] = useState<Product | null>(null);
   const [isAddingNew, setIsAddingNew] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
-  const [selectedIds, setSelectedIds] = useState<number[]>([]);
-  const [activeTab, setActiveTab] = useState<'inventory' | 'orders' | 'settings'>('inventory');
+  const [selectedIds, setSelectedIds] = useState<(number | string)[]>([]);
+  const [activeTab, setActiveTab] = useState<'analytics' | 'inventory' | 'orders' | 'users' | 'settings'>('analytics');
+
+  // Use URL search params to control current view
+  const [searchParams] = useSearchParams();
+  const viewParam = searchParams.get('view') as 'analytics' | 'inventory' | 'orders' | 'users' | 'settings' | null;
 
   // View state for specific "pages"
-  const [currentView, setCurrentView] = useState<'inventory' | 'orders' | 'settings'>('inventory');
+  const [currentView, setCurrentView] = useState<'analytics' | 'inventory' | 'orders' | 'users' | 'settings'>(viewParam || 'analytics');
   const [selectedOrder, setSelectedOrder] = useState<Order | null>(null);
+  const [userCount, setUserCount] = useState<number>(0);
+
+  useEffect(() => {
+    const fetchUserCount = async () => {
+      try {
+        const { count, error } = await supabase
+          .from('profiles')
+          .select('*', { count: 'exact', head: true });
+        if (!error && count !== null) setUserCount(count);
+      } catch (err: any) {
+        const msg = err?.message || String(err);
+        if (msg.includes('Failed to fetch') || msg.includes('network')) {
+          console.warn('Error fetching user count (network):', msg);
+        } else {
+          console.error('Error fetching user count:', err);
+        }
+      }
+    };
+    fetchUserCount();
+  }, []);
+
+  useEffect(() => {
+    if (viewParam && ['analytics', 'inventory', 'orders', 'users', 'settings'].includes(viewParam)) {
+      setCurrentView(viewParam);
+    }
+  }, [viewParam]);
 
   useEffect(() => {
     setSelectedOrder(null);
@@ -579,7 +1414,7 @@ export default function Admin({
   const initialProductState: Omit<Product, 'id'> = {
     name: '',
     price: 0,
-    category: settings.categories[0] || 'Panjabi',
+    category: settings.categories?.[0] || 'Panjabi',
     image: '',
     rating: 4.5,
     description: '',
@@ -591,6 +1426,7 @@ export default function Admin({
 
   const [newProduct, setNewProduct] = useState<Omit<Product, 'id'>>(initialProductState);
   const [successMessage, setSuccessMessage] = useState('');
+  const [isSaving, setIsSaving] = useState(false);
 
   useEffect(() => {
     if (successMessage) {
@@ -599,27 +1435,35 @@ export default function Admin({
     }
   }, [successMessage]);
 
-  const handleLogin = (e: React.FormEvent) => {
+  const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
-    // Simple secure check (In real app, use backend auth)
-    if (email === 'admin@alhurumah.com' && password === 'admin123') {
-      setIsLoggedIn(true);
-      setLoginError('');
-    } else {
-      setLoginError('Invalid email or password');
+    setLoginError('');
+    setIsLoggingIn(true);
+    
+    try {
+      const { error } = await supabase.auth.signInWithPassword({
+        email,
+        password,
+      });
+
+      if (error) throw error;
+      
+      // Let AuthContext handle the user state update. 
+    } catch (err: any) {
+      setLoginError(err.message || 'Invalid email or password');
+    } finally {
+      setIsLoggingIn(false);
     }
   };
 
-  const handleLogout = () => {
-    setIsLoggedIn(false);
-    setEmail('');
-    setPassword('');
+  const handleLogout = async () => {
+    await supabase.auth.signOut();
   };
 
-  const handleDelete = (id: number) => {
+  const handleDelete = (id: number | string) => {
     if (window.confirm('Are you sure you want to delete this product?')) {
       onDelete(id);
-      setSelectedIds(prev => prev.filter(selectedId => Number(selectedId) !== Number(id)));
+      setSelectedIds(prev => prev.filter(selectedId => String(selectedId) !== String(id)));
       setSuccessMessage('সফল ভাবে ডিলেট হয়েছে।');
     }
   };
@@ -641,7 +1485,7 @@ export default function Admin({
     }
   };
 
-  const toggleSelect = (id: number) => {
+  const toggleSelect = (id: number | string) => {
     setSelectedIds(prev => 
       prev.includes(id) ? prev.filter(i => i !== id) : [...prev, id]
     );
@@ -649,26 +1493,75 @@ export default function Admin({
 
   const handleSaveEdit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!editingProduct) return;
+    if (!editingProduct || isSaving) return;
 
-    // Update local state (which syncs to localStorage in App.tsx)
-    setProducts(prev => prev.map(p => p.id === editingProduct.id ? editingProduct : p));
-    setEditingProduct(null);
-    setSuccessMessage('সফল ভাবে আপডেট হয়েছে।');
+    setIsSaving(true);
+    try {
+      const { error } = await supabase
+        .from('products')
+        .update({
+          name: editingProduct.name,
+          description: editingProduct.description,
+          price: editingProduct.price,
+          category: editingProduct.category,
+          image: editingProduct.image,
+          details: {
+            sizes: editingProduct.sizes,
+            volumes: editingProduct.volumes,
+            stock: editingProduct.stock,
+            is_latest: editingProduct.islatest
+          }
+        })
+        .eq('id', editingProduct.id);
+
+      if (error) throw error;
+
+      setProducts(prev => prev.map(p => p.id === editingProduct.id ? editingProduct : p));
+      setEditingProduct(null);
+      setSuccessMessage('সফল ভাবে আপডেট হয়েছে।');
+    } catch (err: any) {
+      alert('Error updating product: ' + err.message);
+    } finally {
+      setIsSaving(false);
+    }
   };
 
   const handleAddNew = async (e: React.FormEvent) => {
     e.preventDefault();
-    
-    // Generate a new ID locally
-    const newId = products.length > 0 ? Math.max(...products.map(p => p.id)) + 1 : 1;
-    const productToAdd = { ...newProduct, id: newId } as Product;
-    
-    // Update local state (which syncs to localStorage in App.tsx)
-    setProducts(prev => [...prev, productToAdd]);
-    setIsAddingNew(false);
-    setNewProduct(initialProductState);
-    setSuccessMessage('সফল ভাবে এড হয়েছে।');
+    if (isSaving) return;
+
+    setIsSaving(true);
+    try {
+      const { data, error } = await supabase.from('products').insert({
+        name: newProduct.name,
+        description: newProduct.description,
+        price: Number(newProduct.price),
+        category: newProduct.category,
+        image: newProduct.image,
+        details: {
+          sizes: newProduct.sizes,
+          volumes: newProduct.volumes,
+          stock: Number(newProduct.stock),
+          is_latest: newProduct.islatest
+        }
+      }).select().single();
+
+      if (error) throw error;
+
+      const productToAdd = { 
+        ...newProduct, 
+        id: data.id 
+      } as Product;
+      
+      setProducts(prev => [productToAdd, ...prev]);
+      setIsAddingNew(false);
+      setNewProduct(initialProductState);
+      setSuccessMessage('সফল ভাবে এড হয়েছে।');
+    } catch (err: any) {
+       alert('Error adding product: ' + err.message);
+    } finally {
+      setIsSaving(false);
+    }
   };
 
   const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>, isEdit: boolean) => {
@@ -702,7 +1595,14 @@ export default function Admin({
     }
   };
 
-  if (!isLoggedIn) {
+  if (authLoading) {
+    return <div className="min-h-screen flex items-center justify-center font-bold">Checking access...</div>;
+  }
+
+  const isLoggedIn = currentUser !== null;
+  const isAdmin = currentUser?.role === 'admin';
+
+  if (!isAdmin) {
     return (
       <div className="min-h-[80vh] flex items-center justify-center px-4 bg-gray-50">
         <motion.div 
@@ -718,56 +1618,72 @@ export default function Admin({
             <p className="text-black/40 mt-2">Secure access to {settings.brandName || 'AL-Hurumah'} Dashboard</p>
           </div>
 
-          <form onSubmit={handleLogin} className="space-y-6">
-            <div className="space-y-2">
-              <label className="text-xs font-bold uppercase tracking-widest text-black/40 ml-1">Email Address</label>
-              <input 
-                required
-                type="email"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                placeholder="admin@alhurumah.com"
-                className="w-full px-6 py-4 bg-black/5 rounded-2xl focus:outline-none focus:ring-2 focus:ring-black/10 transition-all"
-              />
+          {isLoggedIn && !isAdmin ? (
+            <div className="text-center mb-6 p-4 bg-red-50 rounded-2xl border border-red-100">
+              <p className="text-red-600 font-bold mb-2">Access Denied</p>
+              <p className="text-sm text-red-500/80 mb-4">You are logged in as a normal customer. Please log out and sign in with an admin account.</p>
+              <button 
+                onClick={handleLogout}
+                className="px-6 py-3 bg-red-600 text-white rounded-xl font-bold text-sm hover:bg-red-700 transition-colors"
+              >
+                Log Out
+              </button>
             </div>
-            <div className="space-y-2">
-              <label className="text-xs font-bold uppercase tracking-widest text-black/40 ml-1">Password</label>
-              <div className="relative">
+          ) : (
+            <form onSubmit={handleLogin} className="space-y-6">
+              <div className="space-y-2">
+                <label className="text-xs font-bold uppercase tracking-widest text-black/40 ml-1">Email Address</label>
                 <input 
                   required
-                  type={showPassword ? "text" : "password"}
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  placeholder="••••••••"
-                  className="w-full pl-6 pr-12 py-4 bg-black/5 rounded-2xl focus:outline-none focus:ring-2 focus:ring-black/10 transition-all"
+                  type="email"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  placeholder="admin@alhurumah.com"
+                  className="w-full px-6 py-4 bg-black/5 rounded-2xl focus:outline-none focus:ring-2 focus:ring-black/10 transition-all"
                 />
-                <button
-                  type="button"
-                  onClick={() => setShowPassword(!showPassword)}
-                  className="absolute right-4 top-1/2 -translate-y-1/2 text-black/40 hover:text-black transition-colors"
-                >
-                  {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
-                </button>
               </div>
+              <div className="space-y-2">
+                <label className="text-xs font-bold uppercase tracking-widest text-black/40 ml-1">Password</label>
+                <div className="relative">
+                  <input 
+                    required
+                    type={showPassword ? "text" : "password"}
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                    placeholder="••••••••"
+                    className="w-full pl-6 pr-12 py-4 bg-black/5 rounded-2xl focus:outline-none focus:ring-2 focus:ring-black/10 transition-all"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowPassword(!showPassword)}
+                    className="absolute right-4 top-1/2 -translate-y-1/2 text-black/40 hover:text-black transition-colors"
+                  >
+                    {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                  </button>
+                </div>
+              </div>
+
+              {loginError && (
+                <p className="text-red-500 text-sm font-medium text-center">{loginError}</p>
+              )}
+
+              <button 
+                type="submit"
+                disabled={isLoggingIn}
+                className="w-full py-5 bg-black text-white rounded-2xl font-bold text-lg hover:bg-black/90 transition-all shadow-xl disabled:opacity-50"
+              >
+                {isLoggingIn ? 'Logging in...' : 'Sign In'}
+              </button>
+            </form>
+          )}
+
+          {!isLoggedIn && (
+            <div className="mt-8 text-center">
+              <p className="text-xs text-black/30">
+                Demo Access: admin@alhurumah.com / admin123
+              </p>
             </div>
-
-            {loginError && (
-              <p className="text-red-500 text-sm font-medium text-center">{loginError}</p>
-            )}
-
-            <button 
-              type="submit"
-              className="w-full py-5 bg-black text-white rounded-2xl font-bold text-lg hover:bg-black/90 transition-all shadow-xl"
-            >
-              Sign In
-            </button>
-          </form>
-          
-          <div className="mt-8 text-center">
-            <p className="text-xs text-black/30">
-              Demo Access: admin@alhurumah.com / admin123
-            </p>
-          </div>
+          )}
         </motion.div>
       </div>
     );
@@ -784,29 +1700,14 @@ export default function Admin({
             </div>
             <div>
               <h2 className="font-bold text-lg leading-none">Admin Panel</h2>
-              <p className="text-[10px] text-black/40 uppercase tracking-widest font-bold mt-1">Management System</p>
+              <p className="text-[10px] text-black/40 uppercase tracking-widest font-bold mt-1">
+                {currentView === 'analytics' ? 'Business Overview' : 
+                 currentView === 'inventory' ? 'Inventory Management' : 
+                 currentView === 'orders' ? `Manage Orders (${orders.length})` : 
+                 currentView === 'users' ? 'User Management' :
+                 'Store Settings'}
+              </p>
             </div>
-          </div>
-
-          <div className="flex items-center bg-black/5 p-1 rounded-2xl scale-90 sm:scale-100 origin-left">
-            <button 
-              onClick={() => setCurrentView('inventory')}
-              className={`px-4 sm:px-6 py-2 rounded-xl text-[10px] sm:text-xs font-bold transition-all ${currentView === 'inventory' ? 'bg-white text-black shadow-sm' : 'text-black/40 hover:text-black/60'}`}
-            >
-              Inventory
-            </button>
-            <button 
-              onClick={() => setCurrentView('orders')}
-              className={`px-4 sm:px-6 py-2 rounded-xl text-[10px] sm:text-xs font-bold transition-all ${currentView === 'orders' ? 'bg-white text-black shadow-sm' : 'text-black/40 hover:text-black/60'}`}
-            >
-              Orders
-            </button>
-            <button 
-              onClick={() => setCurrentView('settings')}
-              className={`px-4 sm:px-6 py-2 rounded-xl text-[10px] sm:text-xs font-bold transition-all ${currentView === 'settings' ? 'bg-white text-black shadow-sm' : 'text-black/40 hover:text-black/60'}`}
-            >
-              Settings
-            </button>
           </div>
 
           <div className="flex items-center gap-4">
@@ -845,38 +1746,103 @@ export default function Admin({
       </div>
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        {successMessage && (
-          <motion.div 
-            initial={{ opacity: 0, y: -20 }}
-            animate={{ opacity: 1, y: 0 }}
-            className="mb-6 p-4 bg-green-100 text-green-700 rounded-2xl font-bold text-center border border-green-200"
-          >
-            {successMessage}
-          </motion.div>
-        )}
-        {/* Stats & Search */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-          <div className="bg-white p-6 rounded-3xl border border-black/5 shadow-sm">
-            <p className="text-xs font-bold text-black/40 uppercase tracking-widest mb-1">
-              {currentView === 'inventory' ? 'Total Products' : 'Total Orders'}
-            </p>
-            <p className="text-3xl font-black">
-              {currentView === 'inventory' ? products.length : orders.length}
-            </p>
-          </div>
-          <div className="md:col-span-2 relative">
-            <Search className="absolute left-5 top-1/2 -translate-y-1/2 w-5 h-5 text-black/20" />
-            <input 
-              type="text"
-              placeholder={currentView === 'inventory' ? "Search by name or category..." : "Search by Order ID or Customer..."}
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              className="w-full h-full min-h-[70px] pl-14 pr-6 bg-white border border-black/5 rounded-3xl focus:outline-none focus:ring-2 focus:ring-black/5 shadow-sm"
-            />
-          </div>
-        </div>
+        <AnimatePresence>
+          {successMessage && (
+            <motion.div 
+              initial={{ opacity: 0, y: 50, scale: 0.9 }}
+              animate={{ opacity: 1, y: 0, scale: 1 }}
+              exit={{ opacity: 0, scale: 0.9, transition: { duration: 0.15 } }}
+              className="fixed bottom-6 right-6 z-[9999] min-w-[320px] max-w-sm bg-white border border-green-200 shadow-2xl rounded-3xl p-5 flex items-start gap-4 overflow-hidden"
+            >
+              {/* Left border line or decorative bar */}
+              <div className="absolute left-0 top-0 bottom-0 w-1.5 bg-green-500 rounded-l-3xl" />
+              
+              {/* Check Circle Icon with animation */}
+              <motion.div 
+                initial={{ scale: 0 }}
+                animate={{ scale: 1 }}
+                transition={{ type: "spring", stiffness: 300, delay: 0.1 }}
+                className="w-10 h-10 bg-green-50 rounded-xl flex items-center justify-center shrink-0 border border-green-100"
+              >
+                <CheckCircle2 className="w-5 h-5 text-green-600" />
+              </motion.div>
+              
+              {/* Content */}
+              <div className="flex-1 min-w-0 pr-6">
+                <h4 className="text-sm font-black text-green-900 tracking-tight">কর্মসম্পাদন সফল হয়েছে!</h4>
+                <p className="text-xs font-bold text-black/50 mt-1 leading-normal break-words">{successMessage}</p>
+              </div>
 
-        {currentView === 'inventory' ? (
+              {/* Dismiss Button */}
+              <button 
+                onClick={() => setSuccessMessage('')}
+                className="absolute right-4 top-4 p-1.5 hover:bg-black/5 rounded-xl text-black/40 hover:text-black/70 transition-all"
+              >
+                <X className="w-4 h-4" />
+              </button>
+
+              {/* Progress bar line to show cooldown */}
+              <motion.div 
+                initial={{ width: "100%" }}
+                animate={{ width: "0%" }}
+                transition={{ duration: 3, ease: "linear" }}
+                className="absolute bottom-0 left-0 right-0 h-1 bg-green-500"
+              />
+            </motion.div>
+          )}
+        </AnimatePresence>
+        {/* Stats & Search */}
+        {(currentView === 'inventory' || currentView === 'orders') && (
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+            {(currentView === 'orders' || currentView === 'inventory') && (
+              <div 
+                onClick={currentView === 'inventory' ? () => setCurrentView('users') : undefined}
+                className={`bg-white p-6 rounded-3xl border border-black/5 shadow-sm group ${
+                  currentView === 'inventory' 
+                    ? 'cursor-pointer hover:border-black/20 hover:shadow-md transition-all active:scale-[0.98]' 
+                    : ''
+                }`}
+              >
+                <div className="flex items-center justify-between mb-1">
+                  <p className="text-xs font-bold text-black/40 uppercase tracking-widest">
+                    {currentView === 'inventory' ? 'Total Users' : 'Total Orders'}
+                  </p>
+                  {currentView === 'inventory' ? (
+                    <Users className="w-4 h-4 text-black/10 group-hover:text-black/40 transition-colors" />
+                  ) : (
+                    <ShoppingBag className="w-4 h-4 text-black/10 transition-colors" />
+                  )}
+                </div>
+                <p className="text-3xl font-black">
+                  {currentView === 'inventory' ? userCount : orders.length}
+                </p>
+                <p className="text-[10px] text-black/40 font-bold mt-1 flex items-center gap-1">
+                  {currentView === 'inventory' ? (
+                    <>Manage Users <ChevronRight className="w-3 h-3" /></>
+                  ) : (
+                    <>All registered orders</>
+                  )}
+                </p>
+              </div>
+            )}
+            <div className={`${currentView === 'orders' || currentView === 'inventory' ? 'md:col-span-2' : 'md:col-span-3'} relative`}>
+              <Search className="absolute left-5 top-1/2 -translate-y-1/2 w-5 h-5 text-black/20" />
+              <input 
+                type="text"
+                placeholder={currentView === 'inventory' ? "Search by name or category..." : "Search by Order ID or Customer..."}
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                className="w-full h-full min-h-[70px] pl-14 pr-6 bg-white border border-black/5 rounded-3xl focus:outline-none focus:ring-2 focus:ring-black/5 shadow-sm"
+              />
+            </div>
+          </div>
+        )}
+
+        {currentView === 'analytics' ? (
+          <AnalyticsView orders={orders} setCurrentView={setCurrentView} />
+        ) : currentView === 'users' ? (
+          <UsersView setSuccessMessage={setSuccessMessage} />
+        ) : currentView === 'inventory' ? (
           /* Product List - Responsive */
           <div className="space-y-4">
             {/* Desktop Table */}
@@ -929,9 +1895,11 @@ export default function Admin({
                           <div className={`w-8 h-4 rounded-full relative transition-colors cursor-pointer ${product.islatest ? 'bg-black' : 'bg-black/10'}`}
                             onClick={async () => {
                               const newIsLatest = !product.islatest;
-                              // Update local state (which syncs to localStorage in App.tsx)
-                              setProducts(prev => prev.map(p => p.id === product.id ? { ...p, islatest: newIsLatest } : p));
-                              setSuccessMessage(`সফল ভাবে ${newIsLatest ? 'এড' : 'রিমুভ'} হয়েছে।`);
+                              const { error } = await supabase.from('products').update({ islatest: newIsLatest }).eq('id', product.id);
+                              if(!error) {
+                                setProducts(prev => prev.map(p => p.id === product.id ? { ...p, islatest: newIsLatest } : p));
+                                setSuccessMessage(`সফল ভাবে ${newIsLatest ? 'এড' : 'রিমুভ'} হয়েছে।`);
+                              }
                             }}
                           >
                             <div className={`absolute top-0.5 w-3 h-3 bg-white rounded-full transition-all ${product.islatest ? 'left-4.5' : 'left-0.5'}`} />
@@ -1025,7 +1993,6 @@ export default function Admin({
                       <th className="px-6 py-4 text-[10px] font-black uppercase tracking-widest text-black/40">Items</th>
                       <th className="px-6 py-4 text-[10px] font-black uppercase tracking-widest text-black/40">Customer</th>
                       <th className="px-6 py-4 text-[10px] font-black uppercase tracking-widest text-black/40">Total</th>
-                      <th className="px-6 py-4 text-[10px] font-black uppercase tracking-widest text-black/40">Payment</th>
                       <th className="px-6 py-4 text-[10px] font-black uppercase tracking-widest text-black/40">Status</th>
                       <th className="px-6 py-4 text-[10px] font-black uppercase tracking-widest text-black/40 text-right">Actions</th>
                     </tr>
@@ -1071,18 +2038,6 @@ export default function Admin({
                           </div>
                         </td>
                         <td className="px-6 py-4 font-bold text-sm">৳{order.total}</td>
-                        <td className="px-6 py-4">
-                          <div className="flex flex-col">
-                            <span className="text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 bg-black/5 rounded-md inline-block w-fit">
-                              {order.paymentmethod}
-                            </span>
-                            {order.transactionid && (
-                              <span className="text-[9px] text-black/40 font-mono mt-1">
-                                ID: {order.transactionid}
-                              </span>
-                            )}
-                          </div>
-                        </td>
                         <td className="px-6 py-4">
                           <div className="flex items-center gap-2">
                             {getStatusIcon(order.status)}
@@ -1405,10 +2360,20 @@ export default function Admin({
                   </button>
                   <button 
                     type="submit"
-                    className="flex-1 py-4 bg-black text-white rounded-2xl font-bold hover:bg-black/90 transition-all shadow-xl flex items-center justify-center gap-2"
+                    disabled={isSaving}
+                    className="flex-1 py-4 bg-black text-white rounded-2xl font-bold hover:bg-black/90 transition-all shadow-xl flex items-center justify-center gap-2 disabled:bg-black/40 disabled:cursor-not-allowed"
                   >
-                    <Save className="w-5 h-5" />
-                    {isAddingNew ? 'Add Product' : 'Save Changes'}
+                    {isSaving ? (
+                      <>
+                        <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                        Saving...
+                      </>
+                    ) : (
+                      <>
+                        <Save className="w-5 h-5" />
+                        {isAddingNew ? 'Add Product' : 'Save Changes'}
+                      </>
+                    )}
                   </button>
                 </div>
               </form>

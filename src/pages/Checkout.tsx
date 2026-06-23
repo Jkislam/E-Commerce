@@ -16,6 +16,7 @@ interface CheckoutProps {
 export default function Checkout({ cart, cartTotal, clearCart, placeOrder, currentUser, settings }: CheckoutProps) {
   const navigate = useNavigate();
   const [step, setStep] = useState<1 | 2>(1);
+  const [isProcessing, setIsProcessing] = useState(false);
   const [isOrderPlaced, setIsOrderPlaced] = useState(false);
   const [orderInfo, setOrderInfo] = useState<Order | null>(null);
   const [formData, setFormData] = useState({
@@ -65,7 +66,9 @@ export default function Checkout({ cart, cartTotal, clearCart, placeOrder, curre
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    
+    if (isProcessing) return;
+
+    setIsProcessing(true);
     try {
       const order = await placeOrder({
         customername: formData.fullName,
@@ -78,10 +81,18 @@ export default function Checkout({ cart, cartTotal, clearCart, placeOrder, curre
         transactionid: formData.paymentMethod !== 'Cash on Delivery' ? formData.transactionId : undefined,
       });
 
-      setOrderInfo(order);
-      setIsOrderPlaced(true);
-    } catch (error) {
-      alert('Failed to place order. Please try again.');
+      if (order) {
+        setOrderInfo(order);
+        setIsOrderPlaced(true);
+        // Scroll to top to see confirmation
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+      }
+    } catch (error: any) {
+      console.error('Checkout error:', error);
+      // Detailed error for stock issues or general failures
+      alert(error.message || 'দুঃখিত, অর্ডারটি সফল হয়নি। অনুগ্রহ করে আবার চেষ্টা করুন বা আপনার ইন্টারনেট সংযোগ চেক করুন।');
+    } finally {
+      setIsProcessing(false);
     }
   };
 
@@ -122,7 +133,7 @@ export default function Checkout({ cart, cartTotal, clearCart, placeOrder, curre
             )}
             <div className="pt-4 border-t border-black/5 flex justify-between text-base font-bold">
               <span>Total Paid:</span>
-              <span>৳{cartTotal.toFixed(0)}</span>
+              <span>৳{Number(cartTotal || 0).toFixed(0)}</span>
             </div>
           </div>
         </div>
@@ -275,9 +286,9 @@ export default function Checkout({ cart, cartTotal, clearCart, placeOrder, curre
                 <div className="space-y-4">
                   {[
                     { id: 'Cash on Delivery', icon: Truck, desc: 'Pay when you receive' },
-                    { id: 'bKash', icon: CreditCard, desc: `Send money to ${settings.paymentNumbers.bKash}` },
-                    { id: 'Nagad', icon: CreditCard, desc: `Send money to ${settings.paymentNumbers.Nagad}` },
-                    { id: 'Rocket', icon: CreditCard, desc: `Send money to ${settings.paymentNumbers.Rocket}` }
+                    { id: 'bKash', icon: CreditCard, desc: `Send money to ${settings?.paymentNumbers?.bKash || '017XXXXXXXX'}` },
+                    { id: 'Nagad', icon: CreditCard, desc: `Send money to ${settings?.paymentNumbers?.Nagad || '018XXXXXXXX'}` },
+                    { id: 'Rocket', icon: CreditCard, desc: `Send money to ${settings?.paymentNumbers?.Rocket || '019XXXXXXXX'}` }
                   ].map((method) => (
                     <label 
                       key={method.id}
@@ -316,7 +327,7 @@ export default function Checkout({ cart, cartTotal, clearCart, placeOrder, curre
                       <div>
                         <p className="text-sm font-bold text-amber-900">Payment Instructions</p>
                         <p className="text-xs text-amber-800 mt-1 leading-relaxed">
-                          Please send <strong>৳{cartTotal.toFixed(0)}</strong> to our {formData.paymentMethod} number <strong>{settings.paymentNumbers[formData.paymentMethod as keyof AppSettings['paymentNumbers']]}</strong>. After sending the money, please enter the Transaction ID below to confirm your order.
+                          Please send <strong>৳{Number(cartTotal || 0).toFixed(0)}</strong> to our {formData.paymentMethod} number <strong>{settings?.paymentNumbers[formData.paymentMethod as keyof AppSettings['paymentNumbers']] || 'N/A'}</strong>. After sending the money, please enter the Transaction ID below to confirm your order.
                         </p>
                       </div>
                     </div>
@@ -338,9 +349,17 @@ export default function Checkout({ cart, cartTotal, clearCart, placeOrder, curre
                 <div className="pt-4">
                   <button 
                     type="submit"
-                    className="w-full py-5 bg-black text-white rounded-2xl font-bold text-lg hover:bg-black/90 transition-all shadow-xl"
+                    disabled={isProcessing}
+                    className="w-full py-5 bg-black text-white rounded-2xl font-bold text-lg hover:bg-black/90 transition-all shadow-xl disabled:bg-black/40 disabled:cursor-not-allowed flex items-center justify-center gap-3"
                   >
-                    Confirm Order • ৳{cartTotal.toFixed(0)}
+                    {isProcessing ? (
+                      <>
+                        <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                        Processing...
+                      </>
+                    ) : (
+                      `Confirm Order • ৳${Number(cartTotal || 0).toFixed(0)}`
+                    )}
                   </button>
                   <p className="text-[10px] text-center text-black/40 mt-4 uppercase tracking-widest font-bold">
                     Secure Checkout Powered by {settings.brandName || 'AL-Hurumah'}
@@ -364,10 +383,10 @@ export default function Checkout({ cart, cartTotal, clearCart, placeOrder, curre
                   </div>
                   <div className="flex-1 flex flex-col justify-center">
                     <h3 className="font-bold text-sm leading-tight">{item.name}</h3>
-                    <p className="text-xs text-black/40 mt-1">{item.quantity} × ৳{item.price.toFixed(0)}</p>
+                    <p className="text-xs text-black/40 mt-1">{item.quantity} × ৳{Number(item.price || 0).toFixed(0)}</p>
                   </div>
                   <div className="flex items-center">
-                    <p className="font-bold text-sm">৳{(item.price * item.quantity).toFixed(0)}</p>
+                    <p className="font-bold text-sm">৳{(Number(item.price || 0) * item.quantity).toFixed(0)}</p>
                   </div>
                 </div>
               ))}
@@ -376,7 +395,7 @@ export default function Checkout({ cart, cartTotal, clearCart, placeOrder, curre
             <div className="space-y-4 pt-6 border-t border-black/5">
               <div className="flex justify-between text-sm">
                 <span className="text-black/40">Subtotal</span>
-                <span className="font-bold">৳{cartTotal.toFixed(0)}</span>
+                <span className="font-bold">৳{Number(cartTotal || 0).toFixed(0)}</span>
               </div>
               <div className="flex justify-between text-sm">
                 <span className="text-black/40">Shipping</span>
@@ -384,7 +403,7 @@ export default function Checkout({ cart, cartTotal, clearCart, placeOrder, curre
               </div>
               <div className="flex justify-between text-lg font-bold pt-4 border-t border-black/5">
                 <span>Total</span>
-                <span>৳{cartTotal.toFixed(0)}</span>
+                <span>৳{Number(cartTotal || 0).toFixed(0)}</span>
               </div>
             </div>
 
