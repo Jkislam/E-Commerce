@@ -1093,7 +1093,7 @@ export default function App() {
             } />
             <Route path="/product/:id" element={<ProductDetails products={products} addToCart={addToCart} />} />
             <Route path="/checkout" element={<Checkout cart={cart} cartTotal={cartTotal} clearCart={clearCart} placeOrder={placeOrder} currentUser={currentUser} settings={settings} />} />
-            <Route path="/profile" element={<Profile currentUser={currentUser} isAuthLoading={authLoading} orders={orders} onLogout={logout} onUpdateUser={refreshUser} />} />
+            <Route path="/profile" element={<Profile currentUser={currentUser} isAuthLoading={authLoading} orders={orders} onLogout={async () => { await logout(); clearCart(); }} onUpdateUser={refreshUser} />} />
             <Route path="/login" element={<Login />} />
             <Route path="/about" element={<About settings={settings} />} />
             <Route path="/contact" element={<Contact settings={settings} />} />

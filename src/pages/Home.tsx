@@ -48,11 +48,11 @@ export default function Home({
             className="w-full h-full object-cover object-[center_25%] opacity-70 lg:opacity-85"
             referrerPolicy="no-referrer"
           />
-          <div className="absolute inset-0 bg-gradient-to-r from-[#FDFCFB] via-[#FDFCFB]/60 to-transparent lg:from-[#FDFCFB] lg:via-[#FDFCFB]/20 lg:to-transparent" />
+          <div className="absolute inset-0 bg-gradient-to-r from-[#FDFCFB] via-[#FDFCFB]/70 to-transparent lg:from-[#FDFCFB] lg:via-[#FDFCFB]/65 lg:to-transparent" />
         </div>
         
-        <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 w-full py-16 lg:py-24">
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-16 lg:gap-24 items-center">
+        <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 w-full py-12 lg:py-20">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 lg:gap-16 items-center">
             {/* Left Content */}
             <motion.div 
               initial={{ opacity: 0, y: 30 }}
@@ -60,17 +60,17 @@ export default function Home({
               transition={{ duration: 1, ease: [0.22, 1, 0.36, 1] }}
               className="text-center lg:text-left"
             >
-              <h1 className="text-5xl sm:text-7xl md:text-8xl lg:text-[10rem] font-bold tracking-tight text-black mb-8 leading-tight break-words">
+              <h1 className="text-4xl sm:text-6xl md:text-7xl lg:text-[4.5rem] xl:text-[5.5rem] font-bold tracking-tight text-black mb-6 leading-tight break-words">
                 {settings.hero?.titleLine1 || "Elegance in"} <br />
-                <span className="italic font-serif text-amber-600 block mt-6 transform rotate-[-2deg] origin-left">{settings.hero?.titleLine2 || "Tradition."}</span>
+                <span className="italic font-serif text-amber-600 block mt-4 transform rotate-[-2deg] origin-left">{settings.hero?.titleLine2 || "Tradition."}</span>
               </h1>
-              <p className="text-base sm:text-lg md:text-xl text-black/50 mb-12 max-w-lg mx-auto lg:mx-0 leading-relaxed font-medium">
+              <p className="text-base sm:text-lg md:text-xl text-black/60 mb-10 max-w-lg mx-auto lg:mx-0 leading-relaxed font-medium">
                 {settings.hero?.description || "Discover our exclusive collection of premium Panjabis and authentic Attars. Crafted for elegance, designed for you."}
               </p>
               <div className="flex flex-col sm:flex-row gap-6 justify-center lg:justify-start">
                 <a 
                   href="#shop"
-                  className="group relative inline-flex items-center justify-center px-12 py-6 bg-black text-white font-bold rounded-2xl overflow-hidden transition-all shadow-[0_20px_50px_rgba(0,0,0,0.2)] hover:shadow-[0_20px_50px_rgba(0,0,0,0.3)] active:scale-95"
+                  className="group relative inline-flex items-center justify-center px-10 py-5 bg-black text-white font-bold rounded-2xl overflow-hidden transition-all shadow-[0_20px_50px_rgba(0,0,0,0.2)] hover:shadow-[0_20px_50px_rgba(0,0,0,0.3)] active:scale-95"
                 >
                   <span className="relative z-10 flex items-center">
                     Explore Collection
@@ -212,7 +212,7 @@ export default function Home({
         </div>
 
         {/* Product Grid */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-x-10 gap-y-16">
+        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-x-4 sm:gap-x-6 lg:gap-x-8 gap-y-10 sm:gap-y-14">
           {filteredAndSortedProducts.map((product, index) => (
             <motion.div 
               key={product.id}
@@ -223,7 +223,7 @@ export default function Home({
               className="group cursor-pointer"
             >
               <Link to={`/product/${product.id}`} className="block">
-                <div className="relative aspect-[4/5] mb-6 overflow-hidden rounded-[2.5rem] bg-gray-100 shadow-sm group-hover:shadow-2xl transition-all duration-700">
+                <div className="relative aspect-[4/4.6] mb-4 overflow-hidden rounded-3xl sm:rounded-[2rem] bg-gray-100 shadow-sm group-hover:shadow-xl transition-all duration-500">
                   <img 
                     src={product.image} 
                     alt={product.name}
@@ -233,40 +233,40 @@ export default function Home({
                   <div className="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition-colors duration-500" />
                   
                   {/* Floating Action Overlay */}
-                  <div className="absolute inset-x-6 bottom-6 translate-y-4 opacity-0 group-hover:translate-y-0 group-hover:opacity-100 transition-all duration-500">
-                    <div className="bg-white/90 backdrop-blur-md py-4 rounded-2xl font-black text-[10px] uppercase tracking-[0.2em] text-center shadow-2xl">
+                  <div className="absolute inset-x-4 bottom-4 translate-y-4 opacity-0 group-hover:translate-y-0 group-hover:opacity-100 transition-all duration-500 hidden sm:block">
+                    <div className="bg-white/95 backdrop-blur-md py-3 rounded-xl font-black text-[9px] uppercase tracking-[0.15em] text-center shadow-xl">
                       Quick View Details
                     </div>
                   </div>
                   
                   {/* Category Tag */}
-                  <div className="absolute top-6 left-6 px-4 py-1.5 bg-white/90 backdrop-blur-md rounded-full text-[8px] font-black uppercase tracking-widest shadow-sm">
+                  <div className="absolute top-4 left-4 px-3 py-1 bg-white/95 backdrop-blur-md rounded-full text-[7px] font-black uppercase tracking-widest shadow-sm">
                     {product.category}
                   </div>
                 </div>
               </Link>
-              <div className="flex justify-between items-end px-2">
-                <div className="flex-1 min-w-0 pr-4">
+              <div className="flex flex-col sm:flex-row sm:justify-between sm:items-end px-1 gap-2">
+                <div className="flex-1 min-w-0">
                   <Link to={`/product/${product.id}`}>
-                    <h3 className="text-xl font-bold mb-1 truncate group-hover:text-amber-600 transition-colors duration-300">{product.name}</h3>
+                    <h3 className="text-sm sm:text-base md:text-lg font-bold mb-1 truncate group-hover:text-amber-600 transition-colors duration-300">{product.name}</h3>
                   </Link>
-                  <div className="flex items-center gap-3">
+                  <div className="flex items-center gap-2 flex-wrap">
                     <div className="flex items-center gap-1">
-                      <Star className="w-3.5 h-3.5 fill-amber-400 text-amber-400" />
-                      <span className="text-xs font-black">{product.rating}</span>
+                      <Star className="w-3 h-3 fill-amber-400 text-amber-400" />
+                      <span className="text-[10px] font-black">{product.rating}</span>
                     </div>
                     <div className="w-1 h-1 bg-black/10 rounded-full" />
-                    <span className="text-[10px] font-black uppercase tracking-widest text-black/30">Free Delivery</span>
+                    <span className="text-[8px] sm:text-[9px] font-black uppercase tracking-widest text-black/30">Free Delivery</span>
                   </div>
                 </div>
-                <div className="text-right">
-                  <p className="text-2xl font-black tracking-tight italic">৳{Number(product.price || 0).toFixed(0)}</p>
+                <div className="text-left sm:text-right">
+                  <p className="text-lg sm:text-xl md:text-2xl font-black tracking-tight italic text-amber-600 sm:text-black">৳{Number(product.price || 0).toFixed(0)}</p>
                 </div>
               </div>
-              <div className="mt-4 px-2">
+              <div className="mt-3 px-1">
                 <Link 
                   to={`/product/${product.id}`}
-                  className="w-full inline-flex items-center justify-center py-3 bg-black hover:bg-amber-600 text-white font-black text-xs uppercase tracking-[0.2em] rounded-2xl transition-all duration-300 shadow-md hover:shadow-lg active:scale-[0.98]"
+                  className="w-full inline-flex items-center justify-center py-2.5 bg-black hover:bg-amber-600 text-white font-black text-[9px] sm:text-xs uppercase tracking-[0.15em] rounded-xl sm:rounded-2xl transition-all duration-300 shadow-md hover:shadow-lg active:scale-[0.98]"
                 >
                   Quick View Details
                 </Link>
