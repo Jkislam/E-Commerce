@@ -53,7 +53,15 @@ export default function App() {
   const [orders, setOrders] = useState<Order[]>([]);
   const [dataLoading, setDataLoading] = useState(true);
   const [dataError, setDataError] = useState<string | null>(null);
-  const [cart, setCart] = useState<CartItem[]>([]);
+  const [cart, setCart] = useState<CartItem[]>(() => {
+    try {
+      const saved = localStorage.getItem('al_hurumah_cart');
+      return saved ? JSON.parse(saved) : [];
+    } catch (e) {
+      console.error('Failed to parse cart from localStorage:', e);
+      return [];
+    }
+  });
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [isCartOpen, setIsCartOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
@@ -275,6 +283,40 @@ export default function App() {
         }
 
         if (currentUser && isSubscribed) {
+          // Fetch the user's cart from user_carts table
+          try {
+            const { data: cartData, error: cartError } = await supabase
+              .from('user_carts')
+              .select('items')
+              .eq('user_id', currentUser.id)
+              .maybeSingle();
+
+            if (!cartError && cartData && cartData.items && isSubscribed) {
+              const dbCart = cartData.items as CartItem[];
+              if (dbCart.length > 0) {
+                // Merge local cart and DB cart
+                setCart(prev => {
+                  const merged = [...prev];
+                  dbCart.forEach(dbItem => {
+                    const existing = merged.find(
+                      item => item.id === dbItem.id && item.selectedAttr === dbItem.selectedAttr
+                    );
+                    if (existing) {
+                      existing.quantity = Math.max(existing.quantity, dbItem.quantity);
+                    } else {
+                      merged.push(dbItem);
+                    }
+                  });
+                  return merged;
+                });
+              }
+            } else if (cartError) {
+              console.log('Error fetching cart from database (user_carts table may not be initialized yet):', cartError);
+            }
+          } catch (cartErr) {
+            console.log('Failed to fetch cart from DB:', cartErr);
+          }
+
           let query = supabase.from('orders').select('*, order_items(*)');
           if (currentUser.role !== 'admin' && currentUser.id) {
             query = query.eq('user_id', currentUser.id);
@@ -411,6 +453,38 @@ export default function App() {
 
     syncToSupabaseSettings();
   }, [settings, currentUser]);
+
+  // Sync cart to localStorage and Supabase (if user is logged in)
+  useEffect(() => {
+    localStorage.setItem('al_hurumah_cart', JSON.stringify(cart));
+
+    const syncCartToSupabase = async () => {
+      if (currentUser?.id) {
+        try {
+          const { error } = await supabase
+            .from('user_carts')
+            .upsert({
+              user_id: currentUser.id,
+              items: cart,
+              updated_at: new Date().toISOString()
+            });
+
+          if (error) {
+            console.warn('Failed to sync cart to database (user_carts table may not be initialized yet):', error);
+          }
+        } catch (err) {
+          console.error('Error during Supabase cart sync:', err);
+        }
+      }
+    };
+
+    // 500ms debounce to prevent spamming the DB with queries while updating quantities
+    const timer = setTimeout(() => {
+      syncCartToSupabase();
+    }, 500);
+
+    return () => clearTimeout(timer);
+  }, [cart, currentUser]);
 
   // Close mobile menu on scroll (with threshold)
   useEffect(() => {

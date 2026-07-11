@@ -263,6 +263,14 @@ export default function Home({
                   <p className="text-2xl font-black tracking-tight italic">৳{Number(product.price || 0).toFixed(0)}</p>
                 </div>
               </div>
+              <div className="mt-4 px-2">
+                <Link 
+                  to={`/product/${product.id}`}
+                  className="w-full inline-flex items-center justify-center py-3 bg-black hover:bg-amber-600 text-white font-black text-xs uppercase tracking-[0.2em] rounded-2xl transition-all duration-300 shadow-md hover:shadow-lg active:scale-[0.98]"
+                >
+                  Quick View Details
+                </Link>
+              </div>
             </motion.div>
           ))}
         </div>

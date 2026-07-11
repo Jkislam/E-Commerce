@@ -199,3 +199,21 @@ VALUES (
   'https://images.unsplash.com/photo-1497366754035-f200968a6e72?auto=format&fit=crop&q=80&w=2000'
 )
 ON CONFLICT (id) DO NOTHING;
+
+
+-- 6. User Carts Table (For persisting cart items of logged-in users)
+CREATE TABLE IF NOT EXISTS user_carts (
+  user_id UUID REFERENCES auth.users(id) ON DELETE CASCADE PRIMARY KEY,
+  items JSONB NOT NULL DEFAULT '[]'::jsonb,
+  updated_at TIMESTAMP WITH TIME ZONE DEFAULT TIMEZONE('utc'::text, NOW()) NOT NULL
+);
+
+-- Enable RLS on user_carts
+ALTER TABLE user_carts ENABLE ROW LEVEL SECURITY;
+
+-- User Carts Policies
+CREATE POLICY "Users can manage their own cart." ON user_carts FOR ALL USING (
+  auth.uid() = user_id
+) WITH CHECK (
+  auth.uid() = user_id
+);
