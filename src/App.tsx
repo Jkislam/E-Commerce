@@ -278,7 +278,8 @@ export default function App() {
             islatest: p.is_latest ?? p.details?.is_latest ?? false,
             sizes: p.details?.sizes,
             volumes: p.details?.volumes,
-            stock: Number(p.details?.stock) || 0
+            stock: Number(p.details?.stock) || 0,
+            images: p.details?.images || []
           })));
         }
 

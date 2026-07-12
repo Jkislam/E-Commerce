@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { motion } from 'motion/react';
 import { Star, ShoppingBag, ArrowLeft, ShieldCheck, Truck, RotateCcw } from 'lucide-react';
@@ -13,7 +13,13 @@ export default function ProductDetails({ products, addToCart }: ProductDetailsPr
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const [selectedAttr, setSelectedAttr] = useState<string | null>(null);
+  const [selectedImage, setSelectedImage] = useState<string | null>(null);
+
   const product = products.find(p => String(p.id) === String(id));
+
+  useEffect(() => {
+    setSelectedImage(null);
+  }, [id]);
 
   if (!product) {
     return (
@@ -34,6 +40,9 @@ export default function ProductDetails({ products, addToCart }: ProductDetailsPr
     navigate('/checkout');
   };
 
+  const allImages = [product.image, ...(product.images || [])].filter(Boolean);
+  const activeImage = selectedImage || product.image;
+
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
       <button 
@@ -45,25 +54,52 @@ export default function ProductDetails({ products, addToCart }: ProductDetailsPr
       </button>
 
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-12">
-        {/* Product Image */}
-        <motion.div 
-          initial={{ opacity: 0, scale: 0.95 }}
-          animate={{ opacity: 1, scale: 1 }}
-          transition={{ duration: 0.8, ease: [0.22, 1, 0.36, 1] }}
-          className="lg:col-span-5 relative aspect-square max-w-[420px] w-full rounded-3xl overflow-hidden bg-gray-50 border border-black/5 shadow-md group mx-auto lg:mx-0"
-        >
-          <img 
-            src={product.image} 
-            alt={product.name} 
-            className="w-full h-full object-cover transition-transform duration-[2s] hover:scale-105"
-            referrerPolicy="no-referrer"
-          />
-          {product.stock <= 5 && product.stock > 0 && (
-            <div className="absolute top-4 right-4 px-3 py-1.5 bg-red-600 text-white text-[9px] font-black uppercase tracking-widest rounded-full shadow-md animate-pulse">
-              Low Stock
+        {/* Product Image & Gallery */}
+        <div className="lg:col-span-5 flex flex-col gap-4 max-w-[420px] w-full mx-auto lg:mx-0">
+          <motion.div 
+            initial={{ opacity: 0, scale: 0.95 }}
+            animate={{ opacity: 1, scale: 1 }}
+            transition={{ duration: 0.8, ease: [0.22, 1, 0.36, 1] }}
+            className="relative aspect-square w-full rounded-3xl overflow-hidden bg-gray-50 border border-black/5 shadow-md group"
+          >
+            <img 
+              src={activeImage} 
+              alt={product.name} 
+              className="w-full h-full object-cover transition-transform duration-[2s] hover:scale-105"
+              referrerPolicy="no-referrer"
+            />
+            {product.stock <= 5 && product.stock > 0 && (
+              <div className="absolute top-4 right-4 px-3 py-1.5 bg-red-600 text-white text-[9px] font-black uppercase tracking-widest rounded-full shadow-md animate-pulse">
+                Low Stock
+              </div>
+            )}
+          </motion.div>
+
+          {/* Thumbnail Gallery (Daraz style) */}
+          {allImages.length > 1 && (
+            <div className="flex flex-wrap gap-2.5 justify-center sm:justify-start">
+              {allImages.map((imgUrl, idx) => {
+                const isActive = imgUrl === activeImage;
+                return (
+                  <button
+                    key={idx}
+                    onClick={() => setSelectedImage(imgUrl)}
+                    className={`w-14 h-14 sm:w-16 sm:h-16 rounded-xl overflow-hidden border-2 bg-white transition-all cursor-pointer ${
+                      isActive ? 'border-amber-500 scale-95 shadow-sm' : 'border-black/5 hover:border-black/20'
+                    }`}
+                  >
+                    <img 
+                      src={imgUrl} 
+                      alt={`Thumbnail ${idx + 1}`} 
+                      className="w-full h-full object-cover"
+                      referrerPolicy="no-referrer"
+                    />
+                  </button>
+                );
+              })}
             </div>
           )}
-        </motion.div>
+        </div>
 
         {/* Product Info */}
         <motion.div 

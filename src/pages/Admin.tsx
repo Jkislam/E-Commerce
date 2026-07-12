@@ -1421,7 +1421,8 @@ export default function Admin({
     stock: 0,
     sizes: [],
     volumes: [],
-    islatest: false
+    islatest: false,
+    images: []
   };
 
   const [newProduct, setNewProduct] = useState<Omit<Product, 'id'>>(initialProductState);
@@ -1509,7 +1510,8 @@ export default function Admin({
             sizes: editingProduct.sizes,
             volumes: editingProduct.volumes,
             stock: editingProduct.stock,
-            is_latest: editingProduct.islatest
+            is_latest: editingProduct.islatest,
+            images: editingProduct.images || []
           }
         })
         .eq('id', editingProduct.id);
@@ -1542,7 +1544,8 @@ export default function Admin({
           sizes: newProduct.sizes,
           volumes: newProduct.volumes,
           stock: Number(newProduct.stock),
-          is_latest: newProduct.islatest
+          is_latest: newProduct.islatest,
+          images: newProduct.images || []
         }
       }).select().single();
 
@@ -1577,6 +1580,50 @@ export default function Admin({
         }
       };
       reader.readAsDataURL(file);
+    }
+  };
+
+  const handleAdditionalImageUpload = (e: React.ChangeEvent<HTMLInputElement>, index: number, isEdit: boolean) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        const base64String = reader.result as string;
+        if (isEdit && editingProduct) {
+          const currentImages = [...(editingProduct.images || [])];
+          currentImages[index] = base64String;
+          setEditingProduct({ ...editingProduct, images: currentImages });
+        } else {
+          const currentImages = [...(newProduct.images || [])];
+          currentImages[index] = base64String;
+          setNewProduct({ ...newProduct, images: currentImages });
+        }
+      };
+      reader.readAsDataURL(file);
+    }
+  };
+
+  const handleAdditionalImageUrlChange = (url: string, index: number, isEdit: boolean) => {
+    if (isEdit && editingProduct) {
+      const currentImages = [...(editingProduct.images || [])];
+      currentImages[index] = url;
+      setEditingProduct({ ...editingProduct, images: currentImages });
+    } else {
+      const currentImages = [...(newProduct.images || [])];
+      currentImages[index] = url;
+      setNewProduct({ ...newProduct, images: currentImages });
+    }
+  };
+
+  const handleRemoveAdditionalImage = (index: number, isEdit: boolean) => {
+    if (isEdit && editingProduct) {
+      const currentImages = [...(editingProduct.images || [])];
+      currentImages.splice(index, 1);
+      setEditingProduct({ ...editingProduct, images: currentImages });
+    } else {
+      const currentImages = [...(newProduct.images || [])];
+      currentImages.splice(index, 1);
+      setNewProduct({ ...newProduct, images: currentImages });
     }
   };
 
@@ -2276,12 +2323,14 @@ export default function Admin({
                   </div>
                 </div>
 
+                {/* Main Product Image */}
                 <div className="space-y-2">
-                  <label className="text-[10px] font-black uppercase tracking-widest text-black/40 ml-1">Image Selection</label>
+                  <label className="text-[10px] font-black uppercase tracking-widest text-black/40 ml-1">Main Product Image (Required)</label>
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <div className="relative">
                       <ImageIcon className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-black/20" />
                       <input 
+                        required
                         type="text"
                         value={isAddingNew ? newProduct.image : (editingProduct?.image || '')}
                         onChange={(e) => isAddingNew 
@@ -2314,6 +2363,62 @@ export default function Admin({
                       />
                     </div>
                   )}
+                </div>
+
+                {/* Additional Product Images */}
+                <div className="space-y-4 pt-2">
+                  <div>
+                    <label className="text-[10px] font-black uppercase tracking-widest text-black/40 ml-1">
+                      Additional Product Images (Optional - Up to 4)
+                    </label>
+                    <p className="text-[10px] text-black/35 ml-1">These will appear as a thumbnail gallery on the product details page.</p>
+                  </div>
+
+                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                    {[0, 1, 2, 3].map((index) => {
+                      const imagesList = isAddingNew ? (newProduct.images || []) : (editingProduct?.images || []);
+                      const currentImageUrl = imagesList[index] || '';
+
+                      return (
+                        <div key={index} className="p-4 bg-black/[0.02] border border-black/5 rounded-2xl space-y-3 flex flex-col justify-between">
+                          <p className="text-[9px] font-black uppercase tracking-widest text-black/30">Slot {index + 1}</p>
+                          
+                          {currentImageUrl ? (
+                            <div className="relative group aspect-square rounded-xl overflow-hidden border border-black/5">
+                              <img src={currentImageUrl} alt={`Slot ${index + 1}`} className="w-full h-full object-cover" />
+                              <button
+                                type="button"
+                                onClick={() => handleRemoveAdditionalImage(index, !isAddingNew)}
+                                className="absolute inset-0 bg-black/40 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity text-white font-bold text-xs"
+                              >
+                                Remove
+                              </button>
+                            </div>
+                          ) : (
+                            <div className="space-y-2">
+                              <input 
+                                type="text"
+                                placeholder="Image URL..."
+                                value={currentImageUrl}
+                                onChange={(e) => handleAdditionalImageUrlChange(e.target.value, index, !isAddingNew)}
+                                className="w-full px-3 py-2 bg-black/5 rounded-xl focus:outline-none focus:ring-1 focus:ring-black/10 text-[10px] font-bold"
+                              />
+                              <label className="flex items-center justify-center gap-1.5 w-full h-10 bg-black/5 hover:bg-black/10 rounded-xl border border-dashed border-black/10 cursor-pointer transition-all">
+                                <Upload className="w-3.5 h-3.5 text-black/40" />
+                                <span className="text-[10px] font-bold text-black/40">Upload File</span>
+                                <input 
+                                  type="file"
+                                  accept="image/*"
+                                  onChange={(e) => handleAdditionalImageUpload(e, index, !isAddingNew)}
+                                  className="hidden"
+                                />
+                              </label>
+                            </div>
+                          )}
+                        </div>
+                      );
+                    })}
+                  </div>
                 </div>
 
                 <div className="space-y-2">

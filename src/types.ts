@@ -10,6 +10,7 @@ export interface Product {
   sizes?: string[];
   volumes?: string[];
   islatest?: boolean;
+  images?: string[];
 }
 
 export interface CartItem extends Product {
