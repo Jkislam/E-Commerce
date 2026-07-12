@@ -44,22 +44,22 @@ export default function ProductDetails({ products, addToCart }: ProductDetailsPr
         Back to Collection
       </button>
 
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 lg:gap-24">
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-12">
         {/* Product Image */}
         <motion.div 
           initial={{ opacity: 0, scale: 0.95 }}
           animate={{ opacity: 1, scale: 1 }}
           transition={{ duration: 0.8, ease: [0.22, 1, 0.36, 1] }}
-          className="relative aspect-[4/5] rounded-[2.5rem] overflow-hidden bg-gray-50 shadow-2xl group"
+          className="lg:col-span-5 relative aspect-square max-w-[420px] w-full rounded-3xl overflow-hidden bg-gray-50 border border-black/5 shadow-md group mx-auto lg:mx-0"
         >
           <img 
             src={product.image} 
             alt={product.name} 
-            className="w-full h-full object-cover transition-transform duration-[2s] hover:scale-110"
+            className="w-full h-full object-cover transition-transform duration-[2s] hover:scale-105"
             referrerPolicy="no-referrer"
           />
           {product.stock <= 5 && product.stock > 0 && (
-            <div className="absolute top-8 right-8 px-4 py-2 bg-red-600 text-white text-[10px] font-black uppercase tracking-widest rounded-full shadow-lg animate-pulse">
+            <div className="absolute top-4 right-4 px-3 py-1.5 bg-red-600 text-white text-[9px] font-black uppercase tracking-widest rounded-full shadow-md animate-pulse">
               Low Stock
             </div>
           )}
@@ -67,18 +67,18 @@ export default function ProductDetails({ products, addToCart }: ProductDetailsPr
 
         {/* Product Info */}
         <motion.div 
-          initial={{ opacity: 0, x: 30 }}
+          initial={{ opacity: 0, x: 20 }}
           animate={{ opacity: 1, x: 0 }}
           transition={{ duration: 0.8, delay: 0.2, ease: [0.22, 1, 0.36, 1] }}
-          className="flex flex-col py-4"
+          className="lg:col-span-7 flex flex-col"
         >
-          <div className="mb-10">
-            <div className="flex items-center gap-3 mb-4">
-              <span className="px-3 py-1 bg-black text-white text-[8px] font-black uppercase tracking-[0.2em] rounded-md">Official</span>
-              <p className="text-[10px] uppercase tracking-[0.3em] font-black text-black/30">{product.category}</p>
+          <div className="mb-6">
+            <div className="flex items-center gap-3 mb-3">
+              <span className="px-2.5 py-1 bg-amber-600 text-white text-[8px] font-black uppercase tracking-[0.15em] rounded">Official Store</span>
+              <p className="text-[10px] uppercase tracking-[0.2em] font-black text-black/40">{product.category}</p>
             </div>
-            <h1 className="text-5xl sm:text-6xl font-black tracking-tight mb-6 leading-none italic">{product.name}</h1>
-            <div className="flex items-center space-x-6">
+            <h1 className="text-2xl sm:text-3xl font-black text-gray-900 tracking-tight mb-4 leading-snug">{product.name}</h1>
+            <div className="flex items-center space-x-4">
               <div className="flex items-center gap-2">
                 <div className="flex">
                   {[...Array(5)].map((_, i) => (
@@ -95,19 +95,20 @@ export default function ProductDetails({ products, addToCart }: ProductDetailsPr
             </div>
           </div>
 
-          <div className="mb-10">
-            <div className="flex items-baseline gap-4">
-              <p className="text-5xl font-black tracking-tighter">৳{Number(product.price || 0).toFixed(0)}</p>
-              <p className="text-sm font-bold text-black/20 line-through decoration-black/20 decoration-2 italic">৳{(Number(product.price || 0) * 1.2).toFixed(0)}</p>
+          <div className="mb-6 p-4 sm:p-5 bg-amber-50/30 rounded-2xl border border-amber-500/10">
+            <div className="flex items-baseline gap-3">
+              <p className="text-3xl sm:text-4xl font-black tracking-tight text-amber-600">৳{Number(product.price || 0).toFixed(0)}</p>
+              <p className="text-sm font-bold text-black/30 line-through">৳{(Number(product.price || 0) * 1.2).toFixed(0)}</p>
+              <span className="px-2 py-0.5 bg-red-100 text-red-700 text-[10px] font-black rounded-md uppercase tracking-wider">-20% Off</span>
             </div>
             <p className="text-[10px] font-black uppercase tracking-widest text-green-600 mt-2">Free Delivery Today</p>
           </div>
 
           {/* Stock Status */}
-          <div className="mb-10">
-            <div className={`inline-flex items-center gap-2 px-5 py-2.5 rounded-2xl border-2 ${product.stock > 0 ? 'bg-white text-black border-black/5' : 'bg-red-50 text-red-700 border-red-100'}`}>
-              <div className={`w-2 h-2 rounded-full ${product.stock > 0 ? 'bg-green-500 animate-pulse' : 'bg-red-500'}`} />
-              <span className="text-[10px] font-black uppercase tracking-widest">
+          <div className="mb-6">
+            <div className={`inline-flex items-center gap-2 px-4 py-2 rounded-xl border ${product.stock > 0 ? 'bg-white text-black border-black/5' : 'bg-red-50 text-red-700 border-red-100'}`}>
+              <div className={`w-1.5 h-1.5 rounded-full ${product.stock > 0 ? 'bg-green-500 animate-pulse' : 'bg-red-500'}`} />
+              <span className="text-[9px] font-black uppercase tracking-widest">
                 {product.stock > 0 ? `Inventory: ${product.stock} Units` : 'Stock Depleted'}
               </span>
             </div>
@@ -115,18 +116,18 @@ export default function ProductDetails({ products, addToCart }: ProductDetailsPr
 
           {/* Selection */}
           {(product.sizes?.length || product.volumes?.length) ? (
-            <div className="mb-8">
-              <h3 className="text-sm font-bold uppercase tracking-widest mb-4">
+            <div className="mb-6">
+              <h3 className="text-xs font-bold uppercase tracking-widest mb-3 text-black/80">
                 {product.category === 'Panjabi' ? 'Select Size' : 'Select Volume'}
               </h3>
-              <div className="flex flex-wrap gap-3">
+              <div className="flex flex-wrap gap-2.5">
                 {product.category === 'Panjabi' ? (
                   product.sizes?.map(size => (
                     <button 
                       key={size} 
                       onClick={() => setSelectedAttr(size)}
-                      className={`w-12 h-12 border rounded-xl flex items-center justify-center text-sm font-bold transition-all ${
-                        selectedAttr === size ? 'border-black bg-black text-white shadow-lg' : 'border-black/10 hover:border-black'
+                      className={`w-11 h-11 border rounded-xl flex items-center justify-center text-sm font-bold transition-all ${
+                        selectedAttr === size ? 'border-black bg-black text-white shadow-md' : 'border-black/10 hover:border-black'
                       }`}
                     >
                       {size}
@@ -137,8 +138,8 @@ export default function ProductDetails({ products, addToCart }: ProductDetailsPr
                     <button 
                       key={vol} 
                       onClick={() => setSelectedAttr(vol)}
-                      className={`px-4 h-12 border rounded-xl flex items-center justify-center text-sm font-bold transition-all ${
-                        selectedAttr === vol ? 'border-black bg-black text-white shadow-lg' : 'border-black/10 hover:border-black'
+                      className={`px-3.5 h-11 border rounded-xl flex items-center justify-center text-sm font-bold transition-all ${
+                        selectedAttr === vol ? 'border-black bg-black text-white shadow-md' : 'border-black/10 hover:border-black'
                       }`}
                     >
                       {vol}
@@ -149,28 +150,28 @@ export default function ProductDetails({ products, addToCart }: ProductDetailsPr
             </div>
           ) : null}
 
-          <div className="mb-10">
-            <h3 className="text-sm font-bold uppercase tracking-widest mb-4">Description</h3>
-            <p className="text-black/60 leading-relaxed mb-6">
+          <div className="mb-6">
+            <h3 className="text-xs font-bold uppercase tracking-widest mb-3 text-black/80">Description</h3>
+            <p className="text-sm text-black/60 leading-relaxed mb-5">
               {product.description} This premium {product.category.toLowerCase()} is crafted with the finest materials to ensure both comfort and style. Perfect for special occasions or daily elegance.
             </p>
             
-            <div className="space-y-4">
-              <h4 className="text-sm font-bold uppercase tracking-widest">Specifications</h4>
-              <ul className="grid grid-cols-1 sm:grid-cols-2 gap-x-8 gap-y-2 text-sm text-black/60">
-                <li className="flex justify-between border-b border-black/5 pb-2">
+            <div className="space-y-3">
+              <h4 className="text-xs font-bold uppercase tracking-widest text-black/80">Specifications</h4>
+              <ul className="grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-2 text-xs text-black/65">
+                <li className="flex justify-between border-b border-black/5 pb-1.5">
                   <span className="font-medium text-black/40">Material</span>
                   <span>Premium Quality</span>
                 </li>
-                <li className="flex justify-between border-b border-black/5 pb-2">
+                <li className="flex justify-between border-b border-black/5 pb-1.5">
                   <span className="font-medium text-black/40">Origin</span>
                   <span>Authentic Source</span>
                 </li>
-                <li className="flex justify-between border-b border-black/5 pb-2">
+                <li className="flex justify-between border-b border-black/5 pb-1.5">
                   <span className="font-medium text-black/40">Fit</span>
                   <span>Regular / Slim</span>
                 </li>
-                <li className="flex justify-between border-b border-black/5 pb-2">
+                <li className="flex justify-between border-b border-black/5 pb-1.5">
                   <span className="font-medium text-black/40">Care</span>
                   <span>Hand Wash Recommended</span>
                 </li>
@@ -179,22 +180,22 @@ export default function ProductDetails({ products, addToCart }: ProductDetailsPr
           </div>
 
           {/* Features */}
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-6 mb-10 py-8 border-y border-black/5">
+          <div className="grid grid-cols-3 gap-4 mb-6 py-6 border-y border-black/5">
             <div className="flex flex-col items-center text-center">
-              <Truck className="w-6 h-6 mb-2 text-black/60" />
-              <p className="text-[10px] font-bold uppercase tracking-widest">Free Shipping</p>
+              <Truck className="w-5 h-5 mb-1.5 text-black/60" />
+              <p className="text-[9px] font-bold uppercase tracking-widest">Free Shipping</p>
             </div>
             <div className="flex flex-col items-center text-center">
-              <ShieldCheck className="w-6 h-6 mb-2 text-black/60" />
-              <p className="text-[10px] font-bold uppercase tracking-widest">Authentic Product</p>
+              <ShieldCheck className="w-5 h-5 mb-1.5 text-black/60" />
+              <p className="text-[9px] font-bold uppercase tracking-widest">Authentic Product</p>
             </div>
             <div className="flex flex-col items-center text-center">
-              <RotateCcw className="w-6 h-6 mb-2 text-black/60" />
-              <p className="text-[10px] font-bold uppercase tracking-widest">Easy Returns</p>
+              <RotateCcw className="w-5 h-5 mb-1.5 text-black/60" />
+              <p className="text-[9px] font-bold uppercase tracking-widest">Easy Returns</p>
             </div>
           </div>
 
-          <div className="flex flex-col sm:flex-row gap-5 mt-auto">
+          <div className="flex flex-col sm:flex-row gap-4 mt-auto">
             <button 
               onClick={() => {
                 if ((product.sizes?.length || product.volumes?.length) && !selectedAttr) {
@@ -203,9 +204,9 @@ export default function ProductDetails({ products, addToCart }: ProductDetailsPr
                 }
                 addToCart(product, selectedAttr || undefined);
               }}
-              className="flex-1 py-5 border-[3px] border-black rounded-[1.5rem] font-black text-xs uppercase tracking-[0.2em] hover:bg-black hover:text-white transition-all duration-500 flex items-center justify-center group active:scale-95"
+              className="flex-1 py-4 border-2 border-black rounded-xl font-black text-xs uppercase tracking-[0.15em] hover:bg-black hover:text-white transition-all duration-300 flex items-center justify-center group active:scale-[0.98]"
             >
-              <ShoppingBag className="w-5 h-5 mr-3 group-hover:rotate-12 transition-transform" />
+              <ShoppingBag className="w-4 h-4 mr-2 group-hover:rotate-12 transition-transform" />
               Add to Cart
             </button>
             <button 
@@ -217,7 +218,7 @@ export default function ProductDetails({ products, addToCart }: ProductDetailsPr
                 addToCart(product, selectedAttr || undefined);
                 navigate('/checkout');
               }}
-              className="flex-1 py-5 bg-black text-white rounded-[1.5rem] font-black text-xs uppercase tracking-[0.2em] hover:bg-amber-600 transition-all duration-500 shadow-[0_20px_50px_rgba(0,0,0,0.2)] active:scale-95 translate-y-[-2px] hover:translate-y-[-4px]"
+              className="flex-1 py-4 bg-black hover:bg-amber-600 text-white rounded-xl font-black text-xs uppercase tracking-[0.15em] transition-all duration-300 shadow-md hover:shadow-lg active:scale-[0.98]"
             >
               Express Buy Now
             </button>
