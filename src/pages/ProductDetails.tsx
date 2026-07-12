@@ -98,10 +98,7 @@ export default function ProductDetails({ products, addToCart }: ProductDetailsPr
           <div className="mb-6 p-4 sm:p-5 bg-amber-50/30 rounded-2xl border border-amber-500/10">
             <div className="flex items-baseline gap-3">
               <p className="text-3xl sm:text-4xl font-black tracking-tight text-amber-600">৳{Number(product.price || 0).toFixed(0)}</p>
-              <p className="text-sm font-bold text-black/30 line-through">৳{(Number(product.price || 0) * 1.2).toFixed(0)}</p>
-              <span className="px-2 py-0.5 bg-red-100 text-red-700 text-[10px] font-black rounded-md uppercase tracking-wider">-20% Off</span>
             </div>
-            <p className="text-[10px] font-black uppercase tracking-widest text-green-600 mt-2">Free Delivery Today</p>
           </div>
 
           {/* Stock Status */}
@@ -153,7 +150,7 @@ export default function ProductDetails({ products, addToCart }: ProductDetailsPr
           <div className="mb-6">
             <h3 className="text-xs font-bold uppercase tracking-widest mb-3 text-black/80">Description</h3>
             <p className="text-sm text-black/60 leading-relaxed mb-5">
-              {product.description} This premium {product.category.toLowerCase()} is crafted with the finest materials to ensure both comfort and style. Perfect for special occasions or daily elegance.
+              {product.description}
             </p>
             
             <div className="space-y-3">
