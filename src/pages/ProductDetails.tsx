@@ -1,12 +1,12 @@
 import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { motion } from 'motion/react';
-import { Star, ShoppingBag, ArrowLeft, ShieldCheck, Truck, RotateCcw } from 'lucide-react';
+import { Star, ShoppingBag, ArrowLeft, ShieldCheck, Truck, RotateCcw, Minus, Plus } from 'lucide-react';
 import { Product } from '../types';
 
 interface ProductDetailsProps {
   products: Product[];
-  addToCart: (product: Product, selectedAttr?: string, openCart?: boolean) => void;
+  addToCart: (product: Product, selectedAttr?: string, openCart?: boolean, quantity?: number) => void;
 }
 
 export default function ProductDetails({ products, addToCart }: ProductDetailsProps) {
@@ -14,11 +14,14 @@ export default function ProductDetails({ products, addToCart }: ProductDetailsPr
   const navigate = useNavigate();
   const [selectedAttr, setSelectedAttr] = useState<string | null>(null);
   const [selectedImage, setSelectedImage] = useState<string | null>(null);
+  const [quantity, setQuantity] = useState<number>(1);
 
   const product = products.find(p => String(p.id) === String(id));
 
   useEffect(() => {
     setSelectedImage(null);
+    setSelectedAttr(null);
+    setQuantity(1);
   }, [id]);
 
   if (!product) {
@@ -132,8 +135,13 @@ export default function ProductDetails({ products, addToCart }: ProductDetailsPr
           </div>
 
           <div className="mb-6 p-4 sm:p-5 bg-amber-50/30 rounded-2xl border border-amber-500/10">
-            <div className="flex items-baseline gap-3">
+            <div className="flex items-baseline gap-3 flex-wrap">
               <p className="text-3xl sm:text-4xl font-black tracking-tight text-amber-600">৳{Number(product.price || 0).toFixed(0)}</p>
+              {quantity > 1 && (
+                <span className="text-xs sm:text-sm font-bold text-black/40 uppercase tracking-wider">
+                  (৳{Number(product.price || 0).toFixed(0)} × {quantity} = <strong className="text-black/80">৳{(product.price * quantity).toFixed(0)}</strong>)
+                </span>
+              )}
             </div>
           </div>
 
@@ -228,6 +236,38 @@ export default function ProductDetails({ products, addToCart }: ProductDetailsPr
             </div>
           </div>
 
+          {/* Quantity Selector */}
+          <div className="mb-6 flex items-center justify-between sm:justify-start gap-6 pt-2">
+            <h3 className="text-xs font-black uppercase tracking-widest text-black/80">Quantity</h3>
+            <div className="flex items-center border border-black/10 rounded-xl bg-black/[0.02] p-1">
+              <button 
+                type="button"
+                onClick={() => setQuantity(prev => Math.max(1, prev - 1))}
+                className="w-9 h-9 flex items-center justify-center rounded-lg hover:bg-black/5 active:scale-95 transition-all text-black/60 hover:text-black cursor-pointer"
+              >
+                <Minus className="w-3.5 h-3.5" />
+              </button>
+              <span className="w-12 text-center font-black text-sm text-black">
+                {quantity}
+              </span>
+              <button 
+                type="button"
+                onClick={() => {
+                  const maxStock = product.stock !== undefined ? product.stock : 99;
+                  setQuantity(prev => Math.min(maxStock > 0 ? maxStock : 99, prev + 1));
+                }}
+                className="w-9 h-9 flex items-center justify-center rounded-lg hover:bg-black/5 active:scale-95 transition-all text-black/60 hover:text-black cursor-pointer"
+              >
+                <Plus className="w-3.5 h-3.5" />
+              </button>
+            </div>
+            {product.stock !== undefined && product.stock > 0 && (
+              <span className="text-[10px] font-bold text-black/40 uppercase tracking-wider">
+                {product.stock} available
+              </span>
+            )}
+          </div>
+
           <div className="flex flex-col sm:flex-row gap-4 mt-auto">
             <button 
               onClick={() => {
@@ -235,7 +275,7 @@ export default function ProductDetails({ products, addToCart }: ProductDetailsPr
                   alert(`Please select a ${product.category === 'Panjabi' ? 'size' : 'volume'} first.`);
                   return;
                 }
-                addToCart(product, selectedAttr || undefined, false);
+                addToCart(product, selectedAttr || undefined, false, quantity);
               }}
               className="flex-1 py-4 border-2 border-black rounded-xl font-black text-xs uppercase tracking-[0.15em] hover:bg-black hover:text-white transition-all duration-300 flex items-center justify-center group active:scale-[0.98]"
             >
@@ -248,7 +288,7 @@ export default function ProductDetails({ products, addToCart }: ProductDetailsPr
                   alert(`Please select a ${product.category === 'Panjabi' ? 'size' : 'volume'} first.`);
                   return;
                 }
-                navigate('/checkout', { state: { expressProduct: product, selectedAttr: selectedAttr || undefined } });
+                navigate('/checkout', { state: { expressProduct: product, selectedAttr: selectedAttr || undefined, quantity } });
               }}
               className="flex-1 py-4 bg-black hover:bg-amber-600 text-white rounded-xl font-black text-xs uppercase tracking-[0.15em] transition-all duration-300 shadow-md hover:shadow-lg active:scale-[0.98]"
             >

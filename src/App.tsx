@@ -523,15 +523,15 @@ export default function App() {
     return result;
   }, [products, searchQuery, sortBy, selectedCategory]);
 
-  const addToCart = (product: Product, selectedAttr?: string, openCart = true) => {
+  const addToCart = (product: Product, selectedAttr?: string, openCart = true, quantityToAdd = 1) => {
     setCart(prev => {
       const existing = prev.find(item => item.id === product.id && item.selectedAttr === selectedAttr);
       if (existing) {
         return prev.map(item => 
-          (item.id === product.id && item.selectedAttr === selectedAttr) ? { ...item, quantity: item.quantity + 1 } : item
+          (item.id === product.id && item.selectedAttr === selectedAttr) ? { ...item, quantity: item.quantity + quantityToAdd } : item
         );
       }
-      return [...prev, { ...product, quantity: 1, selectedAttr }];
+      return [...prev, { ...product, quantity: quantityToAdd, selectedAttr }];
     });
     if (openCart) {
       setIsCartOpen(true);

@@ -20,14 +20,15 @@ export default function Checkout({ cart, cartTotal, clearCart, placeOrder, curre
 
   const expressProduct = location.state?.expressProduct;
   const expressAttr = location.state?.selectedAttr;
+  const expressQuantity = location.state?.quantity || 1;
 
   const activeCart = expressProduct ? [{
     ...expressProduct,
-    quantity: 1,
+    quantity: expressQuantity,
     selectedAttr: expressAttr
   } as CartItem] : cart;
 
-  const activeTotal = expressProduct ? Number(expressProduct.price || 0) : cartTotal;
+  const activeTotal = expressProduct ? Number(expressProduct.price || 0) * expressQuantity : cartTotal;
 
   const [isProcessing, setIsProcessing] = useState(false);
   const [isOrderPlaced, setIsOrderPlaced] = useState(false);
