@@ -230,14 +230,7 @@ export default function Home({
                     className="w-full h-full object-cover transition-transform duration-[1.5s] group-hover:scale-110"
                     referrerPolicy="no-referrer"
                   />
-                  <div className="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition-colors duration-500" />
-                  
-                  {/* Floating Action Overlay */}
-                  <div className="absolute inset-x-4 bottom-4 translate-y-4 opacity-0 group-hover:translate-y-0 group-hover:opacity-100 transition-all duration-500 hidden sm:block">
-                    <div className="bg-white/95 backdrop-blur-md py-3 rounded-xl font-black text-[9px] uppercase tracking-[0.15em] text-center shadow-xl">
-                      Quick View Details
-                    </div>
-                  </div>
+                  <div className="absolute inset-0 bg-black/0 group-hover:bg-black/15 transition-colors duration-500" />
                   
                   {/* Category Tag */}
                   <div className="absolute top-4 left-4 px-3 py-1 bg-white/95 backdrop-blur-md rounded-full text-[7px] font-black uppercase tracking-widest shadow-sm">
@@ -255,21 +248,11 @@ export default function Home({
                       <Star className="w-3 h-3 fill-amber-400 text-amber-400" />
                       <span className="text-[10px] font-black">{product.rating}</span>
                     </div>
-                    <div className="w-1 h-1 bg-black/10 rounded-full" />
-                    <span className="text-[8px] sm:text-[9px] font-black uppercase tracking-widest text-black/30">Free Delivery</span>
                   </div>
                 </div>
                 <div className="text-left sm:text-right">
                   <p className="text-lg sm:text-xl md:text-2xl font-black tracking-tight italic text-amber-600 sm:text-black">৳{Number(product.price || 0).toFixed(0)}</p>
                 </div>
-              </div>
-              <div className="mt-3 px-1">
-                <Link 
-                  to={`/product/${product.id}`}
-                  className="w-full inline-flex items-center justify-center py-2.5 bg-black hover:bg-amber-600 text-white font-black text-[9px] sm:text-xs uppercase tracking-[0.15em] rounded-xl sm:rounded-2xl transition-all duration-300 shadow-md hover:shadow-lg active:scale-[0.98]"
-                >
-                  Quick View Details
-                </Link>
               </div>
             </motion.div>
           ))}
