@@ -523,7 +523,7 @@ export default function App() {
     return result;
   }, [products, searchQuery, sortBy, selectedCategory]);
 
-  const addToCart = (product: Product, selectedAttr?: string) => {
+  const addToCart = (product: Product, selectedAttr?: string, openCart = true) => {
     setCart(prev => {
       const existing = prev.find(item => item.id === product.id && item.selectedAttr === selectedAttr);
       if (existing) {
@@ -533,7 +533,9 @@ export default function App() {
       }
       return [...prev, { ...product, quantity: 1, selectedAttr }];
     });
-    setIsCartOpen(true);
+    if (openCart) {
+      setIsCartOpen(true);
+    }
   };
 
   const removeFromCart = (productId: string | number) => {
@@ -581,7 +583,7 @@ export default function App() {
     }
   };
 
-  const placeOrder = async (orderData: Omit<Order, 'id' | 'status' | 'createdat'>) => {
+  const placeOrder = async (orderData: Omit<Order, 'id' | 'status' | 'createdat'>, shouldClearCart = true) => {
     const userId = currentUser?.id || null;
 
     try {
@@ -637,7 +639,9 @@ export default function App() {
         return p;
       }));
 
-      clearCart();
+      if (shouldClearCart) {
+        clearCart();
+      }
       return newOrder;
     } catch (err: any) {
       console.error('Order placement exception:', err);

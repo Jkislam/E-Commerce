@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { motion } from 'motion/react';
 import { ShoppingBag, ArrowLeft, CheckCircle2, Truck, CreditCard, MapPin } from 'lucide-react';
 import { CartItem, Order, User, AppSettings } from '../types';
@@ -8,14 +8,27 @@ interface CheckoutProps {
   cart: CartItem[];
   cartTotal: number;
   clearCart: () => void;
-  placeOrder: (orderData: Omit<Order, 'id' | 'status' | 'createdat'>) => Promise<Order>;
+  placeOrder: (orderData: Omit<Order, 'id' | 'status' | 'createdat'>, shouldClearCart?: boolean) => Promise<Order>;
   currentUser: User | null;
   settings: AppSettings;
 }
 
 export default function Checkout({ cart, cartTotal, clearCart, placeOrder, currentUser, settings }: CheckoutProps) {
   const navigate = useNavigate();
+  const location = useLocation();
   const [step, setStep] = useState<1 | 2>(1);
+
+  const expressProduct = location.state?.expressProduct;
+  const expressAttr = location.state?.selectedAttr;
+
+  const activeCart = expressProduct ? [{
+    ...expressProduct,
+    quantity: 1,
+    selectedAttr: expressAttr
+  } as CartItem] : cart;
+
+  const activeTotal = expressProduct ? Number(expressProduct.price || 0) : cartTotal;
+
   const [isProcessing, setIsProcessing] = useState(false);
   const [isOrderPlaced, setIsOrderPlaced] = useState(false);
   const [orderInfo, setOrderInfo] = useState<Order | null>(null);
@@ -30,7 +43,7 @@ export default function Checkout({ cart, cartTotal, clearCart, placeOrder, curre
     transactionId: ''
   });
 
-  if (cart.length === 0 && !isOrderPlaced) {
+  if (activeCart.length === 0 && !isOrderPlaced) {
     return (
       <div className="min-h-[60vh] flex flex-col items-center justify-center px-4">
         <div className="w-20 h-20 bg-black/5 rounded-full flex items-center justify-center mb-6">
@@ -75,11 +88,11 @@ export default function Checkout({ cart, cartTotal, clearCart, placeOrder, curre
         customeremail: formData.email,
         customerphone: formData.phone,
         customeraddress: `${formData.address}, ${formData.area}, ${formData.city}`,
-        items: cart,
-        total: cartTotal,
+        items: activeCart,
+        total: activeTotal,
         paymentmethod: formData.paymentMethod,
         transactionid: formData.paymentMethod !== 'Cash on Delivery' ? formData.transactionId : undefined,
-      });
+      }, !expressProduct);
 
       if (order) {
         setOrderInfo(order);
@@ -133,7 +146,7 @@ export default function Checkout({ cart, cartTotal, clearCart, placeOrder, curre
             )}
             <div className="pt-4 border-t border-black/5 flex justify-between text-base font-bold">
               <span>Total Paid:</span>
-              <span>৳{Number(cartTotal || 0).toFixed(0)}</span>
+              <span>৳{Number(activeTotal || 0).toFixed(0)}</span>
             </div>
           </div>
         </div>
@@ -327,7 +340,7 @@ export default function Checkout({ cart, cartTotal, clearCart, placeOrder, curre
                       <div>
                         <p className="text-sm font-bold text-amber-900">Payment Instructions</p>
                         <p className="text-xs text-amber-800 mt-1 leading-relaxed">
-                          Please send <strong>৳{Number(cartTotal || 0).toFixed(0)}</strong> to our {formData.paymentMethod} number <strong>{settings?.paymentNumbers[formData.paymentMethod as keyof AppSettings['paymentNumbers']] || 'N/A'}</strong>. After sending the money, please enter the Transaction ID below to confirm your order.
+                          Please send <strong>৳{Number(activeTotal || 0).toFixed(0)}</strong> to our {formData.paymentMethod} number <strong>{settings?.paymentNumbers[formData.paymentMethod as keyof AppSettings['paymentNumbers']] || 'N/A'}</strong>. After sending the money, please enter the Transaction ID below to confirm your order.
                         </p>
                       </div>
                     </div>
@@ -358,7 +371,7 @@ export default function Checkout({ cart, cartTotal, clearCart, placeOrder, curre
                         Processing...
                       </>
                     ) : (
-                      `Confirm Order • ৳${Number(cartTotal || 0).toFixed(0)}`
+                      `Confirm Order • ৳${Number(activeTotal || 0).toFixed(0)}`
                     )}
                   </button>
                   <p className="text-[10px] text-center text-black/40 mt-4 uppercase tracking-widest font-bold">
@@ -376,7 +389,7 @@ export default function Checkout({ cart, cartTotal, clearCart, placeOrder, curre
             <h2 className="text-xl font-bold mb-6">Order Summary</h2>
             
             <div className="space-y-6 mb-8 max-h-[40vh] overflow-y-auto pr-2 no-scrollbar">
-              {cart.map((item) => (
+              {activeCart.map((item) => (
                 <div key={item.id} className="flex gap-4">
                   <div className="w-16 h-16 bg-black/5 rounded-xl overflow-hidden flex-shrink-0">
                     <img src={item.image} alt={item.name} className="w-full h-full object-cover" />
@@ -395,7 +408,7 @@ export default function Checkout({ cart, cartTotal, clearCart, placeOrder, curre
             <div className="space-y-4 pt-6 border-t border-black/5">
               <div className="flex justify-between text-sm">
                 <span className="text-black/40">Subtotal</span>
-                <span className="font-bold">৳{Number(cartTotal || 0).toFixed(0)}</span>
+                <span className="font-bold">৳{Number(activeTotal || 0).toFixed(0)}</span>
               </div>
               <div className="flex justify-between text-sm">
                 <span className="text-black/40">Shipping</span>
@@ -403,7 +416,7 @@ export default function Checkout({ cart, cartTotal, clearCart, placeOrder, curre
               </div>
               <div className="flex justify-between text-lg font-bold pt-4 border-t border-black/5">
                 <span>Total</span>
-                <span>৳{Number(cartTotal || 0).toFixed(0)}</span>
+                <span>৳{Number(activeTotal || 0).toFixed(0)}</span>
               </div>
             </div>
 

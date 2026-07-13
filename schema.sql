@@ -41,34 +41,38 @@ CREATE TRIGGER on_auth_user_created
 
 
 -- 2. Products Table
-CREATE TABLE products (
-  id UUID DEFAULT uuid_generate_v4() PRIMARY KEY,
+CREATE TABLE IF NOT EXISTS products (
+  id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
   name TEXT NOT NULL,
-  description TEXT NOT NULL,
-  price NUMERIC NOT NULL,
-  image TEXT NOT NULL,
-  category TEXT NOT NULL,
+  description TEXT,
+  price NUMERIC NOT NULL DEFAULT 0,
   rating NUMERIC DEFAULT 0,
-  reviews INTEGER DEFAULT 0,
-  is_latest BOOLEAN DEFAULT false,
-  details JSONB,
-  created_at TIMESTAMP WITH TIME ZONE DEFAULT TIMEZONE('utc'::text, NOW()) NOT NULL
+  category TEXT,
+  image TEXT, -- এটি আপনার মেইন প্রোডাক্টের ছবি
+  details JSONB DEFAULT '{"sizes": [], "volumes": [], "stock": 0, "is_latest": false, "images": []}'::jsonb, -- এই কলামে অতিরিক্ত সব ছবি এবং ডিটেইলস সেভ থাকবে
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()) NOT NULL
 );
+
+-- Note: যদি products টেবিলটি ইতিমধ্যে তৈরি করা থাকে, তবে details কলামটিকে jsonb তে কনভার্ট করতে নিচের কুয়েরিটি রান করুন:
+-- ALTER TABLE products ALTER COLUMN details SET DATA TYPE jsonb USING details::jsonb;
 
 -- Enable RLS on products
 ALTER TABLE products ENABLE ROW LEVEL SECURITY;
 
 -- Products Policies
-CREATE POLICY "Products are viewable by everyone." ON products FOR SELECT USING (true);
-CREATE POLICY "Only admins can insert products." ON products FOR INSERT WITH CHECK (
-  EXISTS (SELECT 1 FROM profiles WHERE profiles.id = auth.uid() AND profiles.role = 'admin')
-);
-CREATE POLICY "Only admins can update products." ON products FOR UPDATE USING (
-  EXISTS (SELECT 1 FROM profiles WHERE profiles.id = auth.uid() AND profiles.role = 'admin')
-);
-CREATE POLICY "Only admins can delete products." ON products FOR DELETE USING (
-  EXISTS (SELECT 1 FROM profiles WHERE profiles.id = auth.uid() AND profiles.role = 'admin')
-);
+-- সকলের জন্য প্রোডাক্ট দেখার অনুমতি (Public Read Access)
+CREATE POLICY "Allow public read access" ON products
+  FOR SELECT USING (true);
+
+-- শুধুমাত্র লগইন করা বা অথেনটিকেটেড ইউজারদের জন্য প্রোডাক্ট তৈরি, এডিট ও ডিলিট করার অনুমতি
+CREATE POLICY "Allow authenticated users to insert" ON products
+  FOR INSERT WITH CHECK (auth.role() = 'authenticated');
+
+CREATE POLICY "Allow authenticated users to update" ON products
+  FOR UPDATE USING (auth.role() = 'authenticated');
+
+CREATE POLICY "Allow authenticated users to delete" ON products
+  FOR DELETE USING (auth.role() = 'authenticated');
 
 
 -- 3. Orders Table

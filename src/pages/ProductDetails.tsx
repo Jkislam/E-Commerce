@@ -6,7 +6,7 @@ import { Product } from '../types';
 
 interface ProductDetailsProps {
   products: Product[];
-  addToCart: (product: Product, selectedAttr?: string) => void;
+  addToCart: (product: Product, selectedAttr?: string, openCart?: boolean) => void;
 }
 
 export default function ProductDetails({ products, addToCart }: ProductDetailsProps) {
@@ -235,7 +235,7 @@ export default function ProductDetails({ products, addToCart }: ProductDetailsPr
                   alert(`Please select a ${product.category === 'Panjabi' ? 'size' : 'volume'} first.`);
                   return;
                 }
-                addToCart(product, selectedAttr || undefined);
+                addToCart(product, selectedAttr || undefined, false);
               }}
               className="flex-1 py-4 border-2 border-black rounded-xl font-black text-xs uppercase tracking-[0.15em] hover:bg-black hover:text-white transition-all duration-300 flex items-center justify-center group active:scale-[0.98]"
             >
@@ -248,8 +248,7 @@ export default function ProductDetails({ products, addToCart }: ProductDetailsPr
                   alert(`Please select a ${product.category === 'Panjabi' ? 'size' : 'volume'} first.`);
                   return;
                 }
-                addToCart(product, selectedAttr || undefined);
-                navigate('/checkout');
+                navigate('/checkout', { state: { expressProduct: product, selectedAttr: selectedAttr || undefined } });
               }}
               className="flex-1 py-4 bg-black hover:bg-amber-600 text-white rounded-xl font-black text-xs uppercase tracking-[0.15em] transition-all duration-300 shadow-md hover:shadow-lg active:scale-[0.98]"
             >
