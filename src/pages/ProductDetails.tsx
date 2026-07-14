@@ -1,8 +1,10 @@
 import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { motion } from 'motion/react';
-import { Star, ShoppingBag, ArrowLeft, ShieldCheck, Truck, RotateCcw, Minus, Plus } from 'lucide-react';
+import { motion, AnimatePresence } from 'motion/react';
+import { Star, ShoppingBag, ArrowLeft, Minus, Plus, MapPin, Truck, Heart, Clock, Shield, Info, X } from 'lucide-react';
 import { Product } from '../types';
+import { useAuth } from '../context/AuthContext';
+import { supabase } from '../lib/supabase';
 
 interface ProductDetailsProps {
   products: Product[];
@@ -12,9 +14,16 @@ interface ProductDetailsProps {
 export default function ProductDetails({ products, addToCart }: ProductDetailsProps) {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
+  const { currentUser, refreshUser } = useAuth();
+  
   const [selectedAttr, setSelectedAttr] = useState<string | null>(null);
   const [selectedImage, setSelectedImage] = useState<string | null>(null);
   const [quantity, setQuantity] = useState<number>(1);
+  
+  // Delivery address states
+  const [showAddressModal, setShowAddressModal] = useState(false);
+  const [guestAddress, setGuestAddress] = useState('');
+  const [newAddressInput, setNewAddressInput] = useState('');
 
   const product = products.find(p => String(p.id) === String(id));
 
@@ -43,6 +52,55 @@ export default function ProductDetails({ products, addToCart }: ProductDetailsPr
     navigate('/checkout');
   };
 
+  const handleSaveAddress = async (newAddr: string) => {
+    if (currentUser && currentUser.id) {
+      try {
+        // Update profile in Supabase database
+        const { error } = await supabase
+          .from('profiles')
+          .update({ address: newAddr })
+          .eq('id', currentUser.id);
+
+        if (error) throw error;
+
+        // Sync with Auth metadata
+        await supabase.auth.updateUser({
+          data: { address: newAddr }
+        });
+
+        // Trigger context refresh
+        if (refreshUser) {
+          await refreshUser();
+        }
+      } catch (err) {
+        console.error('Failed to update address in Supabase:', err);
+      }
+    } else {
+      setGuestAddress(newAddr);
+    }
+    setShowAddressModal(false);
+  };
+
+  const getDeliveryDateRange = (minDays = 2, maxDays = 5) => {
+    const today = new Date();
+    const minDate = new Date(today);
+    minDate.setDate(today.getDate() + minDays);
+    const maxDate = new Date(today);
+    maxDate.setDate(today.getDate() + maxDays);
+    
+    const options: Intl.DateTimeFormatOptions = { day: 'numeric', month: 'short' };
+    const minStr = minDate.toLocaleDateString('en-US', options);
+    
+    let maxStr = '';
+    if (minDate.getMonth() === maxDate.getMonth()) {
+      maxStr = maxDate.getDate().toString() + ' ' + maxDate.toLocaleDateString('en-US', { month: 'short' });
+    } else {
+      maxStr = maxDate.toLocaleDateString('en-US', options);
+    }
+    
+    return `Get by ${minStr}-${maxStr}`;
+  };
+
   const allImages = [product.image, ...(product.images || [])].filter(Boolean);
   const activeImage = selectedImage || product.image;
 
@@ -56,9 +114,9 @@ export default function ProductDetails({ products, addToCart }: ProductDetailsPr
         Back to Collection
       </button>
 
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-12">
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-10">
         {/* Product Image & Gallery */}
-        <div className="lg:col-span-5 flex flex-col gap-4 max-w-[420px] w-full mx-auto lg:mx-0">
+        <div className="lg:col-span-4 flex flex-col gap-4 max-w-[420px] w-full mx-auto lg:mx-0">
           <motion.div 
             initial={{ opacity: 0, scale: 0.95 }}
             animate={{ opacity: 1, scale: 1 }}
@@ -109,7 +167,7 @@ export default function ProductDetails({ products, addToCart }: ProductDetailsPr
           initial={{ opacity: 0, x: 20 }}
           animate={{ opacity: 1, x: 0 }}
           transition={{ duration: 0.8, delay: 0.2, ease: [0.22, 1, 0.36, 1] }}
-          className="lg:col-span-7 flex flex-col"
+          className="lg:col-span-5 flex flex-col"
         >
           <div className="mb-6">
             <div className="flex items-center gap-3 mb-3">
@@ -191,51 +249,6 @@ export default function ProductDetails({ products, addToCart }: ProductDetailsPr
             </div>
           ) : null}
 
-          <div className="mb-6">
-            <h3 className="text-xs font-bold uppercase tracking-widest mb-3 text-black/80">Description</h3>
-            <p className="text-sm text-black/60 leading-relaxed mb-5">
-              {product.description}
-            </p>
-            
-            <div className="space-y-3">
-              <h4 className="text-xs font-bold uppercase tracking-widest text-black/80">Specifications</h4>
-              <ul className="grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-2 text-xs text-black/65">
-                <li className="flex justify-between border-b border-black/5 pb-1.5">
-                  <span className="font-medium text-black/40">Material</span>
-                  <span>Premium Quality</span>
-                </li>
-                <li className="flex justify-between border-b border-black/5 pb-1.5">
-                  <span className="font-medium text-black/40">Origin</span>
-                  <span>Authentic Source</span>
-                </li>
-                <li className="flex justify-between border-b border-black/5 pb-1.5">
-                  <span className="font-medium text-black/40">Fit</span>
-                  <span>Regular / Slim</span>
-                </li>
-                <li className="flex justify-between border-b border-black/5 pb-1.5">
-                  <span className="font-medium text-black/40">Care</span>
-                  <span>Hand Wash Recommended</span>
-                </li>
-              </ul>
-            </div>
-          </div>
-
-          {/* Features */}
-          <div className="grid grid-cols-3 gap-4 mb-6 py-6 border-y border-black/5">
-            <div className="flex flex-col items-center text-center">
-              <Truck className="w-5 h-5 mb-1.5 text-black/60" />
-              <p className="text-[9px] font-bold uppercase tracking-widest">Free Shipping</p>
-            </div>
-            <div className="flex flex-col items-center text-center">
-              <ShieldCheck className="w-5 h-5 mb-1.5 text-black/60" />
-              <p className="text-[9px] font-bold uppercase tracking-widest">Authentic Product</p>
-            </div>
-            <div className="flex flex-col items-center text-center">
-              <RotateCcw className="w-5 h-5 mb-1.5 text-black/60" />
-              <p className="text-[9px] font-bold uppercase tracking-widest">Easy Returns</p>
-            </div>
-          </div>
-
           {/* Quantity Selector */}
           <div className="mb-6 flex items-center justify-between sm:justify-start gap-6 pt-2">
             <h3 className="text-xs font-black uppercase tracking-widest text-black/80">Quantity</h3>
@@ -268,6 +281,13 @@ export default function ProductDetails({ products, addToCart }: ProductDetailsPr
             )}
           </div>
 
+          <div className="mb-6">
+            <h3 className="text-xs font-bold uppercase tracking-widest mb-3 text-black/80">Description</h3>
+            <p className="text-sm text-black/60 leading-relaxed">
+              {product.description}
+            </p>
+          </div>
+
           <div className="flex flex-col sm:flex-row gap-4 mt-auto">
             <button 
               onClick={() => {
@@ -296,7 +316,201 @@ export default function ProductDetails({ products, addToCart }: ProductDetailsPr
             </button>
           </div>
         </motion.div>
+
+        {/* Daraz-Style Delivery, Return & Seller Info Sidebar */}
+        <div className="lg:col-span-3 space-y-6">
+          {/* Delivery Options Card */}
+          <div className="bg-gray-50/50 rounded-3xl p-5 border border-black/5 space-y-5">
+            <div className="flex justify-between items-center text-gray-500">
+              <span className="text-[10px] font-black uppercase tracking-wider">Delivery Options</span>
+              <Info className="w-4 h-4 text-gray-400 cursor-help" />
+            </div>
+
+            {/* Address Row */}
+            <div className="flex gap-3">
+              <MapPin className="w-5 h-5 text-gray-500 flex-shrink-0 mt-0.5" />
+              <div className="flex-1 space-y-1">
+                <p className="text-xs font-bold leading-snug text-gray-800 break-words">
+                  {currentUser?.address || guestAddress || 'Dhaka, Dhaka North, Banani'}
+                </p>
+                <button
+                  onClick={() => {
+                    setNewAddressInput(currentUser?.address || guestAddress || 'Dhaka, Dhaka North, Banani');
+                    setShowAddressModal(true);
+                  }}
+                  className="text-[10px] font-black tracking-wider text-amber-600 hover:text-amber-700 transition-colors uppercase cursor-pointer"
+                >
+                  Change
+                </button>
+              </div>
+            </div>
+
+            <hr className="border-black/5" />
+
+            {/* Standard Delivery Row */}
+            {(product.delivery_charge_active ?? true) && (
+              <div className="flex gap-3">
+                <Truck className="w-5 h-5 text-gray-500 flex-shrink-0 mt-0.5" />
+                <div className="flex-1 flex justify-between items-start gap-2">
+                  <div className="space-y-0.5">
+                    <p className="text-xs font-bold text-gray-800">Standard Delivery</p>
+                    <p className="text-[10px] text-gray-400 font-medium">
+                      {getDeliveryDateRange(product.delivery_days_min ?? 2, product.delivery_days_max ?? 5)}
+                    </p>
+                  </div>
+                  <span className="text-xs font-black text-gray-900 flex-shrink-0">
+                    ৳{(product.delivery_charge ?? 110)}
+                  </span>
+                </div>
+              </div>
+            )}
+
+            {/* Cash on Delivery Row */}
+            <div className="flex gap-3">
+              <svg className="w-5 h-5 text-gray-500 flex-shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
+                <path strokeLinecap="round" strokeLinejoin="round" d="M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2zm7-5a2 2 0 11-4 0 2 2 0 014 0z" />
+              </svg>
+              <div className="flex-1">
+                <p className="text-xs font-bold text-gray-800">
+                  {(product.cod_available ?? true) ? 'Cash on Delivery Available' : 'Cash on Delivery are not Available now'}
+                </p>
+              </div>
+            </div>
+          </div>
+
+          {/* Return & Warranty Card */}
+          <div className="bg-gray-50/50 rounded-3xl p-5 border border-black/5 space-y-5">
+            <div className="flex justify-between items-center text-gray-500">
+              <span className="text-[10px] font-black uppercase tracking-wider">Return & Warranty</span>
+              <Info className="w-4 h-4 text-gray-400 cursor-help" />
+            </div>
+
+            {/* Change of Mind Row */}
+            <div className="flex gap-3">
+              <Heart className="w-5 h-5 text-gray-500 flex-shrink-0 mt-0.5" />
+              <div className="flex-1">
+                <p className="text-xs font-bold text-gray-800">
+                  {(product.change_of_mind_available ?? true) ? 'Change of Mind Allowed' : 'Change of Mind Not Available'}
+                </p>
+              </div>
+            </div>
+
+            {/* Return Row */}
+            <div className="flex gap-3">
+              <Clock className="w-5 h-5 text-gray-500 flex-shrink-0 mt-0.5" />
+              <div className="flex-1">
+                <p className="text-xs font-bold text-gray-800">
+                  {Number(product.easy_return_days ?? 14) > 0 
+                    ? `${product.easy_return_days} Days Easy Return` 
+                    : 'Return not available'}
+                </p>
+              </div>
+            </div>
+
+            {/* Warranty Row */}
+            <div className="flex gap-3">
+              <Shield className="w-5 h-5 text-gray-500 flex-shrink-0 mt-0.5" />
+              <div className="flex-1">
+                <p className="text-xs font-bold text-gray-800">
+                  {(product.warranty_available ?? false) ? (product.warranty_duration || 'Warranty Available') : 'Warranty not available'}
+                </p>
+              </div>
+            </div>
+          </div>
+
+          {/* Sold by Card */}
+          <div className="bg-gray-50/50 rounded-3xl p-5 border border-black/5 space-y-4">
+            <div className="space-y-1">
+              <p className="text-[9px] font-black uppercase tracking-widest text-gray-400">Sold by</p>
+              <h4 className="text-sm font-black text-gray-800 truncate">
+                {product.store_name || 'Buy More Save More Store'}
+              </h4>
+            </div>
+
+            <hr className="border-black/5" />
+
+            <div className="grid grid-cols-3 gap-2 text-center">
+              <div className="space-y-1">
+                <p className="text-[8px] font-bold uppercase tracking-wider text-gray-400 leading-tight">Positive Ratings</p>
+                <p className="text-xs sm:text-sm font-black text-gray-800">
+                  {product.seller_rating || '88%'}
+                </p>
+              </div>
+              <div className="space-y-1 border-x border-black/5 px-1">
+                <p className="text-[8px] font-bold uppercase tracking-wider text-gray-400 leading-tight">Ship on Time</p>
+                <p className="text-xs sm:text-sm font-black text-gray-800">
+                  {product.ship_on_time || '100%'}
+                </p>
+              </div>
+              <div className="space-y-1">
+                <p className="text-[8px] font-bold uppercase tracking-wider text-gray-400 leading-tight">Chat Response</p>
+                <p className="text-xs sm:text-sm font-black text-gray-800 truncate">
+                  {product.chat_response_rate || '95%'}
+                </p>
+              </div>
+            </div>
+          </div>
+        </div>
       </div>
+
+      {/* Address Edit Modal */}
+      <AnimatePresence>
+        {showAddressModal && (
+          <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
+            <motion.div 
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              onClick={() => setShowAddressModal(false)}
+              className="absolute inset-0 bg-black/50 backdrop-blur-sm"
+            />
+            <motion.div 
+              initial={{ opacity: 0, scale: 0.95 }}
+              animate={{ opacity: 1, scale: 1 }}
+              exit={{ opacity: 0, scale: 0.95 }}
+              className="relative w-full max-w-md bg-white rounded-3xl p-6 shadow-2xl z-10"
+            >
+              <div className="flex justify-between items-center mb-4">
+                <h3 className="text-base font-black uppercase tracking-wider text-gray-900">Delivery Address</h3>
+                <button 
+                  onClick={() => setShowAddressModal(false)}
+                  className="p-1 hover:bg-black/5 rounded-full transition-colors"
+                >
+                  <X className="w-5 h-5" />
+                </button>
+              </div>
+
+              <div className="space-y-4">
+                <div className="space-y-1.5">
+                  <label className="text-[10px] font-black uppercase tracking-widest text-black/40">Enter Delivery Address</label>
+                  <textarea 
+                    rows={3}
+                    value={newAddressInput}
+                    onChange={(e) => setNewAddressInput(e.target.value)}
+                    placeholder="e.g. Dhaka, Dhaka North, Banani Road No. 12 - 19"
+                    className="w-full px-4 py-3 bg-black/5 rounded-2xl text-xs font-bold focus:outline-none focus:ring-1 focus:ring-black/15 resize-none leading-relaxed"
+                  />
+                </div>
+
+                <div className="flex gap-3">
+                  <button 
+                    onClick={() => setShowAddressModal(false)}
+                    className="flex-1 py-3 border border-black/10 rounded-2xl text-xs font-bold hover:bg-black/5 transition-all"
+                  >
+                    Cancel
+                  </button>
+                  <button 
+                    onClick={() => handleSaveAddress(newAddressInput)}
+                    className="flex-1 py-3 bg-black text-white rounded-2xl text-xs font-bold hover:bg-black/90 transition-all"
+                  >
+                    Save Changes
+                  </button>
+                </div>
+              </div>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
 
       {/* Related Products or More Info could go here */}
     </div>

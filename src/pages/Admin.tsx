@@ -1422,7 +1422,20 @@ export default function Admin({
     sizes: [],
     volumes: [],
     islatest: false,
-    images: []
+    images: [],
+    delivery_days_min: 2,
+    delivery_days_max: 5,
+    delivery_charge: 110,
+    delivery_charge_active: true,
+    cod_available: true,
+    change_of_mind_available: true,
+    easy_return_days: 14,
+    warranty_available: false,
+    warranty_duration: 'Warranty not available',
+    store_name: 'Buy More Save More Store',
+    seller_rating: '88%',
+    ship_on_time: '100%',
+    chat_response_rate: 'Not enough data'
   };
 
   const [newProduct, setNewProduct] = useState<Omit<Product, 'id'>>(initialProductState);
@@ -1511,7 +1524,20 @@ export default function Admin({
             volumes: editingProduct.volumes,
             stock: editingProduct.stock,
             is_latest: editingProduct.islatest,
-            images: editingProduct.images || []
+            images: editingProduct.images || [],
+            delivery_days_min: editingProduct.delivery_days_min,
+            delivery_days_max: editingProduct.delivery_days_max,
+            delivery_charge: editingProduct.delivery_charge,
+            delivery_charge_active: editingProduct.delivery_charge_active,
+            cod_available: editingProduct.cod_available,
+            change_of_mind_available: editingProduct.change_of_mind_available,
+            easy_return_days: editingProduct.easy_return_days,
+            warranty_available: editingProduct.warranty_available,
+            warranty_duration: editingProduct.warranty_duration,
+            store_name: editingProduct.store_name,
+            seller_rating: editingProduct.seller_rating,
+            ship_on_time: editingProduct.ship_on_time,
+            chat_response_rate: editingProduct.chat_response_rate
           }
         })
         .eq('id', editingProduct.id);
@@ -1545,7 +1571,20 @@ export default function Admin({
           volumes: newProduct.volumes,
           stock: Number(newProduct.stock),
           is_latest: newProduct.islatest,
-          images: newProduct.images || []
+          images: newProduct.images || [],
+          delivery_days_min: newProduct.delivery_days_min,
+          delivery_days_max: newProduct.delivery_days_max,
+          delivery_charge: newProduct.delivery_charge,
+          delivery_charge_active: newProduct.delivery_charge_active,
+          cod_available: newProduct.cod_available,
+          change_of_mind_available: newProduct.change_of_mind_available,
+          easy_return_days: newProduct.easy_return_days,
+          warranty_available: newProduct.warranty_available,
+          warranty_duration: newProduct.warranty_duration,
+          store_name: newProduct.store_name,
+          seller_rating: newProduct.seller_rating,
+          ship_on_time: newProduct.ship_on_time,
+          chat_response_rate: newProduct.chat_response_rate
         }
       }).select().single();
 
@@ -2433,6 +2472,242 @@ export default function Admin({
                     }
                     className="w-full px-5 py-4 bg-black/5 rounded-2xl focus:outline-none focus:ring-2 focus:ring-black/5 transition-all resize-none"
                   />
+                </div>
+
+                {/* Daraz-style Delivery & Service Options */}
+                <div className="space-y-6 border border-black/10 rounded-3xl p-5 bg-black/[0.01]">
+                  <h3 className="text-sm font-black uppercase tracking-wider text-black">
+                    Delivery & Service Options (Daraz Style)
+                  </h3>
+                  
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <div className="space-y-1.5">
+                      <label className="text-[10px] font-black uppercase tracking-widest text-black/40">Standard Delivery Charge (৳)</label>
+                      <input 
+                        type="number"
+                        min="0"
+                        value={isAddingNew ? (newProduct.delivery_charge ?? 110) : (editingProduct?.delivery_charge ?? 110)}
+                        onChange={(e) => isAddingNew 
+                          ? setNewProduct({...newProduct, delivery_charge: Number(e.target.value)})
+                          : setEditingProduct({...editingProduct!, delivery_charge: Number(e.target.value)})
+                        }
+                        className="w-full px-4 py-2.5 bg-black/5 rounded-xl text-xs font-bold focus:outline-none focus:ring-1 focus:ring-black/20"
+                      />
+                    </div>
+                    
+                    <div className="grid grid-cols-2 gap-2">
+                      <div className="space-y-1.5">
+                        <label className="text-[10px] font-black uppercase tracking-widest text-black/40">Min Days</label>
+                        <input 
+                          type="number"
+                          min="1"
+                          value={isAddingNew ? (newProduct.delivery_days_min ?? 2) : (editingProduct?.delivery_days_min ?? 2)}
+                          onChange={(e) => isAddingNew 
+                            ? setNewProduct({...newProduct, delivery_days_min: Number(e.target.value)})
+                            : setEditingProduct({...editingProduct!, delivery_days_min: Number(e.target.value)})
+                          }
+                          className="w-full px-4 py-2.5 bg-black/5 rounded-xl text-xs font-bold focus:outline-none focus:ring-1 focus:ring-black/20"
+                        />
+                      </div>
+                      <div className="space-y-1.5">
+                        <label className="text-[10px] font-black uppercase tracking-widest text-black/40">Max Days</label>
+                        <input 
+                          type="number"
+                          min="1"
+                          value={isAddingNew ? (newProduct.delivery_days_max ?? 5) : (editingProduct?.delivery_days_max ?? 5)}
+                          onChange={(e) => isAddingNew 
+                            ? setNewProduct({...newProduct, delivery_days_max: Number(e.target.value)})
+                            : setEditingProduct({...editingProduct!, delivery_days_max: Number(e.target.value)})
+                          }
+                          className="w-full px-4 py-2.5 bg-black/5 rounded-xl text-xs font-bold focus:outline-none focus:ring-1 focus:ring-black/20"
+                        />
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <div className="flex items-center gap-3 p-3 bg-white border border-black/5 rounded-xl">
+                      <button 
+                        type="button"
+                        onClick={() => isAddingNew 
+                          ? setNewProduct({...newProduct, delivery_charge_active: !(newProduct.delivery_charge_active ?? true)})
+                          : setEditingProduct({...editingProduct!, delivery_charge_active: !(editingProduct?.delivery_charge_active ?? true)})
+                        }
+                        className={`w-9 h-4.5 rounded-full relative transition-colors cursor-pointer focus:outline-none ${
+                          (isAddingNew ? (newProduct.delivery_charge_active ?? true) : (editingProduct?.delivery_charge_active ?? true)) ? 'bg-black' : 'bg-black/10'
+                        }`}
+                      >
+                        <div className={`absolute top-0.5 w-3.5 h-3.5 bg-white rounded-full transition-all ${
+                          (isAddingNew ? (newProduct.delivery_charge_active ?? true) : (editingProduct?.delivery_charge_active ?? true)) ? 'left-5' : 'left-0.5'
+                        }`} />
+                      </button>
+                      <div>
+                        <p className="text-[10px] font-bold">Standard Delivery</p>
+                        <p className="text-[8px] text-black/45">Show standard delivery details</p>
+                      </div>
+                    </div>
+
+                    <div className="flex items-center gap-3 p-3 bg-white border border-black/5 rounded-xl">
+                      <button 
+                        type="button"
+                        onClick={() => isAddingNew 
+                          ? setNewProduct({...newProduct, cod_available: !(newProduct.cod_available ?? true)})
+                          : setEditingProduct({...editingProduct!, cod_available: !(editingProduct?.cod_available ?? true)})
+                        }
+                        className={`w-9 h-4.5 rounded-full relative transition-colors cursor-pointer focus:outline-none ${
+                          (isAddingNew ? (newProduct.cod_available ?? true) : (editingProduct?.cod_available ?? true)) ? 'bg-black' : 'bg-black/10'
+                        }`}
+                      >
+                        <div className={`absolute top-0.5 w-3.5 h-3.5 bg-white rounded-full transition-all ${
+                          (isAddingNew ? (newProduct.cod_available ?? true) : (editingProduct?.cod_available ?? true)) ? 'left-5' : 'left-0.5'
+                        }`} />
+                      </button>
+                      <div>
+                        <p className="text-[10px] font-bold">Cash On Delivery (COD)</p>
+                        <p className="text-[8px] text-black/45">Toggle Cash on Delivery status</p>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <div className="flex items-center gap-3 p-3 bg-white border border-black/5 rounded-xl">
+                      <button 
+                        type="button"
+                        onClick={() => isAddingNew 
+                          ? setNewProduct({...newProduct, change_of_mind_available: !(newProduct.change_of_mind_available ?? true)})
+                          : setEditingProduct({...editingProduct!, change_of_mind_available: !(editingProduct?.change_of_mind_available ?? true)})
+                        }
+                        className={`w-9 h-4.5 rounded-full relative transition-colors cursor-pointer focus:outline-none ${
+                          (isAddingNew ? (newProduct.change_of_mind_available ?? true) : (editingProduct?.change_of_mind_available ?? true)) ? 'bg-black' : 'bg-black/10'
+                        }`}
+                      >
+                        <div className={`absolute top-0.5 w-3.5 h-3.5 bg-white rounded-full transition-all ${
+                          (isAddingNew ? (newProduct.change_of_mind_available ?? true) : (editingProduct?.change_of_mind_available ?? true)) ? 'left-5' : 'left-0.5'
+                        }`} />
+                      </button>
+                      <div>
+                        <p className="text-[10px] font-bold">Change of Mind</p>
+                        <p className="text-[8px] text-black/45">Is change of mind allowed?</p>
+                      </div>
+                    </div>
+
+                    <div className="space-y-1.5">
+                      <label className="text-[10px] font-black uppercase tracking-widest text-black/40">Easy Return Days</label>
+                      <input 
+                        type="number"
+                        min="0"
+                        placeholder="e.g. 14 (0 for none)"
+                        value={isAddingNew ? (newProduct.easy_return_days ?? 14) : (editingProduct?.easy_return_days ?? 14)}
+                        onChange={(e) => isAddingNew 
+                          ? setNewProduct({...newProduct, easy_return_days: Number(e.target.value)})
+                          : setEditingProduct({...editingProduct!, easy_return_days: Number(e.target.value)})
+                        }
+                        className="w-full px-4 py-2.5 bg-black/5 rounded-xl text-xs font-bold focus:outline-none focus:ring-1 focus:ring-black/20"
+                      />
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <div className="flex items-center gap-3 p-3 bg-white border border-black/5 rounded-xl">
+                      <button 
+                        type="button"
+                        onClick={() => isAddingNew 
+                          ? setNewProduct({...newProduct, warranty_available: !(newProduct.warranty_available ?? false)})
+                          : setEditingProduct({...editingProduct!, warranty_available: !(editingProduct?.warranty_available ?? false)})
+                        }
+                        className={`w-9 h-4.5 rounded-full relative transition-colors cursor-pointer focus:outline-none ${
+                          (isAddingNew ? (newProduct.warranty_available ?? false) : (editingProduct?.warranty_available ?? false)) ? 'bg-black' : 'bg-black/10'
+                        }`}
+                      >
+                        <div className={`absolute top-0.5 w-3.5 h-3.5 bg-white rounded-full transition-all ${
+                          (isAddingNew ? (newProduct.warranty_available ?? false) : (editingProduct?.warranty_available ?? false)) ? 'left-5' : 'left-0.5'
+                        }`} />
+                      </button>
+                      <div>
+                        <p className="text-[10px] font-bold">Warranty Available</p>
+                        <p className="text-[8px] text-black/45">Toggle warranty support</p>
+                      </div>
+                    </div>
+
+                    <div className="space-y-1.5">
+                      <label className="text-[10px] font-black uppercase tracking-widest text-black/40">Warranty Details</label>
+                      <input 
+                        type="text"
+                        placeholder="e.g. 1 Year Brand Warranty"
+                        value={isAddingNew ? (newProduct.warranty_duration || '') : (editingProduct?.warranty_duration || '')}
+                        onChange={(e) => isAddingNew 
+                          ? setNewProduct({...newProduct, warranty_duration: e.target.value})
+                          : setEditingProduct({...editingProduct!, warranty_duration: e.target.value})
+                        }
+                        className="w-full px-4 py-2.5 bg-black/5 rounded-xl text-xs font-bold focus:outline-none focus:ring-1 focus:ring-black/20"
+                      />
+                    </div>
+                  </div>
+
+                  <div className="border-t border-black/5 pt-4 space-y-4">
+                    <h4 className="text-xs font-black uppercase tracking-widest text-black/60">
+                      Seller / Store Information
+                    </h4>
+                    
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                      <div className="space-y-1.5">
+                        <label className="text-[10px] font-black uppercase tracking-widest text-black/40">Store Name</label>
+                        <input 
+                          type="text"
+                          value={isAddingNew ? (newProduct.store_name || 'Buy More Save More Store') : (editingProduct?.store_name || 'Buy More Save More Store')}
+                          onChange={(e) => isAddingNew 
+                            ? setNewProduct({...newProduct, store_name: e.target.value})
+                            : setEditingProduct({...editingProduct!, store_name: e.target.value})
+                          }
+                          className="w-full px-4 py-2.5 bg-black/5 rounded-xl text-xs font-bold focus:outline-none focus:ring-1 focus:ring-black/20"
+                        />
+                      </div>
+
+                      <div className="space-y-1.5">
+                        <label className="text-[10px] font-black uppercase tracking-widest text-black/40">Seller Ratings (Positive)</label>
+                        <input 
+                          type="text"
+                          placeholder="e.g. 88%"
+                          value={isAddingNew ? (newProduct.seller_rating || '88%') : (editingProduct?.seller_rating || '88%')}
+                          onChange={(e) => isAddingNew 
+                            ? setNewProduct({...newProduct, seller_rating: e.target.value})
+                            : setEditingProduct({...editingProduct!, seller_rating: e.target.value})
+                          }
+                          className="w-full px-4 py-2.5 bg-black/5 rounded-xl text-xs font-bold focus:outline-none focus:ring-1 focus:ring-black/20"
+                        />
+                      </div>
+                    </div>
+
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                      <div className="space-y-1.5">
+                        <label className="text-[10px] font-black uppercase tracking-widest text-black/40">Ship on Time Rate</label>
+                        <input 
+                          type="text"
+                          placeholder="e.g. 100%"
+                          value={isAddingNew ? (newProduct.ship_on_time || '100%') : (editingProduct?.ship_on_time || '100%')}
+                          onChange={(e) => isAddingNew 
+                            ? setNewProduct({...newProduct, ship_on_time: e.target.value})
+                            : setEditingProduct({...editingProduct!, ship_on_time: e.target.value})
+                          }
+                          className="w-full px-4 py-2.5 bg-black/5 rounded-xl text-xs font-bold focus:outline-none focus:ring-1 focus:ring-black/20"
+                        />
+                      </div>
+
+                      <div className="space-y-1.5">
+                        <label className="text-[10px] font-black uppercase tracking-widest text-black/40">Chat Response Rate</label>
+                        <input 
+                          type="text"
+                          placeholder="e.g. 95% or Not enough data"
+                          value={isAddingNew ? (newProduct.chat_response_rate || 'Not enough data') : (editingProduct?.chat_response_rate || 'Not enough data')}
+                          onChange={(e) => isAddingNew 
+                            ? setNewProduct({...newProduct, chat_response_rate: e.target.value})
+                            : setEditingProduct({...editingProduct!, chat_response_rate: e.target.value})
+                          }
+                          className="w-full px-4 py-2.5 bg-black/5 rounded-xl text-xs font-bold focus:outline-none focus:ring-1 focus:ring-black/20"
+                        />
+                      </div>
+                    </div>
+                  </div>
                 </div>
 
                 <div className="flex items-center gap-3 p-4 bg-black/5 rounded-2xl border border-black/5">

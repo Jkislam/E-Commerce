@@ -11,6 +11,27 @@ export interface Product {
   volumes?: string[];
   islatest?: boolean;
   images?: string[];
+  
+  // Delivery Options
+  delivery_days_min?: number;
+  delivery_days_max?: number;
+  delivery_charge?: number;
+  delivery_charge_active?: boolean;
+  
+  // COD Options
+  cod_available?: boolean;
+  
+  // Return & Warranty
+  change_of_mind_available?: boolean;
+  easy_return_days?: number;
+  warranty_available?: boolean;
+  warranty_duration?: string;
+  
+  // Store info
+  store_name?: string;
+  seller_rating?: string;
+  ship_on_time?: string;
+  chat_response_rate?: string;
 }
 
 export interface CartItem extends Product {

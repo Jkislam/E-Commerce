@@ -160,19 +160,20 @@ export default function App() {
     }
   }, [settings.metaPixelId]);
 
-  // Fetch products from Supabase on Mount
+  // Fetch public data (products & settings) from Supabase on Mount
   useEffect(() => {
+    let isSubscribed = true;
     let retryCount = 0;
     const maxRetries = 2; // Reduced from 3 for faster failure recovery
 
-    const loadData = async (retry = 0) => {
+    const loadPublicData = async (retry = 0) => {
       if (!isSubscribed) return;
       
       // Only set global loading for the first time or if products list is empty
       if (retry === 0 && products.length === 0) setDataLoading(true);
       setDataError(null);
       
-      // Safety timeout: force loading to false after 20 seconds
+      // Safety timeout: force loading to false after 10 seconds
       const timeoutId = setTimeout(() => {
         if (isSubscribed) {
           setDataLoading(false);
@@ -190,7 +191,7 @@ export default function App() {
       }, 10000);
 
       try {
-        console.log(`Fetching data... (Attempt ${retry + 1}/${maxRetries})`);
+        console.log(`Fetching public data... (Attempt ${retry + 1}/${maxRetries})`);
         
         // Exponential backoff for retries
         if (retry > 0) {
@@ -252,15 +253,13 @@ export default function App() {
           console.log('Failed to fetch settings from Supabase, using localStorage:', settingsErr);
         }
 
-        // Use a persistent health check or just wrap the select in a shorter timeout if possible
-        // But Supabase client doesn't support easy per-request timeouts
+        // Fetch products
         const { data: productsData, error: productsError } = await supabase
           .from('products')
           .select('*')
           .order('created_at', { ascending: false });
 
         if (productsError) {
-          // If it's a specific Supabase error like "Failed to fetch" (network error)
           throw productsError;
         }
 
@@ -279,87 +278,36 @@ export default function App() {
             sizes: p.details?.sizes,
             volumes: p.details?.volumes,
             stock: Number(p.details?.stock) || 0,
-            images: p.details?.images || []
+            images: p.details?.images || [],
+            // Delivery Options
+            delivery_days_min: p.details?.delivery_days_min !== undefined ? Number(p.details.delivery_days_min) : 2,
+            delivery_days_max: p.details?.delivery_days_max !== undefined ? Number(p.details.delivery_days_max) : 5,
+            delivery_charge: p.details?.delivery_charge !== undefined ? Number(p.details.delivery_charge) : 110,
+            delivery_charge_active: p.details?.delivery_charge_active !== undefined ? Boolean(p.details.delivery_charge_active) : true,
+            // COD Options
+            cod_available: p.details?.cod_available !== undefined ? Boolean(p.details.cod_available) : true,
+            // Return & Warranty
+            change_of_mind_available: p.details?.change_of_mind_available !== undefined ? Boolean(p.details.change_of_mind_available) : true,
+            easy_return_days: p.details?.easy_return_days !== undefined ? Number(p.details.easy_return_days) : 14,
+            warranty_available: p.details?.warranty_available !== undefined ? Boolean(p.details.warranty_available) : false,
+            warranty_duration: p.details?.warranty_duration || 'Warranty not available',
+            // Store Info
+            store_name: p.details?.store_name || 'Buy More Save More Store',
+            seller_rating: p.details?.seller_rating || '88%',
+            ship_on_time: p.details?.ship_on_time || '100%',
+            chat_response_rate: p.details?.chat_response_rate || 'Not enough data'
           })));
         }
-
-        if (currentUser && isSubscribed) {
-          // Fetch the user's cart from user_carts table
-          try {
-            const { data: cartData, error: cartError } = await supabase
-              .from('user_carts')
-              .select('items')
-              .eq('user_id', currentUser.id)
-              .maybeSingle();
-
-            if (!cartError && cartData && cartData.items && isSubscribed) {
-              const dbCart = cartData.items as CartItem[];
-              if (dbCart.length > 0) {
-                // Merge local cart and DB cart
-                setCart(prev => {
-                  const merged = [...prev];
-                  dbCart.forEach(dbItem => {
-                    const existing = merged.find(
-                      item => item.id === dbItem.id && item.selectedAttr === dbItem.selectedAttr
-                    );
-                    if (existing) {
-                      existing.quantity = Math.max(existing.quantity, dbItem.quantity);
-                    } else {
-                      merged.push(dbItem);
-                    }
-                  });
-                  return merged;
-                });
-              }
-            } else if (cartError) {
-              console.log('Error fetching cart from database (user_carts table may not be initialized yet):', cartError);
-            }
-          } catch (cartErr) {
-            console.log('Failed to fetch cart from DB:', cartErr);
-          }
-
-          let query = supabase.from('orders').select('*, order_items(*)');
-          if (currentUser.role !== 'admin' && currentUser.id) {
-            query = query.eq('user_id', currentUser.id);
-          }
-
-          const { data: ordersData, error: ordersError } = await query.order('created_at', { ascending: false });
-          if (ordersError) throw ordersError;
-          
-          if (isSubscribed && ordersData) {
-            setOrders(ordersData.map(o => ({
-              id: o.id,
-              customername: o.customer_name,
-              customeremail: o.customer_email,
-              customerphone: o.customer_phone,
-              customeraddress: o.customer_address,
-              total: Number(o.total || 0),
-              status: o.status,
-              paymentmethod: o.payment_method || 'Cash on Delivery',
-              transactionid: o.transaction_id,
-              createdat: o.created_at,
-              items: o.order_items?.map((item: any) => ({
-                id: item.product_id,
-                name: item.product_name,
-                quantity: item.quantity,
-                price: Number(item.price || 0),
-                selectedAttr: item.selected_attr,
-                image: item.image_url || ''
-              })) || []
-            } as Order)));
-          }
-        }
         
-        // If we reached here, loading succeeded
         setDataLoading(false);
       } catch (err: any) {
         const errorMessage = err.message || String(err);
         const isNetworkError = errorMessage.includes('Failed to fetch') || errorMessage.includes('network');
         
         if (isNetworkError) {
-          console.warn(`Data fetch connection issue (Attempt ${retry + 1}): ${errorMessage}`);
+          console.warn(`Public data fetch connection issue (Attempt ${retry + 1}): ${errorMessage}`);
         } else {
-          console.error(`Data fetch error (Attempt ${retry + 1}):`, errorMessage);
+          console.error(`Public data fetch error (Attempt ${retry + 1}):`, errorMessage);
         }
         
         // Immediately load fallback products on first failure so page is not empty during retries
@@ -376,7 +324,7 @@ export default function App() {
         if (isSubscribed && retry < maxRetries - 1) {
           console.log(`Scheduling retry ${retry + 2}...`);
           clearTimeout(timeoutId);
-          await loadData(retry + 1);
+          await loadPublicData(retry + 1);
           return;
         }
 
@@ -396,9 +344,120 @@ export default function App() {
       }
     };
 
+    loadPublicData();
+    return () => { isSubscribed = false; };
+  }, []); // Run ONCE on mount
+
+  // Fetch user-specific data (cart and orders) from Supabase when user changes
+  useEffect(() => {
     let isSubscribed = true;
+
+    const loadUserData = async () => {
+      if (!currentUser || !isSubscribed) return;
+
+      // Fetch the user's cart from user_carts table
+      try {
+        const { data: cartData, error: cartError } = await supabase
+          .from('user_carts')
+          .select('items')
+          .eq('user_id', currentUser.id)
+          .maybeSingle();
+
+        if (!cartError && cartData && cartData.items && isSubscribed) {
+          const dbCart = cartData.items as CartItem[];
+          if (dbCart.length > 0) {
+            // Merge local cart and DB cart
+            setCart(prev => {
+              const merged = [...prev];
+              dbCart.forEach(dbItem => {
+                const existing = merged.find(
+                  item => item.id === dbItem.id && item.selectedAttr === dbItem.selectedAttr
+                );
+                if (existing) {
+                  existing.quantity = Math.max(existing.quantity, dbItem.quantity);
+                } else {
+                  merged.push(dbItem);
+                }
+              });
+              return merged;
+            });
+          }
+        } else if (cartError) {
+          console.log('Error fetching cart from database (user_carts table may not be initialized yet):', cartError);
+        }
+      } catch (cartErr) {
+        console.log('Failed to fetch cart from DB:', cartErr);
+      }
+
+      // Fetch user's orders
+      try {
+        let ordersData: any[] | null = null;
+        
+        // Attempt nested query first
+        let query = supabase.from('orders').select('*, order_items(*)');
+        if (currentUser.role !== 'admin' && currentUser.id) {
+          query = query.eq('user_id', currentUser.id);
+        }
+
+        const { data: nestedData, error: nestedError } = await query.order('created_at', { ascending: false });
+        
+        if (!nestedError && nestedData) {
+          ordersData = nestedData;
+        } else {
+          // Fallback: Fetch orders and order_items separately to bypass potential PostgREST relation mapping issues
+          console.info('Nested orders query failed, attempting separate queries fallback:', nestedError?.message);
+          let fallbackQuery = supabase.from('orders').select('*');
+          if (currentUser.role !== 'admin' && currentUser.id) {
+            fallbackQuery = fallbackQuery.eq('user_id', currentUser.id);
+          }
+          const { data: simpleOrders, error: simpleError } = await fallbackQuery.order('created_at', { ascending: false });
+          if (simpleError) throw simpleError;
+
+          if (simpleOrders && simpleOrders.length > 0) {
+            const orderIds = simpleOrders.map(o => o.id);
+            const { data: itemsData, error: itemsError } = await supabase
+              .from('order_items')
+              .select('*')
+              .in('order_id', orderIds);
+
+            ordersData = simpleOrders.map(o => ({
+              ...o,
+              order_items: !itemsError && itemsData ? itemsData.filter(item => item.order_id === o.id) : []
+            }));
+          } else {
+            ordersData = simpleOrders || [];
+          }
+        }
+        
+        if (isSubscribed && ordersData) {
+          setOrders(ordersData.map(o => ({
+            id: o.id,
+            customername: o.customer_name,
+            customeremail: o.customer_email,
+            customerphone: o.customer_phone,
+            customeraddress: o.customer_address,
+            total: Number(o.total || 0),
+            status: o.status,
+            paymentmethod: o.payment_method || 'Cash on Delivery',
+            transactionid: o.transaction_id,
+            createdat: o.created_at,
+            items: o.order_items?.map((item: any) => ({
+              id: item.product_id,
+              name: item.product_name,
+              quantity: item.quantity,
+              price: Number(item.price || 0),
+              selectedAttr: item.selected_attr,
+              image: item.image_url || ''
+            })) || []
+          } as Order)));
+        }
+      } catch (ordersErr) {
+        console.warn('Gracefully handled order loading fallback:', ordersErr);
+      }
+    };
+
     if (!authLoading) {
-      loadData();
+      loadUserData();
     }
     return () => { isSubscribed = false; };
   }, [currentUser, authLoading]);

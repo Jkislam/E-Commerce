@@ -49,7 +49,7 @@ CREATE TABLE IF NOT EXISTS products (
   rating NUMERIC DEFAULT 0,
   category TEXT,
   image TEXT, -- এটি আপনার মেইন প্রোডাক্টের ছবি
-  details JSONB DEFAULT '{"sizes": [], "volumes": [], "stock": 0, "is_latest": false, "images": []}'::jsonb, -- এই কলামে অতিরিক্ত সব ছবি এবং ডিটেইলস সেভ থাকবে
+  details JSONB DEFAULT '{"sizes": [], "volumes": [], "stock": 0, "is_latest": false, "images": [], "delivery_days_min": 2, "delivery_days_max": 5, "delivery_charge": 110, "delivery_charge_active": true, "cod_available": true, "change_of_mind_available": true, "easy_return_days": 14, "warranty_available": false, "warranty_duration": "Warranty not available", "store_name": "Buy More Save More Store", "seller_rating": "88%", "ship_on_time": "100%", "chat_response_rate": "Not enough data"}'::jsonb, -- এই কলামে অতিরিক্ত সব ছবি এবং ডিটেইলস সেভ থাকবে
   created_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()) NOT NULL
 );
 
