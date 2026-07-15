@@ -30,6 +30,16 @@ export default function Checkout({ cart, cartTotal, clearCart, placeOrder, curre
 
   const activeTotal = expressProduct ? Number(expressProduct.price || 0) * expressQuantity : cartTotal;
 
+  const deliveryCharge = activeCart.reduce((sum, item) => {
+    const isActive = item.delivery_charge_active ?? true;
+    if (isActive) {
+      return sum + (item.delivery_charge ?? 110);
+    }
+    return sum;
+  }, 0);
+
+  const grandTotal = activeTotal + deliveryCharge;
+
   const [isProcessing, setIsProcessing] = useState(false);
   const [isOrderPlaced, setIsOrderPlaced] = useState(false);
   const [orderInfo, setOrderInfo] = useState<Order | null>(null);
@@ -90,7 +100,7 @@ export default function Checkout({ cart, cartTotal, clearCart, placeOrder, curre
         customerphone: formData.phone,
         customeraddress: `${formData.address}, ${formData.area}, ${formData.city}`,
         items: activeCart,
-        total: activeTotal,
+        total: grandTotal,
         paymentmethod: formData.paymentMethod,
         transactionid: formData.paymentMethod !== 'Cash on Delivery' ? formData.transactionId : undefined,
       }, !expressProduct);
@@ -147,7 +157,7 @@ export default function Checkout({ cart, cartTotal, clearCart, placeOrder, curre
             )}
             <div className="pt-4 border-t border-black/5 flex justify-between text-base font-bold">
               <span>Total Paid:</span>
-              <span>৳{Number(activeTotal || 0).toFixed(0)}</span>
+              <span>৳{Number(grandTotal || 0).toFixed(0)}</span>
             </div>
           </div>
         </div>
@@ -341,7 +351,7 @@ export default function Checkout({ cart, cartTotal, clearCart, placeOrder, curre
                       <div>
                         <p className="text-sm font-bold text-amber-900">Payment Instructions</p>
                         <p className="text-xs text-amber-800 mt-1 leading-relaxed">
-                          Please send <strong>৳{Number(activeTotal || 0).toFixed(0)}</strong> to our {formData.paymentMethod} number <strong>{settings?.paymentNumbers[formData.paymentMethod as keyof AppSettings['paymentNumbers']] || 'N/A'}</strong>. After sending the money, please enter the Transaction ID below to confirm your order.
+                          Please send <strong>৳{Number(grandTotal || 0).toFixed(0)}</strong> to our {formData.paymentMethod} number <strong>{settings?.paymentNumbers[formData.paymentMethod as keyof AppSettings['paymentNumbers']] || 'N/A'}</strong>. After sending the money, please enter the Transaction ID below to confirm your order.
                         </p>
                       </div>
                     </div>
@@ -372,7 +382,7 @@ export default function Checkout({ cart, cartTotal, clearCart, placeOrder, curre
                         Processing...
                       </>
                     ) : (
-                      `Confirm Order • ৳${Number(activeTotal || 0).toFixed(0)}`
+                      `Confirm Order • ৳${Number(grandTotal || 0).toFixed(0)}`
                     )}
                   </button>
                   <p className="text-[10px] text-center text-black/40 mt-4 uppercase tracking-widest font-bold">
@@ -412,12 +422,14 @@ export default function Checkout({ cart, cartTotal, clearCart, placeOrder, curre
                 <span className="font-bold">৳{Number(activeTotal || 0).toFixed(0)}</span>
               </div>
               <div className="flex justify-between text-sm">
-                <span className="text-black/40">Shipping</span>
-                <span className="font-bold text-green-600">FREE</span>
+                <span className="text-black/40">Delivery Charge</span>
+                <span className="font-bold text-gray-900">
+                  {deliveryCharge > 0 ? `৳${deliveryCharge.toFixed(0)}` : 'FREE'}
+                </span>
               </div>
               <div className="flex justify-between text-lg font-bold pt-4 border-t border-black/5">
                 <span>Total</span>
-                <span>৳{Number(activeTotal || 0).toFixed(0)}</span>
+                <span>৳{Number(grandTotal || 0).toFixed(0)}</span>
               </div>
             </div>
 

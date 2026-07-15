@@ -7,6 +7,7 @@ CREATE TABLE profiles (
   name TEXT,
   phone TEXT,
   address TEXT,
+  photourl TEXT,
   role TEXT DEFAULT 'customer' CHECK (role IN ('customer', 'admin')),
   created_at TIMESTAMP WITH TIME ZONE DEFAULT TIMEZONE('utc'::text, NOW()) NOT NULL
 );
@@ -221,3 +222,107 @@ CREATE POLICY "Users can manage their own cart." ON user_carts FOR ALL USING (
 ) WITH CHECK (
   auth.uid() = user_id
 );
+
+
+-- 7. Atomic Order Creation with Stock Validation Function (RPC)
+CREATE OR REPLACE FUNCTION public.create_order_v1(
+  p_user_id UUID,
+  p_customer_name TEXT,
+  p_customer_email TEXT,
+  p_customer_phone TEXT,
+  p_customer_address TEXT,
+  p_total NUMERIC,
+  p_payment_method TEXT,
+  p_transaction_id TEXT,
+  p_order_items JSONB
+)
+RETURNS JSONB
+LANGUAGE plpgsql
+SECURITY DEFINER
+AS $$
+DECLARE
+  v_order_id UUID;
+  v_item RECORD;
+  v_current_stock INTEGER;
+  v_created_at TIMESTAMP WITH TIME ZONE;
+BEGIN
+  -- 1. Validate stock for each item before inserting anything
+  FOR v_item IN SELECT * FROM jsonb_to_recordset(p_order_items) AS x(p_id UUID, p_qty INTEGER, p_name TEXT) LOOP
+    SELECT COALESCE((details->>'stock')::INTEGER, 0)
+    INTO v_current_stock
+    FROM public.products
+    WHERE id = v_item.p_id;
+
+    IF NOT FOUND THEN
+      RAISE EXCEPTION 'Product % not found', v_item.p_name;
+    END IF;
+
+    IF v_current_stock < v_item.p_qty THEN
+      RAISE EXCEPTION 'Insufficient stock for product %', v_item.p_name;
+    END IF;
+  END LOOP;
+
+  -- 2. Create the order
+  INSERT INTO public.orders (
+    user_id,
+    customer_name,
+    customer_email,
+    customer_phone,
+    customer_address,
+    total,
+    payment_method,
+    transaction_id,
+    status
+  )
+  VALUES (
+    p_user_id,
+    p_customer_name,
+    p_customer_email,
+    p_customer_phone,
+    p_customer_address,
+    p_total,
+    p_payment_method,
+    p_transaction_id,
+    'Pending'
+  )
+  RETURNING id, created_at INTO v_order_id, v_created_at;
+
+  -- 3. Create order items and update stock
+  FOR v_item IN SELECT * FROM jsonb_to_recordset(p_order_items) AS x(p_id UUID, p_qty INTEGER, p_name TEXT, p_price NUMERIC, p_attr TEXT, p_image TEXT) LOOP
+    -- Insert into order_items
+    INSERT INTO public.order_items (
+      order_id,
+      product_id,
+      product_name,
+      quantity,
+      price,
+      selected_attr,
+      image_url
+    )
+    VALUES (
+      v_order_id,
+      v_item.p_id,
+      v_item.p_name,
+      v_item.p_qty,
+      v_item.p_price,
+      v_item.p_attr,
+      v_item.p_image
+    );
+
+    -- Deduct stock from details JSONB column in products
+    UPDATE public.products
+    SET details = jsonb_set(
+      details, 
+      '{stock}', 
+      to_jsonb(COALESCE((details->>'stock')::INTEGER, 0) - v_item.p_qty)
+    )
+    WHERE id = v_item.p_id;
+  END LOOP;
+
+  -- 4. Return success response
+  RETURN jsonb_build_object(
+    'order_id', v_order_id,
+    'created_at', v_created_at
+  );
+END;
+$$;
