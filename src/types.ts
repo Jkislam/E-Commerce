@@ -93,4 +93,5 @@ export interface AppSettings {
   contactHours?: string;
   contactImageTop?: string;
   contactImageBottom?: string;
+  delivery_duration_info?: string;
 }

@@ -243,6 +243,7 @@ export default function App() {
                 contactHours: settingsData.contact_hours,
                 contactImageTop: settingsData.contact_image_top,
                 contactImageBottom: settingsData.contact_image_bottom,
+                delivery_duration_info: settingsData.delivery_duration_info || 'Delivery within 2-3 days in Dhaka, 3-5 days outside Dhaka.',
               };
             }
             setSettings(prev => ({ ...prev, ...loadedSettings }));
@@ -493,6 +494,7 @@ export default function App() {
             contact_hours: settings.contactHours,
             contact_image_top: settings.contactImageTop,
             contact_image_bottom: settings.contactImageBottom,
+            delivery_duration_info: settings.delivery_duration_info,
             updated_at: new Date().toISOString()
           };
 

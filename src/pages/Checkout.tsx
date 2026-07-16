@@ -437,7 +437,7 @@ export default function Checkout({ cart, cartTotal, clearCart, placeOrder, curre
               <div className="flex items-start gap-3 p-4 bg-amber-50 rounded-2xl">
                 <MapPin className="w-5 h-5 text-amber-600 mt-0.5" />
                 <p className="text-xs text-amber-800 leading-relaxed">
-                  Delivery within 2-3 days in Dhaka, 3-5 days outside Dhaka.
+                  {settings?.delivery_duration_info || 'Delivery within 2-3 days in Dhaka, 3-5 days outside Dhaka.'}
                 </p>
               </div>
             </div>

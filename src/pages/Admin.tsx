@@ -138,6 +138,7 @@ function SettingsView({ settings, setSettings, setSuccessMessage }: SettingsView
   const [metaPixelId, setMetaPixelId] = useState(settings.metaPixelId || '');
   const [seoKeywords, setSeoKeywords] = useState(settings.seoKeywords || 'AL-Hurumah, Panjabi, Attar, Traditional Wear, Fragrances, Premium Panjabi, Authentic Attar');
   const [logo, setLogo] = useState(settings.logo || '');
+  const [deliveryDurationInfo, setDeliveryDurationInfo] = useState(settings.delivery_duration_info || 'Delivery within 2-3 days in Dhaka, 3-5 days outside Dhaka.');
 
   const handleUpdateHero = async () => {
     // Update local state (which syncs to localStorage in App.tsx)
@@ -157,7 +158,8 @@ function SettingsView({ settings, setSettings, setSuccessMessage }: SettingsView
       brandName,
       footerDescription,
       metaPixelId,
-      seoKeywords
+      seoKeywords,
+      delivery_duration_info: deliveryDurationInfo
     }));
     setSuccessMessage('সফল ভাবে আপডেট হয়েছে।');
   };
@@ -385,6 +387,17 @@ function SettingsView({ settings, setSettings, setSuccessMessage }: SettingsView
                 placeholder="e.g. AL-Hurumah, Panjabi, Attar, Traditional Wear"
               />
               <p className="text-xs text-black/40 ml-1 mt-1">Comma-separated keywords for search engines.</p>
+            </div>
+            <div className="space-y-2 md:col-span-2">
+              <label className="text-[10px] font-black uppercase tracking-widest text-black/40 ml-1">Delivery Duration Info</label>
+              <input 
+                type="text"
+                value={deliveryDurationInfo}
+                onChange={(e) => setDeliveryDurationInfo(e.target.value)}
+                className="w-full px-6 py-4 bg-black/5 rounded-2xl focus:outline-none focus:ring-2 focus:ring-black/10 transition-all text-sm font-bold"
+                placeholder="Delivery within 2-3 days in Dhaka, 3-5 days outside Dhaka."
+              />
+              <p className="text-xs text-black/40 ml-1 mt-1">This text is shown on the checkout page to inform customers about the delivery time.</p>
             </div>
             <div className="md:col-span-2 flex justify-end">
               <motion.button 

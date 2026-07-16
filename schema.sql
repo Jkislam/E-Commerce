@@ -157,6 +157,7 @@ CREATE TABLE site_settings (
   contact_hours TEXT DEFAULT '10:00 AM - 09:00 PM',
   contact_image_top TEXT DEFAULT 'https://images.unsplash.com/photo-1534536281715-e28d76689b4d?auto=format&fit=crop&q=80&w=2000',
   contact_image_bottom TEXT DEFAULT 'https://images.unsplash.com/photo-1497366754035-f200968a6e72?auto=format&fit=crop&q=80&w=2000',
+  delivery_duration_info TEXT DEFAULT 'Delivery within 2-3 days in Dhaka, 3-5 days outside Dhaka.',
   updated_at TIMESTAMP WITH TIME ZONE DEFAULT TIMEZONE('utc'::text, NOW()) NOT NULL
 );
 
@@ -176,7 +177,7 @@ INSERT INTO site_settings (
   footer_description, meta_pixel_id, seo_keywords, 
   about_text_1, about_text_2, about_mission, about_vision, 
   contact_email, contact_phone, contact_address, contact_hours, 
-  contact_image_top, contact_image_bottom
+  contact_image_top, contact_image_bottom, delivery_duration_info
 )
 VALUES (
   'global_settings', 
@@ -201,7 +202,8 @@ VALUES (
   'Gulshan-2, Dhaka', 
   '10:00 AM - 09:00 PM',
   'https://images.unsplash.com/photo-1534536281715-e28d76689b4d?auto=format&fit=crop&q=80&w=2000',
-  'https://images.unsplash.com/photo-1497366754035-f200968a6e72?auto=format&fit=crop&q=80&w=2000'
+  'https://images.unsplash.com/photo-1497366754035-f200968a6e72?auto=format&fit=crop&q=80&w=2000',
+  'Delivery within 2-3 days in Dhaka, 3-5 days outside Dhaka.'
 )
 ON CONFLICT (id) DO NOTHING;
 
