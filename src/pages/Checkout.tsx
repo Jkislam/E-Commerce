@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { motion } from 'motion/react';
-import { ShoppingBag, ArrowLeft, CheckCircle2, Truck, CreditCard, MapPin } from 'lucide-react';
+import { ShoppingBag, ArrowLeft, CheckCircle2, Truck, CreditCard, MapPin, Rocket } from 'lucide-react';
 import { CartItem, Order, User, AppSettings } from '../types';
 
 interface CheckoutProps {
@@ -303,91 +303,180 @@ export default function Checkout({ cart, cartTotal, clearCart, placeOrder, curre
             <motion.div
               initial={{ opacity: 0, x: 20 }}
               animate={{ opacity: 1, x: 0 }}
+              className="space-y-6"
             >
-              <h1 className="text-3xl font-bold mb-8">Payment Method</h1>
+              <h2 className="text-xl font-bold text-gray-800">Select Payment Method</h2>
               
-              <form onSubmit={handleSubmit} className="space-y-8">
-                <div className="space-y-4">
+              <form onSubmit={handleSubmit} className="space-y-6">
+                {/* Daraz-style Payment Tabs Grid */}
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-3 bg-gray-50 p-2.5 rounded-2xl border border-black/5">
                   {[
-                    { id: 'Cash on Delivery', icon: Truck, desc: 'Pay when you receive' },
-                    { id: 'bKash', icon: CreditCard, desc: `Send money to ${settings?.paymentNumbers?.bKash || '017XXXXXXXX'}` },
-                    { id: 'Nagad', icon: CreditCard, desc: `Send money to ${settings?.paymentNumbers?.Nagad || '018XXXXXXXX'}` },
-                    { id: 'Rocket', icon: CreditCard, desc: `Send money to ${settings?.paymentNumbers?.Rocket || '019XXXXXXXX'}` }
-                  ].map((method) => (
-                    <label 
-                      key={method.id}
-                      className={`relative flex items-center p-6 border-2 rounded-2xl cursor-pointer transition-all ${formData.paymentMethod === method.id ? 'border-black bg-black/5' : 'border-black/5 hover:border-black/20'}`}
-                    >
-                      <input 
-                        type="radio" 
-                        name="paymentMethod" 
-                        value={method.id} 
-                        checked={formData.paymentMethod === method.id}
-                        onChange={handleInputChange}
-                        className="hidden"
-                      />
-                      <method.icon className={`w-6 h-6 mr-4 ${formData.paymentMethod === method.id ? 'text-black' : 'text-black/20'}`} />
-                      <div className="flex-1">
-                        <p className="font-bold text-base">{method.id}</p>
-                        <p className="text-xs text-black/40">{method.desc}</p>
-                      </div>
-                      <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center ${formData.paymentMethod === method.id ? 'border-black' : 'border-black/10'}`}>
-                        {formData.paymentMethod === method.id && <div className="w-2.5 h-2.5 bg-black rounded-full" />}
-                      </div>
-                    </label>
-                  ))}
+                    { 
+                      id: 'Cash on Delivery', 
+                      label: 'Cash on Delivery',
+                      brandText: 'COD',
+                      brandColor: 'text-[#0088cc]',
+                      bgAccent: 'bg-[#0088cc]/5',
+                      activeBorder: 'border-[#0088cc]',
+                      activeRing: 'ring-[#0088cc]/10',
+                      renderIcon: (active: boolean) => (
+                        <div className={`w-10 h-10 rounded-xl flex items-center justify-center transition-all ${active ? 'bg-[#0088cc]/10 text-[#0088cc]' : 'bg-white text-gray-400 group-hover:text-gray-600'}`}>
+                          <Truck className="w-5 h-5" />
+                        </div>
+                      )
+                    },
+                    { 
+                      id: 'bKash', 
+                      label: 'bKash',
+                      brandText: 'bKash',
+                      brandColor: 'text-[#e2136e]',
+                      bgAccent: 'bg-[#e2136e]/5',
+                      activeBorder: 'border-[#e2136e]',
+                      activeRing: 'ring-[#e2136e]/10',
+                      renderIcon: (active: boolean) => (
+                        <div className={`w-10 h-10 rounded-xl flex items-center justify-center transition-all ${active ? 'bg-[#e2136e]/10 text-[#e2136e]' : 'bg-white text-gray-400 group-hover:text-gray-600'}`}>
+                          <span className="font-black text-[11px] tracking-tighter">bKash</span>
+                        </div>
+                      )
+                    },
+                    { 
+                      id: 'Nagad', 
+                      label: 'Nagad',
+                      brandText: 'নগদ',
+                      brandColor: 'text-[#f57224]',
+                      bgAccent: 'bg-[#f57224]/5',
+                      activeBorder: 'border-[#f57224]',
+                      activeRing: 'ring-[#f57224]/10',
+                      renderIcon: (active: boolean) => (
+                        <div className={`w-10 h-10 rounded-xl flex items-center justify-center transition-all ${active ? 'bg-[#f57224]/10 text-[#f57224]' : 'bg-white text-gray-400 group-hover:text-gray-600'}`}>
+                          <span className="font-black text-xs tracking-tighter">নগদ</span>
+                        </div>
+                      )
+                    },
+                    { 
+                      id: 'Rocket', 
+                      label: 'Rocket',
+                      brandText: 'Rocket',
+                      brandColor: 'text-[#8c348d]',
+                      bgAccent: 'bg-[#8c348d]/5',
+                      activeBorder: 'border-[#8c348d]',
+                      activeRing: 'ring-[#8c348d]/10',
+                      renderIcon: (active: boolean) => (
+                        <div className={`w-10 h-10 rounded-xl flex items-center justify-center transition-all ${active ? 'bg-[#8c348d]/10 text-[#8c348d]' : 'bg-white text-gray-400 group-hover:text-gray-600'}`}>
+                          <Rocket className="w-5 h-5 text-[#8c348d]" />
+                        </div>
+                      )
+                    }
+                  ].map((method) => {
+                    const isSelected = formData.paymentMethod === method.id;
+                    return (
+                      <label 
+                        key={method.id}
+                        className={`group relative flex flex-col items-center justify-center p-4 border-2 rounded-xl cursor-pointer transition-all select-none text-center ${
+                          isSelected 
+                            ? `bg-white ${method.activeBorder} shadow-sm ring-4 ${method.activeRing}` 
+                            : 'bg-white border-transparent hover:bg-gray-100 hover:border-gray-200'
+                        }`}
+                      >
+                        <input 
+                          type="radio" 
+                          name="paymentMethod" 
+                          value={method.id} 
+                          checked={isSelected}
+                          onChange={handleInputChange}
+                          className="hidden"
+                        />
+                        
+                        {method.renderIcon(isSelected)}
+
+                        <span className={`font-bold text-xs mt-2.5 transition-colors ${isSelected ? 'text-black' : 'text-black/50 group-hover:text-black/70'}`}>
+                          {method.label}
+                        </span>
+
+                        {/* Tiny active indicator badge */}
+                        {isSelected && (
+                          <div className={`absolute top-2 right-2 w-2 h-2 rounded-full ${method.brandColor.replace('text-', 'bg-')}`} />
+                        )}
+                      </label>
+                    );
+                  })}
                 </div>
 
-                {formData.paymentMethod !== 'Cash on Delivery' && (
-                  <motion.div 
-                    initial={{ opacity: 0, y: -10 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    className="p-6 bg-amber-50 rounded-2xl border border-amber-100 space-y-4"
-                  >
-                    <div className="flex items-start gap-3">
-                      <div className="w-8 h-8 bg-amber-100 rounded-full flex items-center justify-center flex-shrink-0">
-                        <span className="text-amber-700 font-bold text-sm">!</span>
-                      </div>
-                      <div>
-                        <p className="text-sm font-bold text-amber-900">Payment Instructions</p>
-                        <p className="text-xs text-amber-800 mt-1 leading-relaxed">
-                          Please send <strong>৳{Number(grandTotal || 0).toFixed(0)}</strong> to our {formData.paymentMethod} number <strong>{settings?.paymentNumbers[formData.paymentMethod as keyof AppSettings['paymentNumbers']] || 'N/A'}</strong>. After sending the money, please enter the Transaction ID below to confirm your order.
-                        </p>
-                      </div>
+                {/* Unified Detail Panel inspired by Daraz */}
+                <div className="bg-white border border-black/5 rounded-2xl p-6 md:p-8 space-y-6 shadow-sm">
+                  {formData.paymentMethod === 'Cash on Delivery' ? (
+                    <div className="space-y-4">
+                      <p className="text-sm font-bold text-gray-800">Please ensure the following before you proceed:</p>
+                      <ul className="text-xs text-gray-600 space-y-3 pl-1">
+                        <li className="flex gap-2">
+                          <span className="font-bold text-gray-400">1.</span>
+                          <span>You have to pay the rider <strong>৳{Number(grandTotal || 0).toFixed(0)}</strong> in cash when the delivery is received.</span>
+                        </li>
+                        <li className="flex gap-2">
+                          <span className="font-bold text-gray-400">2.</span>
+                          <span>Please ensure your phone number <strong className="font-mono">{formData.phone}</strong> is reachable during the delivery window.</span>
+                        </li>
+                        <li className="flex gap-2">
+                          <span className="font-bold text-gray-400">3.</span>
+                          <span>Double check your shipping address: <strong>{formData.address}, {formData.area}, {formData.city}</strong>.</span>
+                        </li>
+                      </ul>
                     </div>
-                    <div className="space-y-2">
-                      <label className="text-[10px] font-black uppercase tracking-widest text-amber-900/40 ml-1">Transaction ID</label>
-                      <input 
-                        required
-                        type="text"
-                        name="transactionId"
-                        value={formData.transactionId}
-                        onChange={handleInputChange}
-                        placeholder="Enter your Transaction ID"
-                        className="w-full px-5 py-4 bg-white border border-amber-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-amber-500/20 transition-all font-mono text-sm"
-                      />
-                    </div>
-                  </motion.div>
-                )}
+                  ) : (
+                    <div className="space-y-5">
+                      <div className="space-y-4">
+                        <p className="text-sm font-bold text-gray-800">Please ensure the following before you proceed:</p>
+                        <ul className="text-xs text-gray-600 space-y-3 pl-1">
+                          <li className="flex gap-2">
+                            <span className="font-bold text-gray-400">1.</span>
+                            <span>Please send <strong>৳{Number(grandTotal || 0).toFixed(0)}</strong> to our {formData.paymentMethod} number: <strong className="text-black bg-black/5 px-2 py-0.5 rounded text-sm select-all">{settings?.paymentNumbers[formData.paymentMethod as keyof AppSettings['paymentNumbers']] || 'N/A'}</strong>.</span>
+                          </li>
+                          <li className="flex gap-2">
+                            <span className="font-bold text-gray-400">2.</span>
+                            <span>After completing the transaction, enter the Transaction ID in the input field below to verify your payment.</span>
+                          </li>
+                          <li className="flex gap-2">
+                            <span className="font-bold text-gray-400">3.</span>
+                            <span>Please double check that you are sending the money to our official account.</span>
+                          </li>
+                        </ul>
+                      </div>
 
-                <div className="pt-4">
-                  <button 
-                    type="submit"
-                    disabled={isProcessing}
-                    className="w-full py-5 bg-black text-white rounded-2xl font-bold text-lg hover:bg-black/90 transition-all shadow-xl disabled:bg-black/40 disabled:cursor-not-allowed flex items-center justify-center gap-3"
-                  >
-                    {isProcessing ? (
-                      <>
-                        <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-                        Processing...
-                      </>
-                    ) : (
-                      `Confirm Order • ৳${Number(grandTotal || 0).toFixed(0)}`
-                    )}
-                  </button>
-                  <p className="text-[10px] text-center text-black/40 mt-4 uppercase tracking-widest font-bold">
-                    Secure Checkout Powered by {settings.brandName || 'AL-Hurumah'}
-                  </p>
+                      <div className="space-y-2 pt-4 border-t border-black/5">
+                        <label className="text-[10px] font-black uppercase tracking-widest text-black/40">Transaction ID</label>
+                        <input 
+                          required
+                          type="text"
+                          name="transactionId"
+                          value={formData.transactionId}
+                          onChange={handleInputChange}
+                          placeholder="Enter your Transaction ID (e.g. 9J28K9L2)"
+                          className="w-full px-5 py-4 bg-black/5 border border-black/5 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#f57224]/30 focus:border-[#f57224] focus:bg-white transition-all font-mono text-sm"
+                        />
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Primary Pay Now Action Button inside the active panel */}
+                  <div className="pt-4 border-t border-black/5 flex flex-col md:flex-row md:items-center justify-between gap-4">
+                    <p className="text-xs text-black/40 order-2 md:order-1 uppercase tracking-wider font-bold">
+                      Secure Checkout Powered by {settings.brandName || 'AL-Hurumah'}
+                    </p>
+                    <button 
+                      type="submit"
+                      disabled={isProcessing}
+                      className="order-1 md:order-2 px-12 py-4 bg-[#f57224] hover:bg-[#e05e13] text-white rounded-xl font-bold text-base transition-all shadow-md hover:shadow-lg disabled:bg-gray-300 disabled:text-gray-500 disabled:cursor-not-allowed flex items-center justify-center gap-3 w-full md:w-auto"
+                    >
+                      {isProcessing ? (
+                        <>
+                          <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                          Processing...
+                        </>
+                      ) : (
+                        `Pay Now`
+                      )}
+                    </button>
+                  </div>
                 </div>
               </form>
             </motion.div>
