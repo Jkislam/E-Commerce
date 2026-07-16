@@ -320,7 +320,7 @@ export default function Checkout({ cart, cartTotal, clearCart, placeOrder, curre
                       activeBorder: 'border-[#0088cc]',
                       activeRing: 'ring-[#0088cc]/10',
                       renderIcon: (active: boolean) => (
-                        <div className={`w-10 h-10 rounded-xl flex items-center justify-center transition-all ${active ? 'bg-[#0088cc]/10 text-[#0088cc]' : 'bg-white text-gray-400 group-hover:text-gray-600'}`}>
+                        <div className={`w-14 h-10 rounded-xl flex items-center justify-center transition-all ${active ? 'bg-[#0088cc]/10 text-[#0088cc]' : 'bg-gray-100 text-gray-400 group-hover:text-gray-600'}`}>
                           <Truck className="w-5 h-5" />
                         </div>
                       )
@@ -333,9 +333,14 @@ export default function Checkout({ cart, cartTotal, clearCart, placeOrder, curre
                       bgAccent: 'bg-[#e2136e]/5',
                       activeBorder: 'border-[#e2136e]',
                       activeRing: 'ring-[#e2136e]/10',
-                      renderIcon: (active: boolean) => (
-                        <div className={`w-10 h-10 rounded-xl flex items-center justify-center transition-all ${active ? 'bg-[#e2136e]/10 text-[#e2136e]' : 'bg-white text-gray-400 group-hover:text-gray-600'}`}>
-                          <span className="font-black text-[11px] tracking-tighter">bKash</span>
+                      renderIcon: () => (
+                        <div className="w-14 h-10 rounded-xl flex items-center justify-center overflow-hidden bg-white p-1 select-none">
+                          <img 
+                            src="/image/bKash%20Logo.png" 
+                            alt="bKash" 
+                            className="h-full w-full object-contain pointer-events-none"
+                            referrerPolicy="no-referrer"
+                          />
                         </div>
                       )
                     },
@@ -347,9 +352,14 @@ export default function Checkout({ cart, cartTotal, clearCart, placeOrder, curre
                       bgAccent: 'bg-[#f57224]/5',
                       activeBorder: 'border-[#f57224]',
                       activeRing: 'ring-[#f57224]/10',
-                      renderIcon: (active: boolean) => (
-                        <div className={`w-10 h-10 rounded-xl flex items-center justify-center transition-all ${active ? 'bg-[#f57224]/10 text-[#f57224]' : 'bg-white text-gray-400 group-hover:text-gray-600'}`}>
-                          <span className="font-black text-xs tracking-tighter">নগদ</span>
+                      renderIcon: () => (
+                        <div className="w-14 h-10 rounded-xl flex items-center justify-center overflow-hidden bg-white p-1 select-none">
+                          <img 
+                            src="/image/Nagad%20Logo.png" 
+                            alt="Nagad" 
+                            className="h-full w-full object-contain pointer-events-none"
+                            referrerPolicy="no-referrer"
+                          />
                         </div>
                       )
                     },
@@ -361,9 +371,14 @@ export default function Checkout({ cart, cartTotal, clearCart, placeOrder, curre
                       bgAccent: 'bg-[#8c348d]/5',
                       activeBorder: 'border-[#8c348d]',
                       activeRing: 'ring-[#8c348d]/10',
-                      renderIcon: (active: boolean) => (
-                        <div className={`w-10 h-10 rounded-xl flex items-center justify-center transition-all ${active ? 'bg-[#8c348d]/10 text-[#8c348d]' : 'bg-white text-gray-400 group-hover:text-gray-600'}`}>
-                          <Rocket className="w-5 h-5 text-[#8c348d]" />
+                      renderIcon: () => (
+                        <div className="w-14 h-10 rounded-xl flex items-center justify-center overflow-hidden bg-white p-1 select-none">
+                          <img 
+                            src="/image/Rocket%20Logo.png" 
+                            alt="Rocket" 
+                            className="h-full w-full object-contain pointer-events-none"
+                            referrerPolicy="no-referrer"
+                          />
                         </div>
                       )
                     }
