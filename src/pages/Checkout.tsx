@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { motion } from 'motion/react';
 import { ShoppingBag, ArrowLeft, CheckCircle2, Truck, CreditCard, Rocket } from 'lucide-react';
@@ -28,6 +28,8 @@ export default function Checkout({ cart, cartTotal, clearCart, placeOrder, curre
     selectedAttr: expressAttr
   } as CartItem] : cart;
 
+  const isCODAvailable = activeCart.length > 0 && activeCart.every(item => item.cod_available !== false);
+
   const activeTotal = expressProduct ? Number(expressProduct.price || 0) * expressQuantity : cartTotal;
 
   const deliveryCharge = activeCart.reduce((sum, item) => {
@@ -50,9 +52,15 @@ export default function Checkout({ cart, cartTotal, clearCart, placeOrder, curre
     address: currentUser?.address || '',
     city: '',
     area: '',
-    paymentMethod: 'Cash on Delivery' as Order['paymentmethod'],
+    paymentMethod: (isCODAvailable ? 'Cash on Delivery' : 'bKash') as Order['paymentmethod'],
     transactionId: ''
   });
+
+  useEffect(() => {
+    if (!isCODAvailable && formData.paymentMethod === 'Cash on Delivery') {
+      setFormData(prev => ({ ...prev, paymentMethod: 'bKash' }));
+    }
+  }, [isCODAvailable, formData.paymentMethod]);
 
   if (activeCart.length === 0 && !isOrderPlaced) {
     return (
@@ -187,9 +195,9 @@ export default function Checkout({ cart, cartTotal, clearCart, placeOrder, curre
             if (step === 1) {
               const productId = expressProduct?.id || (activeCart.length > 0 ? activeCart[0].id : null);
               if (productId) {
-                navigate(`/product/${productId}`, { state: { openCart: true } });
+                navigate(`/product/${productId}`);
               } else {
-                navigate('/', { state: { openCart: true } });
+                navigate('/');
               }
             } else {
               prevStep();
@@ -320,8 +328,8 @@ export default function Checkout({ cart, cartTotal, clearCart, placeOrder, curre
               
               <form onSubmit={handleSubmit} className="space-y-6">
                 {/* Daraz-style Payment Tabs Grid */}
-                <div className="grid grid-cols-2 md:grid-cols-4 gap-3 bg-gray-50 p-2.5 rounded-2xl border border-black/5">
-                  {[
+                {(() => {
+                  const methods = [
                     { 
                       id: 'Cash on Delivery', 
                       label: 'Cash on Delivery',
@@ -393,40 +401,46 @@ export default function Checkout({ cart, cartTotal, clearCart, placeOrder, curre
                         </div>
                       )
                     }
-                  ].map((method) => {
-                    const isSelected = formData.paymentMethod === method.id;
-                    return (
-                      <label 
-                        key={method.id}
-                        className={`group relative flex flex-col items-center justify-center p-4 border-2 rounded-xl cursor-pointer transition-all select-none text-center ${
-                          isSelected 
-                            ? `bg-white ${method.activeBorder} shadow-sm ring-4 ${method.activeRing}` 
-                            : 'bg-white border-transparent hover:bg-gray-100 hover:border-gray-200'
-                        }`}
-                      >
-                        <input 
-                          type="radio" 
-                          name="paymentMethod" 
-                          value={method.id} 
-                          checked={isSelected}
-                          onChange={handleInputChange}
-                          className="hidden"
-                        />
-                        
-                        {method.renderIcon(isSelected)}
+                  ].filter(m => m.id !== 'Cash on Delivery' || isCODAvailable);
 
-                        <span className={`font-bold text-xs mt-2.5 transition-colors ${isSelected ? 'text-black' : 'text-black/50 group-hover:text-black/70'}`}>
-                          {method.label}
-                        </span>
+                  return (
+                    <div className={`grid grid-cols-2 ${methods.length === 3 ? 'md:grid-cols-3' : 'md:grid-cols-4'} gap-3 bg-gray-50 p-2.5 rounded-2xl border border-black/5`}>
+                      {methods.map((method) => {
+                        const isSelected = formData.paymentMethod === method.id;
+                        return (
+                          <label 
+                            key={method.id}
+                            className={`group relative flex flex-col items-center justify-center p-4 border-2 rounded-xl cursor-pointer transition-all select-none text-center ${
+                              isSelected 
+                                ? `bg-white ${method.activeBorder} shadow-sm ring-4 ${method.activeRing}` 
+                                : 'bg-white border-transparent hover:bg-gray-100 hover:border-gray-200'
+                            }`}
+                          >
+                            <input 
+                              type="radio" 
+                              name="paymentMethod" 
+                              value={method.id} 
+                              checked={isSelected}
+                              onChange={handleInputChange}
+                              className="hidden"
+                            />
+                            
+                            {method.renderIcon(isSelected)}
 
-                        {/* Tiny active indicator badge */}
-                        {isSelected && (
-                          <div className={`absolute top-2 right-2 w-2 h-2 rounded-full ${method.brandColor.replace('text-', 'bg-')}`} />
-                        )}
-                      </label>
-                    );
-                  })}
-                </div>
+                            <span className={`font-bold text-xs mt-2.5 transition-colors ${isSelected ? 'text-black' : 'text-black/50 group-hover:text-black/70'}`}>
+                              {method.label}
+                            </span>
+
+                            {/* Tiny active indicator badge */}
+                            {isSelected && (
+                              <div className={`absolute top-2 right-2 w-2 h-2 rounded-full ${method.brandColor.replace('text-', 'bg-')}`} />
+                            )}
+                          </label>
+                        );
+                      })}
+                    </div>
+                  );
+                })()}
 
                 {/* Unified Detail Panel inspired by Daraz */}
                 <div className="bg-white border border-black/5 rounded-2xl p-6 md:p-8 space-y-6 shadow-sm">
