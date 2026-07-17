@@ -185,7 +185,12 @@ export default function Checkout({ cart, cartTotal, clearCart, placeOrder, curre
         <button 
           onClick={() => {
             if (step === 1) {
-              navigate('/', { state: { openCart: true } });
+              const productId = expressProduct?.id || (activeCart.length > 0 ? activeCart[0].id : null);
+              if (productId) {
+                navigate(`/product/${productId}`, { state: { openCart: true } });
+              } else {
+                navigate('/', { state: { openCart: true } });
+              }
             } else {
               prevStep();
             }
