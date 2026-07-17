@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { motion } from 'motion/react';
-import { ShoppingBag, ArrowLeft, CheckCircle2, Truck, CreditCard, MapPin, Rocket } from 'lucide-react';
+import { ShoppingBag, ArrowLeft, CheckCircle2, Truck, CreditCard, Rocket } from 'lucide-react';
 import { CartItem, Order, User, AppSettings } from '../types';
 
 interface CheckoutProps {
@@ -183,7 +183,13 @@ export default function Checkout({ cart, cartTotal, clearCart, placeOrder, curre
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
       <div className="flex items-center justify-between mb-8">
         <button 
-          onClick={() => step === 1 ? navigate(-1) : prevStep()}
+          onClick={() => {
+            if (step === 1) {
+              navigate('/', { state: { openCart: true } });
+            } else {
+              prevStep();
+            }
+          }}
           className="flex items-center text-sm font-medium text-black/60 hover:text-black transition-colors group"
         >
           <ArrowLeft className="w-4 h-4 mr-2 group-hover:-translate-x-1 transition-transform" />
@@ -537,14 +543,7 @@ export default function Checkout({ cart, cartTotal, clearCart, placeOrder, curre
               </div>
             </div>
 
-            <div className="mt-8 space-y-4">
-              <div className="flex items-start gap-3 p-4 bg-amber-50 rounded-2xl">
-                <MapPin className="w-5 h-5 text-amber-600 mt-0.5" />
-                <p className="text-xs text-amber-800 leading-relaxed">
-                  {settings?.delivery_duration_info || 'Delivery within 2-3 days in Dhaka, 3-5 days outside Dhaka.'}
-                </p>
-              </div>
-            </div>
+
           </div>
         </div>
       </div>
