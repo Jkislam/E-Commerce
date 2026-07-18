@@ -40,7 +40,7 @@ import {
   Mail,
   Phone
 } from 'lucide-react';
-import { Product, Order, AppSettings } from '../types';
+import { Product, Order, AppSettings, SocialLink } from '../types';
 import { useAuth } from '../context/AuthContext';
 import { supabase } from '../lib/supabase';
 import { useSearchParams } from 'react-router-dom';
@@ -196,6 +196,48 @@ function SettingsView({ settings, setSettings, setSuccessMessage }: SettingsView
       contactImageBottom
     }));
     setSuccessMessage('Contact এর তর্থ্য সফল ভাবে আপডেট হয়েছে।');
+  };
+
+  const [socialLinks, setSocialLinks] = useState<SocialLink[]>(settings.socialLinks || [
+    { platform: 'Facebook', url: 'https://facebook.com' },
+    { platform: 'Twitter', url: 'https://twitter.com' },
+    { platform: 'Instagram', url: 'https://instagram.com' }
+  ]);
+  const [newPlatform, setNewPlatform] = useState<SocialLink['platform']>('Facebook');
+  const [newUrl, setNewUrl] = useState('');
+
+  useEffect(() => {
+    if (settings.socialLinks) {
+      setSocialLinks(settings.socialLinks);
+    }
+  }, [settings.socialLinks]);
+
+  const handleAddSocialLink = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!newUrl.trim()) return;
+
+    const exists = socialLinks.some(link => link.platform === newPlatform);
+    if (exists) {
+      alert(`${newPlatform} link already exists. Please remove the existing one first if you want to update it.`);
+      return;
+    }
+
+    const updatedLinks = [...socialLinks, { platform: newPlatform, url: newUrl.trim() }];
+    setSocialLinks(updatedLinks);
+    setNewUrl('');
+  };
+
+  const handleDeleteSocialLink = (platformToDelete: SocialLink['platform']) => {
+    const updatedLinks = socialLinks.filter(link => link.platform !== platformToDelete);
+    setSocialLinks(updatedLinks);
+  };
+
+  const handleSaveSocialLinks = async () => {
+    setSettings(prev => ({
+      ...prev,
+      socialLinks: socialLinks
+    }));
+    setSuccessMessage('সোসাল মিডিয়ার লিংকগুলো সফল ভাবে আপডেট হয়েছে।');
   };
 
   return (
@@ -712,6 +754,100 @@ function SettingsView({ settings, setSettings, setSuccessMessage }: SettingsView
                 Save Contact Settings
               </motion.button>
             </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Social Media Links Card */}
+      <div className="bg-white p-8 rounded-[2.5rem] border border-black/5 shadow-sm animate-fade-in">
+        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-8 pb-4 border-b border-black/5">
+          <div>
+            <h3 className="text-xl font-black text-black tracking-tight">Social Media Links (সোসাল মিডিয়া লিংক)</h3>
+            <p className="text-sm font-bold text-black/40 mt-1">ফুটারে প্রদর্শনের জন্য সোসাল মিডিয়া প্ল্যাটফর্ম ও লিংক যোগ অথবা বাদ করুন।</p>
+          </div>
+        </div>
+        
+        <div className="space-y-6">
+          {/* Add Form */}
+          <form onSubmit={handleAddSocialLink} className="flex flex-col md:flex-row gap-4 items-end bg-black/5 p-6 rounded-2xl">
+            <div className="w-full md:w-1/3 space-y-2">
+              <label className="text-[10px] font-black uppercase tracking-widest text-black/40 ml-1">Platform (প্ল্যাটফর্ম)</label>
+              <select
+                value={newPlatform}
+                onChange={(e) => setNewPlatform(e.target.value as SocialLink['platform'])}
+                className="w-full px-6 py-4 bg-white rounded-2xl border border-black/5 focus:outline-none focus:ring-2 focus:ring-black/10 transition-all text-sm font-bold"
+              >
+                <option value="Facebook">Facebook</option>
+                <option value="Twitter">Twitter</option>
+                <option value="Instagram">Instagram</option>
+                <option value="YouTube">YouTube</option>
+                <option value="LinkedIn">LinkedIn</option>
+                <option value="WhatsApp">WhatsApp</option>
+                <option value="TikTok">TikTok</option>
+                <option value="Pinterest">Pinterest</option>
+                <option value="GitHub">GitHub</option>
+                <option value="Other">Other</option>
+              </select>
+            </div>
+            
+            <div className="w-full md:flex-1 space-y-2">
+              <label className="text-[10px] font-black uppercase tracking-widest text-black/40 ml-1">URL (লিংক)</label>
+              <input
+                type="text"
+                value={newUrl}
+                onChange={(e) => setNewUrl(e.target.value)}
+                placeholder="https://facebook.com/your-page"
+                className="w-full px-6 py-4 bg-white rounded-2xl border border-black/5 focus:outline-none focus:ring-2 focus:ring-black/10 transition-all text-sm font-bold"
+              />
+            </div>
+            
+            <button
+              type="submit"
+              className="w-full md:w-auto px-8 py-4 bg-black text-white hover:bg-black/90 font-bold text-sm rounded-2xl transition-all shadow-sm shrink-0"
+            >
+              Add Link
+            </button>
+          </form>
+
+          {/* Social Links List */}
+          <div className="space-y-3">
+            <h4 className="text-[10px] font-black uppercase tracking-widest text-black/40 ml-1">Active Links (সক্রিয় লিংকসমূহ)</h4>
+            {socialLinks.length === 0 ? (
+              <p className="text-sm font-bold text-black/30 p-6 bg-black/5 rounded-2xl text-center">কোন লিংক যোগ করা হয়নি।</p>
+            ) : (
+              <div className="grid gap-3 sm:grid-cols-2">
+                {socialLinks.map((link) => (
+                  <div key={link.platform} className="flex justify-between items-center p-4 bg-black/5 rounded-2xl border border-black/5">
+                    <div className="min-w-0">
+                      <p className="text-sm font-black text-black">{link.platform}</p>
+                      <p className="text-xs font-medium text-black/40 truncate">{link.url}</p>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => handleDeleteSocialLink(link.platform)}
+                      className="p-3 bg-red-50 hover:bg-red-100 text-red-500 rounded-xl transition-all shrink-0"
+                      title="Remove"
+                    >
+                      <Trash2 className="w-4 h-4" />
+                    </button>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+
+          {/* Save Button */}
+          <div className="flex justify-end pt-4 border-t border-black/5">
+            <motion.button
+              type="button"
+              onClick={handleSaveSocialLinks}
+              whileHover={{ scale: 1.02 }}
+              whileTap={{ scale: 0.95 }}
+              className="px-8 py-4 bg-amber-600 hover:bg-amber-700 text-white rounded-2xl font-bold text-sm transition-all shadow-lg flex items-center gap-2"
+            >
+              <Save className="w-4 h-4" />
+              Save Social Media Links
+            </motion.button>
           </div>
         </div>
       </div>

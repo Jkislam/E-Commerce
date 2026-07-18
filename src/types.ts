@@ -93,4 +93,11 @@ export interface AppSettings {
   contactHours?: string;
   contactImageTop?: string;
   contactImageBottom?: string;
+  socialLinks?: SocialLink[];
 }
+
+export interface SocialLink {
+  platform: 'Facebook' | 'Twitter' | 'Instagram' | 'YouTube' | 'LinkedIn' | 'WhatsApp' | 'TikTok' | 'Pinterest' | 'GitHub' | 'Other';
+  url: string;
+}
+

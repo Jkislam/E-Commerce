@@ -20,6 +20,9 @@ import {
   Twitter, 
   Instagram, 
   Github,
+  Youtube,
+  Linkedin,
+  Globe,
   Plus,
   Minus,
   Trash2,
@@ -94,7 +97,12 @@ export default function App() {
       contactAddress: 'Gulshan-2, Dhaka',
       contactHours: '10:00 AM - 09:00 PM',
       contactImageTop: 'https://images.unsplash.com/photo-1534536281715-e28d76689b4d?auto=format&fit=crop&q=80&w=2000',
-      contactImageBottom: 'https://images.unsplash.com/photo-1497366754035-f200968a6e72?auto=format&fit=crop&q=80&w=2000'
+      contactImageBottom: 'https://images.unsplash.com/photo-1497366754035-f200968a6e72?auto=format&fit=crop&q=80&w=2000',
+      socialLinks: [
+        { platform: 'Facebook', url: 'https://facebook.com' },
+        { platform: 'Twitter', url: 'https://twitter.com' },
+        { platform: 'Instagram', url: 'https://instagram.com' }
+      ]
     };
 
     const saved = localStorage.getItem('al_hurumah_settings');
@@ -243,6 +251,7 @@ export default function App() {
                 contactHours: settingsData.contact_hours,
                 contactImageTop: settingsData.contact_image_top,
                 contactImageBottom: settingsData.contact_image_bottom,
+                socialLinks: settingsData.social_links || undefined,
               };
             }
             setSettings(prev => ({ ...prev, ...loadedSettings }));
@@ -493,6 +502,7 @@ export default function App() {
             contact_hours: settings.contactHours,
             contact_image_top: settings.contactImageTop,
             contact_image_bottom: settings.contactImageBottom,
+            social_links: settings.socialLinks || [],
             updated_at: new Date().toISOString()
           };
 
@@ -501,9 +511,21 @@ export default function App() {
             .upsert(flatRow);
           
           if (error) {
-            console.warn('Upserting with flat columns failed. Please run the SQL schema in Supabase to create the flat site_settings table columns:', error);
+            console.warn('Upserting with social_links column failed. Attempting fallback save without social_links. To enable cloud social links, please run this SQL in Supabase:\nALTER TABLE site_settings ADD COLUMN social_links JSONB DEFAULT \'[]\'::jsonb;\nError:', error);
+            
+            // Fallback save without social_links
+            const { social_links, ...flatRowFallback } = flatRow as any;
+            const { error: fallbackError } = await supabase
+              .from('site_settings')
+              .upsert(flatRowFallback);
+              
+            if (fallbackError) {
+              console.warn('Fallback settings save also failed:', fallbackError);
+            } else {
+              console.log('Successfully synced settings to Supabase (fallback mode without social_links column).');
+            }
           } else {
-            console.log('Successfully synced settings to Supabase flat columns.');
+            console.log('Successfully synced settings to Supabase flat columns with social_links.');
           }
         } catch (err) {
           console.error('Error during Supabase settings sync:', err);
@@ -1239,10 +1261,32 @@ export default function App() {
               <div>
                 <h4 className="font-bold text-sm uppercase tracking-widest mb-6">Follow Us</h4>
                 <div className="flex space-x-4">
-                  <a href="#" className="p-2 bg-black/5 rounded-full hover:bg-black hover:text-white transition-all"><Facebook className="w-4 h-4" /></a>
-                  <a href="#" className="p-2 bg-black/5 rounded-full hover:bg-black hover:text-white transition-all"><Twitter className="w-4 h-4" /></a>
-                  <a href="#" className="p-2 bg-black/5 rounded-full hover:bg-black hover:text-white transition-all"><Instagram className="w-4 h-4" /></a>
-                  <a href="#" className="p-2 bg-black/5 rounded-full hover:bg-black hover:text-white transition-all"><Github className="w-4 h-4" /></a>
+                  {(settings.socialLinks || []).map((link, index) => {
+                    const platform = link.platform;
+                    const IconComponent = (() => {
+                      switch (platform) {
+                        case 'Facebook': return Facebook;
+                        case 'Twitter': return Twitter;
+                        case 'Instagram': return Instagram;
+                        case 'YouTube': return Youtube;
+                        case 'LinkedIn': return Linkedin;
+                        case 'GitHub': return Github;
+                        default: return Globe;
+                      }
+                    })();
+                    return (
+                      <a 
+                        key={index}
+                        href={link.url.startsWith('http') ? link.url : `https://${link.url}`} 
+                        target="_blank" 
+                        rel="noopener noreferrer" 
+                        className="p-2 bg-black/5 rounded-full hover:bg-black hover:text-white transition-all"
+                        title={platform}
+                      >
+                        <IconComponent className="w-4 h-4" />
+                      </a>
+                    );
+                  })}
                 </div>
               </div>
             </div>
