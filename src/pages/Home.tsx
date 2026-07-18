@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
-import { ArrowRight, Star, ArrowUpDown, ChevronDown } from 'lucide-react';
+import { ArrowRight, ArrowUpDown, ChevronDown } from 'lucide-react';
 import { Product, AppSettings } from '../types';
 import { Link } from 'react-router-dom';
 import { PRODUCTS } from '../constants';
@@ -113,10 +113,6 @@ export default function Home({
                             <h3 className="text-base sm:text-xl font-bold text-black mb-1 sm:mb-2">{latestProducts[currentProductIndex].name}</h3>
                             <div className="flex justify-between items-center">
                               <span className="text-sm sm:text-lg font-black">৳{Number(latestProducts[currentProductIndex].price || 0).toFixed(0)}</span>
-                              <div className="flex items-center gap-1">
-                                <Star className="w-3 h-3 fill-black text-black" />
-                                <span className="text-xs font-bold">{latestProducts[currentProductIndex].rating}</span>
-                              </div>
                             </div>
                           </div>
                         </div>
@@ -243,12 +239,7 @@ export default function Home({
                   <Link to={`/product/${product.id}`}>
                     <h3 className="text-sm sm:text-base md:text-lg font-bold mb-1 truncate group-hover:text-amber-600 transition-colors duration-300">{product.name}</h3>
                   </Link>
-                  <div className="flex items-center gap-2 flex-wrap">
-                    <div className="flex items-center gap-1">
-                      <Star className="w-3 h-3 fill-amber-400 text-amber-400" />
-                      <span className="text-[10px] font-black">{product.rating}</span>
-                    </div>
-                  </div>
+                  
                 </div>
                 <div className="text-left sm:text-right">
                   <p className="text-lg sm:text-xl md:text-2xl font-black tracking-tight italic text-amber-600 sm:text-black">৳{Number(product.price || 0).toFixed(0)}</p>

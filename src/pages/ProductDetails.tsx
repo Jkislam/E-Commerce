@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'motion/react';
-import { Star, ShoppingBag, ArrowLeft, Minus, Plus, MapPin, Truck, Heart, Clock, Shield, Info, X } from 'lucide-react';
+import { ShoppingBag, ArrowLeft, Minus, Plus, MapPin, Truck, Heart, Clock, Shield, Info, X } from 'lucide-react';
 import { Product } from '../types';
 import { useAuth } from '../context/AuthContext';
 import { supabase } from '../lib/supabase';
@@ -176,18 +176,6 @@ export default function ProductDetails({ products, addToCart }: ProductDetailsPr
             </div>
             <h1 className="text-2xl sm:text-3xl font-black text-gray-900 tracking-tight mb-4 leading-snug">{product.name}</h1>
             <div className="flex items-center space-x-4">
-              <div className="flex items-center gap-2">
-                <div className="flex">
-                  {[...Array(5)].map((_, i) => (
-                    <Star 
-                      key={i} 
-                      className={`w-3.5 h-3.5 ${i < Math.floor(product.rating) ? 'fill-amber-400 text-amber-400' : 'text-black/10'}`} 
-                    />
-                  ))}
-                </div>
-                <span className="text-xs font-black tracking-widest">{product.rating}</span>
-              </div>
-              <div className="h-4 w-[1px] bg-black/10" />
               <span className="text-[10px] font-bold uppercase tracking-widest text-black/40">Verified Collection</span>
             </div>
           </div>
