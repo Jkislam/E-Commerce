@@ -36,7 +36,8 @@ interface ProfileProps {
 export default function Profile({ currentUser, isAuthLoading, orders, onLogout, onUpdateUser }: ProfileProps) {
   const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState<'profile' | 'orders'>('profile');
-  const [isEditing, setIsEditing] = useState(false);
+  const [isEditingProfile, setIsEditingProfile] = useState(false);
+  const [isEditingAddress, setIsEditingAddress] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   
   // Form fields
@@ -94,23 +95,53 @@ export default function Profile({ currentUser, isAuthLoading, orders, onLogout, 
     });
   };
 
-  const handlePhotoUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handlePhotoUploadDirectly = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
-    if (file) {
-      if (file.size > 5 * 1024 * 1024) {
-        alert("৫ মেগাবাইটের চেয়ে ছোট ছবি আপলোড করুন।");
-        return;
-      }
+    if (!file || !currentUser || !currentUser.id || isSaving) return;
+
+    if (file.size > 5 * 1024 * 1024) {
+      alert("৫ মেগাবাইটের চেয়ে ছোট ছবি আপলোড করুন।");
+      return;
+    }
+
+    setIsSaving(true);
+    try {
       const reader = new FileReader();
       reader.onloadend = async () => {
-        const compressed = await compressImage(reader.result as string);
-        setEditPhoto(compressed);
+        try {
+          const compressed = await compressImage(reader.result as string);
+          setEditPhoto(compressed);
+          
+          // Update database directly
+          const { error } = await supabase.from('profiles').update({
+            photourl: compressed,
+          }).eq('id', currentUser.id);
+
+          if (error) throw error;
+
+          // Update auth metadata
+          const { error: authError } = await supabase.auth.updateUser({
+            data: { photourl: compressed }
+          });
+
+          if (authError) console.warn('Auth metadata sync failed:', authError.message);
+
+          await onUpdateUser();
+        } catch (err: any) {
+          console.error('Photo save error:', err);
+          alert("ছবি পরিবর্তন করতে সমস্যা হয়েছে: " + (err.message || 'Unknown error'));
+        } finally {
+          setIsSaving(false);
+        }
       };
       reader.readAsDataURL(file);
+    } catch (err) {
+      console.error('Photo upload error:', err);
+      setIsSaving(false);
     }
   };
 
-  const handleUpdateProfile = async (e: React.FormEvent) => {
+  const handleUpdatePersonalProfile = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!currentUser || !currentUser.id || isSaving) return;
 
@@ -120,8 +151,6 @@ export default function Profile({ currentUser, isAuthLoading, orders, onLogout, 
       const { error } = await supabase.from('profiles').update({
         name: editName,
         phone: editPhone,
-        address: editAddress,
-        photourl: editPhoto,
       }).eq('id', currentUser.id);
 
       if (error) throw error;
@@ -130,19 +159,49 @@ export default function Profile({ currentUser, isAuthLoading, orders, onLogout, 
       const { error: authError } = await supabase.auth.updateUser({
         data: {
           name: editName,
-          phone: editPhone,
-          address: editAddress,
-          photourl: editPhoto
+          phone: editPhone
         }
       });
 
       if (authError) console.warn('Auth metadata sync failed:', authError.message);
 
       await onUpdateUser();
-      setIsEditing(false);
+      setIsEditingProfile(false);
     } catch(err: any) {
-      console.error('Update error:', err);
+      console.error('Update profile error:', err);
       alert("প্রোফাইল আপডেট করতে সমস্যা হয়েছে: " + (err.message || 'Unknown error'));
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
+  const handleUpdateAddressBook = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!currentUser || !currentUser.id || isSaving) return;
+
+    setIsSaving(true);
+    try {
+      // Update profiles table in Supabase
+      const { error } = await supabase.from('profiles').update({
+        address: editAddress,
+      }).eq('id', currentUser.id);
+
+      if (error) throw error;
+
+      // Update auth metadata for responsive local state sync
+      const { error: authError } = await supabase.auth.updateUser({
+        data: {
+          address: editAddress,
+        }
+      });
+
+      if (authError) console.warn('Auth metadata sync failed:', authError.message);
+
+      await onUpdateUser();
+      setIsEditingAddress(false);
+    } catch(err: any) {
+      console.error('Update address error:', err);
+      alert("ঠিকানা আপডেট করতে সমস্যা হয়েছে: " + (err.message || 'Unknown error'));
     } finally {
       setIsSaving(false);
     }
@@ -207,20 +266,33 @@ export default function Profile({ currentUser, isAuthLoading, orders, onLogout, 
             {/* Greeting Card */}
             <div className="bg-white p-5 rounded-2xl border border-black/5 shadow-sm flex items-center gap-4">
               <div className="relative group">
-                <div className="w-14 h-14 bg-gradient-to-tr from-[#f57224] to-[#ff8f50] text-white rounded-full flex items-center justify-center text-xl font-black shadow-md overflow-hidden border border-white">
+                <div className="w-14 h-14 bg-gradient-to-tr from-[#f57224] to-[#ff8f50] text-white rounded-full flex items-center justify-center text-xl font-black shadow-md overflow-hidden border border-white relative">
                   {currentUser.photourl ? (
                     <img src={currentUser.photourl} alt={currentUser.name} className="w-full h-full object-cover" />
                   ) : (
                     currentUser.name[0].toUpperCase()
                   )}
+                  {isSaving && (
+                    <div className="absolute inset-0 bg-black/60 flex items-center justify-center">
+                      <div className="w-4 h-4 border-2 border-white/20 border-t-white rounded-full animate-spin" />
+                    </div>
+                  )}
                 </div>
                 <button 
-                  onClick={() => setIsEditing(true)}
-                  className="absolute -bottom-1 -right-1 w-6 h-6 bg-white rounded-full border border-black/5 shadow-md flex items-center justify-center text-black hover:bg-[#f57224] hover:text-white transition-all"
+                  onClick={() => fileInputRef.current?.click()}
+                  className="absolute -bottom-1 -right-1 w-6 h-6 bg-white rounded-full border border-black/5 shadow-md flex items-center justify-center text-black hover:bg-[#f57224] hover:text-white transition-all animate-pulse-slow"
                   title="Upload avatar"
+                  disabled={isSaving}
                 >
                   <Camera className="w-3 h-3" />
                 </button>
+                <input 
+                  type="file"
+                  ref={fileInputRef}
+                  onChange={handlePhotoUploadDirectly}
+                  accept="image/*"
+                  className="hidden"
+                />
               </div>
               <div className="min-w-0 flex-1">
                 <p className="text-[10px] font-black text-black/40 uppercase tracking-widest">Hello,</p>
@@ -242,7 +314,7 @@ export default function Profile({ currentUser, isAuthLoading, orders, onLogout, 
                     My Profile
                   </button>
                   <button 
-                    onClick={() => { setActiveTab('profile'); setIsEditing(true); }}
+                    onClick={() => { setActiveTab('profile'); setIsEditingAddress(true); }}
                     className="w-full text-left text-xs font-bold block text-black/50 hover:text-[#f57224] transition-colors"
                   >
                     Address Book
@@ -299,7 +371,7 @@ export default function Profile({ currentUser, isAuthLoading, orders, onLogout, 
                       <div className="flex items-center justify-between border-b border-black/5 pb-4 mb-5">
                         <h3 className="text-sm font-black text-black">Personal Profile</h3>
                         <button 
-                          onClick={() => setIsEditing(true)}
+                          onClick={() => setIsEditingProfile(true)}
                           className="text-[10px] font-black text-[#f57224] hover:underline flex items-center gap-1"
                         >
                           <Edit3 className="w-3 h-3" /> EDIT
@@ -331,7 +403,7 @@ export default function Profile({ currentUser, isAuthLoading, orders, onLogout, 
                       <div className="flex items-center justify-between border-b border-black/5 pb-4 mb-5">
                         <h3 className="text-sm font-black text-black">Address Book</h3>
                         <button 
-                          onClick={() => setIsEditing(true)}
+                          onClick={() => setIsEditingAddress(true)}
                           className="text-[10px] font-black text-[#f57224] hover:underline flex items-center gap-1"
                         >
                           <Edit3 className="w-3 h-3" /> EDIT
@@ -520,15 +592,15 @@ export default function Profile({ currentUser, isAuthLoading, orders, onLogout, 
 
       </div>
 
-      {/* EDIT PROFILE MODAL (Daraz Popover/Form Style) */}
+      {/* EDIT PERSONAL PROFILE MODAL */}
       <AnimatePresence>
-        {isEditing && (
+        {isEditingProfile && (
           <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
             <motion.div 
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
-              onClick={() => setIsEditing(false)}
+              onClick={() => setIsEditingProfile(false)}
               className="absolute inset-0 bg-black/50 backdrop-blur-sm"
             />
             <motion.div 
@@ -538,45 +610,16 @@ export default function Profile({ currentUser, isAuthLoading, orders, onLogout, 
               className="relative w-full max-w-lg bg-white rounded-3xl shadow-2xl overflow-y-auto max-h-[90vh] border border-black/5"
             >
               <div className="px-8 py-5 border-b border-black/5 flex items-center justify-between bg-white sticky top-0 z-10">
-                <h2 className="text-base font-black text-black">Edit Profile & Address Book</h2>
+                <h2 className="text-base font-black text-black">Edit Personal Profile</h2>
                 <button 
-                  onClick={() => setIsEditing(false)}
+                  onClick={() => setIsEditingProfile(false)}
                   className="p-1.5 hover:bg-black/5 rounded-full text-black/40 hover:text-black transition-colors"
                 >
                   <X className="w-5 h-5" />
                 </button>
               </div>
 
-              <form onSubmit={handleUpdateProfile} className="p-8 space-y-5">
-                
-                {/* Photo Upload Area */}
-                <div className="flex flex-col items-center gap-3 bg-black/5 p-4 rounded-2xl">
-                  <div className="relative group">
-                    <div className="w-20 h-20 bg-white rounded-full flex items-center justify-center overflow-hidden border border-black/10 shadow-sm">
-                      {editPhoto ? (
-                        <img src={editPhoto} alt="Preview" className="w-full h-full object-cover" />
-                      ) : (
-                        <UserIcon className="w-8 h-8 text-black/20" />
-                      )}
-                    </div>
-                    <button 
-                      type="button"
-                      onClick={() => fileInputRef.current?.click()}
-                      className="absolute -bottom-1 -right-1 w-8 h-8 bg-[#f57224] text-white rounded-full shadow-md flex items-center justify-center hover:scale-105 transition-transform"
-                    >
-                      <Camera className="w-4 h-4" />
-                    </button>
-                  </div>
-                  <input 
-                    type="file"
-                    ref={fileInputRef}
-                    onChange={handlePhotoUpload}
-                    accept="image/*"
-                    className="hidden"
-                  />
-                  <p className="text-[9px] font-black uppercase tracking-wider text-black/40">Upload New Profile Picture</p>
-                </div>
-
+              <form onSubmit={handleUpdatePersonalProfile} className="p-8 space-y-5">
                 <div className="space-y-4">
                   {/* Full Name */}
                   <div className="space-y-1.5">
@@ -608,27 +651,13 @@ export default function Profile({ currentUser, isAuthLoading, orders, onLogout, 
                       />
                     </div>
                   </div>
-
-                  {/* Delivery Address */}
-                  <div className="space-y-1.5">
-                    <label className="text-[10px] font-black uppercase tracking-widest text-black/40 ml-1">Delivery Address</label>
-                    <div className="relative">
-                      <MapPin className="absolute left-4 top-4.5 w-4 h-4 text-black/20" />
-                      <textarea 
-                        value={editAddress}
-                        onChange={(e) => setEditAddress(e.target.value)}
-                        className="w-full pl-11 pr-4 py-3.5 bg-[#f4f4f7] rounded-xl focus:outline-none focus:ring-2 focus:ring-[#f57224]/20 transition-all font-bold text-xs min-h-[90px]"
-                        placeholder="House no, Road no, Area"
-                      />
-                    </div>
-                  </div>
                 </div>
 
                 {/* Form Buttons */}
                 <div className="pt-4 flex gap-3 border-t border-black/5">
                   <button 
                     type="button"
-                    onClick={() => setIsEditing(false)}
+                    onClick={() => setIsEditingProfile(false)}
                     className="flex-1 py-3 bg-black/5 hover:bg-black/10 text-black text-xs font-bold rounded-xl transition-all"
                   >
                     Cancel
@@ -646,12 +675,89 @@ export default function Profile({ currentUser, isAuthLoading, orders, onLogout, 
                     ) : (
                       <>
                         <Save className="w-4 h-4" />
-                        Save Changes
+                        Save Profile
                       </>
                     )}
                   </button>
                 </div>
+              </form>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
 
+      {/* EDIT ADDRESS BOOK MODAL */}
+      <AnimatePresence>
+        {isEditingAddress && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+            <motion.div 
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              onClick={() => setIsEditingAddress(false)}
+              className="absolute inset-0 bg-black/50 backdrop-blur-sm"
+            />
+            <motion.div 
+              initial={{ opacity: 0, scale: 0.95, y: 15 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.95, y: 15 }}
+              className="relative w-full max-w-lg bg-white rounded-3xl shadow-2xl overflow-y-auto max-h-[90vh] border border-black/5"
+            >
+              <div className="px-8 py-5 border-b border-black/5 flex items-center justify-between bg-white sticky top-0 z-10">
+                <h2 className="text-base font-black text-black">Edit Address Book</h2>
+                <button 
+                  onClick={() => setIsEditingAddress(false)}
+                  className="p-1.5 hover:bg-black/5 rounded-full text-black/40 hover:text-black transition-colors"
+                >
+                  <X className="w-5 h-5" />
+                </button>
+              </div>
+
+              <form onSubmit={handleUpdateAddressBook} className="p-8 space-y-5">
+                <div className="space-y-4">
+                  {/* Delivery Address */}
+                  <div className="space-y-1.5">
+                    <label className="text-[10px] font-black uppercase tracking-widest text-black/40 ml-1">Delivery Address</label>
+                    <div className="relative">
+                      <MapPin className="absolute left-4 top-4.5 w-4 h-4 text-black/20" />
+                      <textarea 
+                        required
+                        value={editAddress}
+                        onChange={(e) => setEditAddress(e.target.value)}
+                        className="w-full pl-11 pr-4 py-3.5 bg-[#f4f4f7] rounded-xl focus:outline-none focus:ring-2 focus:ring-[#f57224]/20 transition-all font-bold text-xs min-h-[90px]"
+                        placeholder="House no, Road no, Area"
+                      />
+                    </div>
+                  </div>
+                </div>
+
+                {/* Form Buttons */}
+                <div className="pt-4 flex gap-3 border-t border-black/5">
+                  <button 
+                    type="button"
+                    onClick={() => setIsEditingAddress(false)}
+                    className="flex-1 py-3 bg-black/5 hover:bg-black/10 text-black text-xs font-bold rounded-xl transition-all"
+                  >
+                    Cancel
+                  </button>
+                  <button 
+                    type="submit"
+                    disabled={isSaving}
+                    className={`flex-1 py-3 bg-[#f57224] hover:bg-[#e05e12] text-white text-xs font-bold rounded-xl transition-all shadow-md shadow-orange-500/10 flex items-center justify-center gap-1.5 ${isSaving ? 'opacity-70 cursor-not-allowed' : ''}`}
+                  >
+                    {isSaving ? (
+                      <>
+                        <div className="w-4 h-4 border-2 border-white/20 border-t-white rounded-full animate-spin" />
+                        Saving...
+                      </>
+                    ) : (
+                      <>
+                        <Save className="w-4 h-4" />
+                        Save Address
+                      </>
+                    )}
+                  </button>
+                </div>
               </form>
             </motion.div>
           </div>
