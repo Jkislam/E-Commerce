@@ -222,10 +222,10 @@ export default function Profile({ currentUser, isAuthLoading, orders, onLogout, 
     return null;
   }
 
-  // Filter orders to show user specific ones
-  const userOrders = orders.filter(
-    order => order.customeremail === currentUser.email
-  );
+  // Filter orders to show user specific ones and sort by date (newest first)
+  const userOrders = orders
+    .filter(order => order.customeremail === currentUser.email)
+    .sort((a, b) => new Date(b.createdat).getTime() - new Date(a.createdat).getTime());
 
   const getStatusIcon = (status: Order['status']) => {
     switch (status) {
