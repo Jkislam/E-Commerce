@@ -16,7 +16,11 @@ import {
   User as UserIcon, 
   Phone, 
   X, 
-  Save 
+  Save,
+  CreditCard,
+  Mail,
+  Calendar,
+  Eye
 } from 'lucide-react';
 import { User, Order } from '../types';
 import { supabase } from '../lib/supabase';
@@ -31,15 +35,18 @@ interface ProfileProps {
 
 export default function Profile({ currentUser, isAuthLoading, orders, onLogout, onUpdateUser }: ProfileProps) {
   const navigate = useNavigate();
+  const [activeTab, setActiveTab] = useState<'profile' | 'orders'>('profile');
   const [isEditing, setIsEditing] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
+  
+  // Form fields
   const [editName, setEditName] = useState(currentUser?.name || '');
   const [editAddress, setEditAddress] = useState(currentUser?.address || '');
   const [editPhone, setEditPhone] = useState(currentUser?.phone || '');
   const [editPhoto, setEditPhoto] = useState(currentUser?.photourl || '');
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  // Update local state when currentUser changes (e.g. after refresh)
+  // Update local states when user loads
   useEffect(() => {
     if (currentUser) {
       setEditName(currentUser.name || '');
@@ -49,6 +56,7 @@ export default function Profile({ currentUser, isAuthLoading, orders, onLogout, 
     }
   }, [currentUser]);
 
+  // Auth Guard
   useEffect(() => {
     if (!isAuthLoading && !currentUser) {
       navigate('/login');
@@ -108,7 +116,7 @@ export default function Profile({ currentUser, isAuthLoading, orders, onLogout, 
 
     setIsSaving(true);
     try {
-      // Update profiles table
+      // Update profiles table in Supabase
       const { error } = await supabase.from('profiles').update({
         name: editName,
         phone: editPhone,
@@ -118,7 +126,7 @@ export default function Profile({ currentUser, isAuthLoading, orders, onLogout, 
 
       if (error) throw error;
 
-      // Also update auth metadata for faster UI sync
+      // Update auth metadata for responsive local state sync
       const { error: authError } = await supabase.auth.updateUser({
         data: {
           name: editName,
@@ -142,10 +150,10 @@ export default function Profile({ currentUser, isAuthLoading, orders, onLogout, 
 
   if (isAuthLoading) {
     return (
-      <div className="min-h-[60vh] flex items-center justify-center">
+      <div className="min-h-[60vh] flex items-center justify-center bg-[#f4f4f7]">
         <div className="text-center">
-          <div className="w-12 h-12 border-4 border-black/10 border-t-black rounded-full animate-spin mx-auto mb-4"></div>
-          <p className="text-black/40 font-bold uppercase tracking-widest text-xs">Loading Profile...</p>
+          <div className="w-12 h-12 border-4 border-[#f57224]/10 border-t-[#f57224] rounded-full animate-spin mx-auto mb-4"></div>
+          <p className="text-black/40 font-bold uppercase tracking-widest text-[10px]">Loading Profile...</p>
         </div>
       </div>
     );
@@ -155,18 +163,18 @@ export default function Profile({ currentUser, isAuthLoading, orders, onLogout, 
     return null;
   }
 
-  // Filter orders to show only the logged-in user's orders even if they are an admin
+  // Filter orders to show user specific ones
   const userOrders = orders.filter(
     order => order.customeremail === currentUser.email
   );
 
   const getStatusIcon = (status: Order['status']) => {
     switch (status) {
-      case 'Pending': return <Clock className="w-4 h-4 text-amber-500" />;
-      case 'Processing': return <Package className="w-4 h-4 text-blue-500" />;
-      case 'Shipped': return <Truck className="w-4 h-4 text-indigo-500" />;
-      case 'Delivered': return <CheckCircle2 className="w-4 h-4 text-green-500" />;
-      case 'Cancelled': return <XCircle className="w-4 h-4 text-red-500" />;
+      case 'Pending': return <Clock className="w-3.5 h-3.5 text-amber-500" />;
+      case 'Processing': return <Package className="w-3.5 h-3.5 text-blue-500" />;
+      case 'Shipped': return <Truck className="w-3.5 h-3.5 text-[#f57224]" />;
+      case 'Delivered': return <CheckCircle2 className="w-3.5 h-3.5 text-green-500" />;
+      case 'Cancelled': return <XCircle className="w-3.5 h-3.5 text-red-500" />;
     }
   };
 
@@ -174,172 +182,345 @@ export default function Profile({ currentUser, isAuthLoading, orders, onLogout, 
     switch (status) {
       case 'Pending': return 'bg-amber-50 text-amber-700 border-amber-100';
       case 'Processing': return 'bg-blue-50 text-blue-700 border-blue-100';
-      case 'Shipped': return 'bg-indigo-50 text-indigo-700 border-indigo-100';
+      case 'Shipped': return 'bg-orange-50 text-[#f57224] border-orange-100';
       case 'Delivered': return 'bg-green-50 text-green-700 border-green-100';
       case 'Cancelled': return 'bg-red-50 text-red-700 border-red-100';
     }
   };
 
   return (
-    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
-      <div className="flex flex-col lg:flex-row gap-12">
-        {/* Sidebar */}
-        <div className="lg:w-1/3">
-          <motion.div 
-            initial={{ opacity: 0, x: -20 }}
-            animate={{ opacity: 1, x: 0 }}
-            className="bg-white rounded-[2.5rem] p-8 border border-black/5 shadow-sm sticky top-24"
-          >
-            <div className="flex items-center gap-4 mb-8">
+    <div className="min-h-screen bg-[#f4f4f7] py-8 sm:py-12">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        
+        {/* Breadcrumb path like Daraz */}
+        <div className="text-xs text-black/40 mb-6 flex items-center gap-1 font-bold tracking-tight">
+          <span className="hover:text-[#f57224] cursor-pointer transition-colors" onClick={() => navigate('/')}>Home</span>
+          <ChevronRight className="w-3 h-3" />
+          <span className="text-black/80 font-black">My Account</span>
+        </div>
+
+        <div className="flex flex-col lg:flex-row gap-6 items-start">
+          
+          {/* LEFT SIDEBAR (Daraz Account Menu) */}
+          <div className="w-full lg:w-64 shrink-0 space-y-4">
+            
+            {/* Greeting Card */}
+            <div className="bg-white p-5 rounded-2xl border border-black/5 shadow-sm flex items-center gap-4">
               <div className="relative group">
-                <div className="w-16 h-16 bg-black text-white rounded-2xl flex items-center justify-center text-2xl font-bold shadow-lg overflow-hidden">
+                <div className="w-14 h-14 bg-gradient-to-tr from-[#f57224] to-[#ff8f50] text-white rounded-full flex items-center justify-center text-xl font-black shadow-md overflow-hidden border border-white">
                   {currentUser.photourl ? (
                     <img src={currentUser.photourl} alt={currentUser.name} className="w-full h-full object-cover" />
                   ) : (
-                    currentUser.name[0]
+                    currentUser.name[0].toUpperCase()
                   )}
                 </div>
                 <button 
                   onClick={() => setIsEditing(true)}
-                  className="absolute -bottom-1 -right-1 w-6 h-6 bg-white rounded-lg border border-black/5 shadow-sm flex items-center justify-center text-black hover:bg-black hover:text-white transition-all opacity-0 group-hover:opacity-100"
+                  className="absolute -bottom-1 -right-1 w-6 h-6 bg-white rounded-full border border-black/5 shadow-md flex items-center justify-center text-black hover:bg-[#f57224] hover:text-white transition-all"
+                  title="Upload avatar"
                 >
                   <Camera className="w-3 h-3" />
                 </button>
               </div>
-              <div className="flex-1 min-w-0">
-                <div className="flex items-center justify-between gap-2">
-                  <h2 className="text-xl font-bold truncate">{currentUser.name}</h2>
+              <div className="min-w-0 flex-1">
+                <p className="text-[10px] font-black text-black/40 uppercase tracking-widest">Hello,</p>
+                <p className="text-sm font-black text-black truncate leading-snug">{currentUser.name}</p>
+              </div>
+            </div>
+
+            {/* Sidebar Navigation Options */}
+            <div className="bg-white p-5 rounded-2xl border border-black/5 shadow-sm space-y-6">
+              
+              {/* Category Group 1 */}
+              <div>
+                <p className="text-xs font-black text-black uppercase tracking-wider mb-3">Manage My Account</p>
+                <div className="space-y-2.5 pl-3 border-l border-black/5">
                   <button 
-                    onClick={() => setIsEditing(true)}
-                    className="p-1.5 hover:bg-black/5 rounded-lg text-black/40 hover:text-black transition-colors"
+                    onClick={() => setActiveTab('profile')}
+                    className={`w-full text-left text-xs font-bold block transition-colors ${activeTab === 'profile' ? 'text-[#f57224]' : 'text-black/50 hover:text-[#f57224]'}`}
                   >
-                    <Edit3 className="w-4 h-4" />
+                    My Profile
+                  </button>
+                  <button 
+                    onClick={() => { setActiveTab('profile'); setIsEditing(true); }}
+                    className="w-full text-left text-xs font-bold block text-black/50 hover:text-[#f57224] transition-colors"
+                  >
+                    Address Book
                   </button>
                 </div>
-                <p className="text-sm text-black/40 truncate">{currentUser.email}</p>
-                {currentUser.phone && (
-                  <div className="flex items-center gap-2 mt-1 text-xs text-black/60">
-                    <Phone className="w-3 h-3" />
-                    <span>{currentUser.phone}</span>
-                  </div>
-                )}
-                {currentUser.address && (
-                  <div className="flex items-center gap-2 mt-1 text-xs text-black/60">
-                    <MapPin className="w-3 h-3" />
-                    <span className="truncate">{currentUser.address}</span>
-                  </div>
-                )}
               </div>
-            </div>
 
-            <div className="space-y-2">
-              <button className="w-full flex items-center justify-between p-4 bg-black/5 rounded-2xl font-bold text-sm">
-                Order History
-                <ChevronRight className="w-4 h-4" />
-              </button>
-              <button 
-                onClick={() => { onLogout(); navigate('/'); }}
-                className="w-full flex items-center gap-3 p-4 text-red-500 hover:bg-red-50 rounded-2xl font-bold text-sm transition-colors"
-              >
-                <LogOut className="w-4 h-4" />
-                Logout
-              </button>
-            </div>
-          </motion.div>
-        </div>
-
-        {/* Main Content */}
-        <div className="lg:flex-1">
-          <motion.div 
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-          >
-            <div className="flex items-center justify-between mb-8">
-              <h1 className="text-3xl font-bold">My Orders</h1>
-              <span className="px-4 py-2 bg-black/5 rounded-full text-xs font-bold uppercase tracking-widest">
-                {userOrders.length} Orders
-              </span>
-            </div>
-
-            {userOrders.length === 0 ? (
-              <div className="bg-white rounded-[2.5rem] p-12 border border-black/5 text-center">
-                <div className="w-20 h-20 bg-black/5 rounded-full flex items-center justify-center mx-auto mb-6">
-                  <ShoppingBag className="w-10 h-10 text-black/20" />
+              {/* Category Group 2 */}
+              <div>
+                <p className="text-xs font-black text-black uppercase tracking-wider mb-3">My Orders</p>
+                <div className="space-y-2.5 pl-3 border-l border-black/5">
+                  <button 
+                    onClick={() => setActiveTab('orders')}
+                    className={`w-full text-left text-xs font-bold block transition-colors ${activeTab === 'orders' ? 'text-[#f57224]' : 'text-black/50 hover:text-[#f57224]'}`}
+                  >
+                    My Orders
+                  </button>
                 </div>
-                <h3 className="text-xl font-bold mb-2">No orders yet</h3>
-                <p className="text-black/40 mb-8">Start shopping to see your orders here.</p>
+              </div>
+
+              <div className="pt-4 border-t border-black/5">
                 <button 
-                  onClick={() => navigate('/')}
-                  className="px-8 py-4 bg-black text-white rounded-2xl font-bold hover:bg-black/90 transition-all shadow-xl"
+                  onClick={() => { onLogout(); navigate('/'); }}
+                  className="w-full flex items-center gap-2 text-xs font-black text-red-500 hover:text-red-600 transition-colors"
                 >
-                  Start Shopping
+                  <LogOut className="w-4 h-4" />
+                  Logout
                 </button>
               </div>
-            ) : (
-              <div className="space-y-6">
-                {userOrders.map((order) => (
-                  <motion.div 
-                    key={order.id}
-                    layout
-                    className="bg-white rounded-[2.5rem] border border-black/5 shadow-sm overflow-hidden"
-                  >
-                    <div className="p-6 sm:p-8 border-b border-black/5 flex flex-wrap items-center justify-between gap-4">
-                      <div>
-                        <p className="text-[10px] font-black uppercase tracking-widest text-black/40 mb-1">Order ID</p>
-                        <p className="font-bold text-sm">{order.id}</p>
+
+            </div>
+          </div>
+
+          {/* RIGHT CONTENT PANEL */}
+          <div className="flex-1 w-full">
+            <AnimatePresence mode="wait">
+              
+              {/* TAB 1: PROFILE DASHBOARD */}
+              {activeTab === 'profile' && (
+                <motion.div
+                  key="profile-tab"
+                  initial={{ opacity: 0, y: 15 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, y: -15 }}
+                  className="space-y-6"
+                >
+                  <h2 className="text-xl font-black text-black tracking-tight">My Profile</h2>
+
+                  {/* Profile & Address Bento Grid */}
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    
+                    {/* Personal Profile Card */}
+                    <div className="bg-white p-6 rounded-2xl border border-black/5 shadow-sm relative">
+                      <div className="flex items-center justify-between border-b border-black/5 pb-4 mb-5">
+                        <h3 className="text-sm font-black text-black">Personal Profile</h3>
+                        <button 
+                          onClick={() => setIsEditing(true)}
+                          className="text-[10px] font-black text-[#f57224] hover:underline flex items-center gap-1"
+                        >
+                          <Edit3 className="w-3 h-3" /> EDIT
+                        </button>
                       </div>
-                      <div>
-                        <p className="text-[10px] font-black uppercase tracking-widest text-black/40 mb-1">Date</p>
-                        <p className="font-bold text-sm">{new Date(order.createdat).toLocaleDateString()}</p>
-                      </div>
-                      <div>
-                        <p className="text-[10px] font-black uppercase tracking-widest text-black/40 mb-1">Total Amount</p>
-                        <p className="font-bold text-sm">৳{order.total}</p>
-                      </div>
-                      <div>
-                        <p className="text-[10px] font-black uppercase tracking-widest text-black/40 mb-1">Payment</p>
-                        <div className="flex flex-col">
-                          <p className="font-bold text-sm uppercase">{order.paymentmethod}</p>
-                          {order.transactionid && (
-                            <p className="text-[9px] text-black/40 font-mono">ID: {order.transactionid}</p>
-                          )}
+
+                      <div className="space-y-4">
+                        <div>
+                          <p className="text-[10px] font-black text-black/30 uppercase tracking-wider mb-1">Full Name</p>
+                          <p className="text-sm font-black text-black">{currentUser.name}</p>
+                        </div>
+                        <div>
+                          <p className="text-[10px] font-black text-black/30 uppercase tracking-wider mb-1">Email Address</p>
+                          <p className="text-sm font-bold text-black/70 flex items-center gap-1.5">
+                            <Mail className="w-3.5 h-3.5 text-black/30" /> {currentUser.email}
+                          </p>
+                        </div>
+                        <div>
+                          <p className="text-[10px] font-black text-black/30 uppercase tracking-wider mb-1">Phone Number</p>
+                          <p className="text-sm font-bold text-black/70 flex items-center gap-1.5">
+                            <Phone className="w-3.5 h-3.5 text-black/30" /> {currentUser.phone || 'মোবাইল নাম্বার যুক্ত করুন'}
+                          </p>
                         </div>
                       </div>
-                      <div className={`flex items-center gap-2 px-4 py-2 rounded-xl border text-xs font-bold ${getStatusColor(order.status)}`}>
-                        {getStatusIcon(order.status)}
-                        {order.status}
+                    </div>
+
+                    {/* Address Book Card */}
+                    <div className="bg-white p-6 rounded-2xl border border-black/5 shadow-sm relative">
+                      <div className="flex items-center justify-between border-b border-black/5 pb-4 mb-5">
+                        <h3 className="text-sm font-black text-black">Address Book</h3>
+                        <button 
+                          onClick={() => setIsEditing(true)}
+                          className="text-[10px] font-black text-[#f57224] hover:underline flex items-center gap-1"
+                        >
+                          <Edit3 className="w-3 h-3" /> EDIT
+                        </button>
+                      </div>
+
+                      <div className="space-y-4">
+                        <p className="text-[10px] font-black text-[#f57224] uppercase tracking-wider bg-orange-50 px-2.5 py-1 rounded-md inline-block">
+                          DEFAULT SHIPPING ADDRESS
+                        </p>
+                        
+                        {currentUser.address ? (
+                          <div className="space-y-1.5">
+                            <p className="text-sm font-black text-black">{currentUser.name}</p>
+                            <p className="text-xs font-bold text-black/60 leading-relaxed flex items-start gap-1.5">
+                              <MapPin className="w-4 h-4 text-black/30 shrink-0 mt-0.5" />
+                              <span>{currentUser.address}</span>
+                            </p>
+                            {currentUser.phone && (
+                              <p className="text-xs font-bold text-black/60 pl-5">{currentUser.phone}</p>
+                            )}
+                          </div>
+                        ) : (
+                          <p className="text-xs font-bold text-black/40 italic py-2">
+                            কোন ঠিকানা যুক্ত করা হয়নি। ঠিকানা যুক্ত করতে প্রোফাইল পরিবর্তন করুন।
+                          </p>
+                        )}
                       </div>
                     </div>
-                    
-                    <div className="p-6 sm:p-8 bg-gray-50/50">
-                      <div className="space-y-4">
-                        {order.items.map((item, idx) => (
-                          <div key={idx} className="flex items-center gap-4">
-                            <div className="w-16 h-16 rounded-xl overflow-hidden bg-white border border-black/5 flex-shrink-0">
-                              <img src={item.image} alt={item.name} className="w-full h-full object-cover" />
+
+                  </div>
+
+                  {/* Recent Orders List */}
+                  <div className="bg-white rounded-2xl border border-black/5 shadow-sm overflow-hidden">
+                    <div className="px-6 py-5 border-b border-black/5 flex items-center justify-between bg-white">
+                      <h3 className="text-sm font-black text-black">Recent Orders</h3>
+                      <button 
+                        onClick={() => setActiveTab('orders')}
+                        className="text-xs font-bold text-[#f57224] hover:underline"
+                      >
+                        View All
+                      </button>
+                    </div>
+
+                    {userOrders.length === 0 ? (
+                      <div className="p-12 text-center">
+                        <div className="w-16 h-16 bg-black/5 rounded-full flex items-center justify-center mx-auto mb-4">
+                          <ShoppingBag className="w-8 h-8 text-black/20" />
+                        </div>
+                        <p className="text-sm font-bold text-black/40">কোন অর্ডার খুঁজে পাওয়া যায়নি।</p>
+                      </div>
+                    ) : (
+                      <div className="overflow-x-auto">
+                        <table className="w-full text-left text-xs border-collapse">
+                          <thead>
+                            <tr className="bg-black/5 border-b border-black/5 text-black/40 font-black uppercase tracking-wider text-[10px]">
+                              <th className="p-4 pl-6">Order ID</th>
+                              <th className="p-4">Date</th>
+                              <th className="p-4">Items</th>
+                              <th className="p-4">Total Amount</th>
+                              <th className="p-4 pr-6">Status</th>
+                            </tr>
+                          </thead>
+                          <tbody className="divide-y divide-black/5">
+                            {userOrders.slice(0, 5).map((order) => (
+                              <tr key={order.id} className="hover:bg-black/5 transition-colors">
+                                <td className="p-4 pl-6 font-mono font-bold text-black">#{order.id.slice(0, 8)}...</td>
+                                <td className="p-4 font-bold text-black/60">{new Date(order.createdat).toLocaleDateString()}</td>
+                                <td className="p-4 max-w-[220px] truncate font-medium text-black/70">
+                                  {order.items.map(item => `${item.name} (x${item.quantity})`).join(', ')}
+                                </td>
+                                <td className="p-4 font-black text-black">৳{order.total}</td>
+                                <td className="p-4 pr-6">
+                                  <span className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[10px] font-black border uppercase tracking-wider ${getStatusColor(order.status)}`}>
+                                    {getStatusIcon(order.status)}
+                                    {order.status}
+                                  </span>
+                                </td>
+                              </tr>
+                            ))}
+                          </tbody>
+                        </table>
+                      </div>
+                    )}
+                  </div>
+
+                </motion.div>
+              )}
+
+              {/* TAB 2: MY ORDERS LIST */}
+              {activeTab === 'orders' && (
+                <motion.div
+                  key="orders-tab"
+                  initial={{ opacity: 0, y: 15 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, y: -15 }}
+                  className="space-y-6"
+                >
+                  <div className="flex justify-between items-center">
+                    <h2 className="text-xl font-black text-black tracking-tight">My Orders</h2>
+                    <span className="px-3.5 py-1.5 bg-[#f57224]/5 text-[#f57224] rounded-full text-[10px] font-black uppercase tracking-widest border border-[#f57224]/10">
+                      Total {userOrders.length} Orders
+                    </span>
+                  </div>
+
+                  {userOrders.length === 0 ? (
+                    <div className="bg-white rounded-2xl p-12 border border-black/5 text-center shadow-sm">
+                      <div className="w-16 h-16 bg-black/5 rounded-full flex items-center justify-center mx-auto mb-5">
+                        <ShoppingBag className="w-8 h-8 text-black/20" />
+                      </div>
+                      <h3 className="text-base font-black mb-1">No Orders Placed Yet</h3>
+                      <p className="text-xs font-bold text-black/40 mb-6">শপিং শুরু করতে নিচের বাটনে চাপ দিন।</p>
+                      <button 
+                        onClick={() => navigate('/')}
+                        className="px-6 py-3 bg-[#f57224] hover:bg-[#e05e12] text-white rounded-xl font-bold text-xs transition-all shadow-md shadow-orange-500/10"
+                      >
+                        Start Shopping
+                      </button>
+                    </div>
+                  ) : (
+                    <div className="space-y-4">
+                      {userOrders.map((order) => (
+                        <div key={order.id} className="bg-white rounded-2xl border border-black/5 shadow-sm overflow-hidden">
+                          
+                          {/* Order Card Header */}
+                          <div className="p-5 bg-black/5 border-b border-black/5 flex flex-wrap items-center justify-between gap-4 text-xs">
+                            <div className="space-y-0.5">
+                              <p className="text-[10px] font-black uppercase tracking-wider text-black/40">Order Number</p>
+                              <p className="font-mono font-bold text-black">#{order.id}</p>
                             </div>
-                            <div className="flex-1">
-                              <h4 className="font-bold text-sm">{item.name}</h4>
-                              <p className="text-xs text-black/40">
-                                {item.quantity} x ৳{item.price} 
-                                {item.selectedAttr && ` • ${item.selectedAttr}`}
+                            <div className="space-y-0.5">
+                              <p className="text-[10px] font-black uppercase tracking-wider text-black/40">Placed On</p>
+                              <p className="font-bold text-black/70">{new Date(order.createdat).toLocaleString()}</p>
+                            </div>
+                            <div className="space-y-0.5">
+                              <p className="text-[10px] font-black uppercase tracking-wider text-black/40">Payment</p>
+                              <p className="font-bold text-black/70 uppercase">
+                                {order.paymentmethod} {order.transactionid && `(ID: ${order.transactionid})`}
                               </p>
                             </div>
-                            <div className="text-right">
-                              <p className="font-bold text-sm">৳{item.price * item.quantity}</p>
+                            <div className="space-y-0.5">
+                              <p className="text-[10px] font-black uppercase tracking-wider text-black/40">Total Price</p>
+                              <p className="font-black text-[#f57224]">৳{order.total}</p>
+                            </div>
+                            <div>
+                              <span className={`inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-full text-[10px] font-black border uppercase tracking-wider ${getStatusColor(order.status)}`}>
+                                {getStatusIcon(order.status)}
+                                {order.status}
+                              </span>
                             </div>
                           </div>
-                        ))}
-                      </div>
+
+                          {/* Order Products List */}
+                          <div className="p-5 divide-y divide-black/5">
+                            {order.items.map((item, idx) => (
+                              <div key={idx} className="py-4 first:pt-0 last:pb-0 flex items-center gap-4">
+                                <div className="w-14 h-14 rounded-xl border border-black/5 overflow-hidden flex-shrink-0 bg-white shadow-sm">
+                                  <img src={item.image} alt={item.name} className="w-full h-full object-cover" />
+                                </div>
+                                <div className="flex-1 min-w-0">
+                                  <h4 className="font-bold text-xs text-black truncate">{item.name}</h4>
+                                  <p className="text-[10px] font-bold text-black/40 mt-1">
+                                    Quantity: {item.quantity} • ৳{item.price} each
+                                    {item.selectedAttr && ` • ${item.selectedAttr}`}
+                                  </p>
+                                </div>
+                                <div className="text-right font-black text-xs text-black">
+                                  ৳{item.price * item.quantity}
+                                </div>
+                              </div>
+                            ))}
+                          </div>
+
+                        </div>
+                      ))}
                     </div>
-                  </motion.div>
-                ))}
-              </div>
-            )}
-          </motion.div>
+                  )}
+
+                </motion.div>
+              )}
+
+            </AnimatePresence>
+          </div>
+
         </div>
+
       </div>
-      {/* Edit Profile Modal */}
+
+      {/* EDIT PROFILE MODAL (Daraz Popover/Form Style) */}
       <AnimatePresence>
         {isEditing && (
           <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
@@ -348,41 +529,42 @@ export default function Profile({ currentUser, isAuthLoading, orders, onLogout, 
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
               onClick={() => setIsEditing(false)}
-              className="absolute inset-0 bg-black/40 backdrop-blur-sm"
+              className="absolute inset-0 bg-black/50 backdrop-blur-sm"
             />
             <motion.div 
-              initial={{ opacity: 0, scale: 0.95, y: 20 }}
+              initial={{ opacity: 0, scale: 0.95, y: 15 }}
               animate={{ opacity: 1, scale: 1, y: 0 }}
-              exit={{ opacity: 0, scale: 0.95, y: 20 }}
-              className="relative w-full max-w-lg bg-white rounded-[2.5rem] shadow-2xl overflow-y-auto max-h-[90vh]"
+              exit={{ opacity: 0, scale: 0.95, y: 15 }}
+              className="relative w-full max-w-lg bg-white rounded-3xl shadow-2xl overflow-y-auto max-h-[90vh] border border-black/5"
             >
-              <div className="p-8 border-b border-black/5 flex items-center justify-between">
-                <h2 className="text-2xl font-black">Edit Profile</h2>
+              <div className="px-8 py-5 border-b border-black/5 flex items-center justify-between bg-white sticky top-0 z-10">
+                <h2 className="text-base font-black text-black">Edit Profile & Address Book</h2>
                 <button 
                   onClick={() => setIsEditing(false)}
-                  className="p-2 hover:bg-black/5 rounded-xl transition-colors"
+                  className="p-1.5 hover:bg-black/5 rounded-full text-black/40 hover:text-black transition-colors"
                 >
-                  <X className="w-6 h-6" />
+                  <X className="w-5 h-5" />
                 </button>
               </div>
 
-              <form onSubmit={handleUpdateProfile} className="p-8 space-y-6">
-                {/* Photo Upload */}
-                <div className="flex flex-col items-center gap-4 mb-8">
+              <form onSubmit={handleUpdateProfile} className="p-8 space-y-5">
+                
+                {/* Photo Upload Area */}
+                <div className="flex flex-col items-center gap-3 bg-black/5 p-4 rounded-2xl">
                   <div className="relative group">
-                    <div className="w-24 h-24 bg-black/5 rounded-[2rem] flex items-center justify-center overflow-hidden border-2 border-dashed border-black/10">
+                    <div className="w-20 h-20 bg-white rounded-full flex items-center justify-center overflow-hidden border border-black/10 shadow-sm">
                       {editPhoto ? (
                         <img src={editPhoto} alt="Preview" className="w-full h-full object-cover" />
                       ) : (
-                        <UserIcon className="w-10 h-10 text-black/20" />
+                        <UserIcon className="w-8 h-8 text-black/20" />
                       )}
                     </div>
                     <button 
                       type="button"
                       onClick={() => fileInputRef.current?.click()}
-                      className="absolute -bottom-2 -right-2 w-10 h-10 bg-black text-white rounded-xl shadow-lg flex items-center justify-center hover:scale-110 transition-transform"
+                      className="absolute -bottom-1 -right-1 w-8 h-8 bg-[#f57224] text-white rounded-full shadow-md flex items-center justify-center hover:scale-105 transition-transform"
                     >
-                      <Camera className="w-5 h-5" />
+                      <Camera className="w-4 h-4" />
                     </button>
                   </div>
                   <input 
@@ -392,11 +574,12 @@ export default function Profile({ currentUser, isAuthLoading, orders, onLogout, 
                     accept="image/*"
                     className="hidden"
                   />
-                  <p className="text-[10px] font-black uppercase tracking-widest text-black/40">Profile Picture</p>
+                  <p className="text-[9px] font-black uppercase tracking-wider text-black/40">Upload New Profile Picture</p>
                 </div>
 
                 <div className="space-y-4">
-                  <div className="space-y-2">
+                  {/* Full Name */}
+                  <div className="space-y-1.5">
                     <label className="text-[10px] font-black uppercase tracking-widest text-black/40 ml-1">Full Name</label>
                     <div className="relative">
                       <UserIcon className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-black/20" />
@@ -405,13 +588,14 @@ export default function Profile({ currentUser, isAuthLoading, orders, onLogout, 
                         type="text"
                         value={editName}
                         onChange={(e) => setEditName(e.target.value)}
-                        className="w-full pl-11 pr-4 py-4 bg-black/5 rounded-2xl focus:outline-none focus:ring-2 focus:ring-black/10 transition-all font-bold"
-                        placeholder="Your Name"
+                        className="w-full pl-11 pr-4 py-3.5 bg-[#f4f4f7] rounded-xl focus:outline-none focus:ring-2 focus:ring-[#f57224]/20 transition-all font-bold text-xs"
+                        placeholder="Your full name"
                       />
                     </div>
                   </div>
 
-                  <div className="space-y-2">
+                  {/* Phone Number */}
+                  <div className="space-y-1.5">
                     <label className="text-[10px] font-black uppercase tracking-widest text-black/40 ml-1">Phone Number</label>
                     <div className="relative">
                       <Phone className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-black/20" />
@@ -419,57 +603,61 @@ export default function Profile({ currentUser, isAuthLoading, orders, onLogout, 
                         type="tel"
                         value={editPhone}
                         onChange={(e) => setEditPhone(e.target.value)}
-                        className="w-full pl-11 pr-4 py-4 bg-black/5 rounded-2xl focus:outline-none focus:ring-2 focus:ring-black/10 transition-all font-bold"
+                        className="w-full pl-11 pr-4 py-3.5 bg-[#f4f4f7] rounded-xl focus:outline-none focus:ring-2 focus:ring-[#f57224]/20 transition-all font-bold text-xs"
                         placeholder="01XXXXXXXXX"
                       />
                     </div>
                   </div>
 
-                  <div className="space-y-2">
+                  {/* Delivery Address */}
+                  <div className="space-y-1.5">
                     <label className="text-[10px] font-black uppercase tracking-widest text-black/40 ml-1">Delivery Address</label>
                     <div className="relative">
-                      <MapPin className="absolute left-4 top-4 w-4 h-4 text-black/20" />
+                      <MapPin className="absolute left-4 top-4.5 w-4 h-4 text-black/20" />
                       <textarea 
                         value={editAddress}
                         onChange={(e) => setEditAddress(e.target.value)}
-                        className="w-full pl-11 pr-4 py-4 bg-black/5 rounded-2xl focus:outline-none focus:ring-2 focus:ring-black/10 transition-all font-bold min-h-[100px]"
+                        className="w-full pl-11 pr-4 py-3.5 bg-[#f4f4f7] rounded-xl focus:outline-none focus:ring-2 focus:ring-[#f57224]/20 transition-all font-bold text-xs min-h-[90px]"
                         placeholder="House no, Road no, Area"
                       />
                     </div>
                   </div>
                 </div>
 
-                <div className="pt-4 flex gap-4">
+                {/* Form Buttons */}
+                <div className="pt-4 flex gap-3 border-t border-black/5">
                   <button 
                     type="button"
                     onClick={() => setIsEditing(false)}
-                    className="flex-1 py-4 bg-black/5 text-black rounded-2xl font-bold hover:bg-black/10 transition-all"
+                    className="flex-1 py-3 bg-black/5 hover:bg-black/10 text-black text-xs font-bold rounded-xl transition-all"
                   >
                     Cancel
                   </button>
                   <button 
                     type="submit"
                     disabled={isSaving}
-                    className={`flex-1 py-4 bg-black text-white rounded-2xl font-bold hover:bg-black/90 transition-all shadow-xl flex items-center justify-center gap-2 ${isSaving ? 'opacity-70 cursor-not-allowed' : ''}`}
+                    className={`flex-1 py-3 bg-[#f57224] hover:bg-[#e05e12] text-white text-xs font-bold rounded-xl transition-all shadow-md shadow-orange-500/10 flex items-center justify-center gap-1.5 ${isSaving ? 'opacity-70 cursor-not-allowed' : ''}`}
                   >
                     {isSaving ? (
                       <>
-                        <div className="w-5 h-5 border-2 border-white/20 border-t-white rounded-full animate-spin" />
+                        <div className="w-4 h-4 border-2 border-white/20 border-t-white rounded-full animate-spin" />
                         Saving...
                       </>
                     ) : (
                       <>
-                        <Save className="w-5 h-5" />
+                        <Save className="w-4 h-4" />
                         Save Changes
                       </>
                     )}
                   </button>
                 </div>
+
               </form>
             </motion.div>
           </div>
         )}
       </AnimatePresence>
+
     </div>
   );
 }
