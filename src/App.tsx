@@ -1018,20 +1018,6 @@ export default function App() {
                     </nav>
 
                     <div className="pt-8 border-t border-black/5">
-                      <p className="text-[10px] uppercase tracking-widest text-black/40 font-bold mb-4">Search</p>
-                      <div className="relative">
-                        <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-black/40" />
-                        <input 
-                          type="text" 
-                          placeholder="Search products..."
-                          value={searchQuery}
-                          onChange={(e) => setSearchQuery(e.target.value)}
-                          className="w-full pl-10 pr-4 py-3 bg-black/5 rounded-xl text-sm focus:outline-none"
-                        />
-                      </div>
-                    </div>
-
-                    <div className="pt-8 border-t border-black/5">
                       <p className="text-[10px] uppercase tracking-widest text-black/40 font-bold mb-4">Follow Us</p>
                       <div className="flex space-x-4">
                         <a href="#" className="p-3 bg-black/5 rounded-full hover:bg-black hover:text-white transition-all"><Facebook className="w-4 h-4" /></a>
