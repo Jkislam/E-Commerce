@@ -465,10 +465,35 @@ export default function App() {
       }
     };
 
-    if (!authLoading) {
+    let ordersChannel: any = null;
+
+    if (!authLoading && currentUser) {
+      loadUserData();
+
+      // Subscribe to real-time changes on the orders table
+      ordersChannel = supabase
+        .channel('public:orders-changes')
+        .on(
+          'postgres_changes',
+          { event: '*', schema: 'public', table: 'orders' },
+          (payload) => {
+            console.log('Real-time order change received:', payload);
+            if (isSubscribed) {
+              loadUserData();
+            }
+          }
+        )
+        .subscribe();
+    } else if (!authLoading) {
       loadUserData();
     }
-    return () => { isSubscribed = false; };
+
+    return () => {
+      isSubscribed = false;
+      if (ordersChannel) {
+        supabase.removeChannel(ordersChannel);
+      }
+    };
   }, [currentUser, authLoading]);
 
   // Sync settings to localStorage and Supabase (if user is admin)
