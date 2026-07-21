@@ -866,7 +866,7 @@ function AnalyticsView({ orders, products = [], setCurrentView }: { orders: Orde
     avgOrderValue: 0
   });
   const [chartData, setChartData] = useState<{ date: string; amount: number }[]>([]);
-  const [timeframe, setTimeframe] = useState<'7d' | '30d' | 'month' | 'all'>('all');
+  const [timeframe, setTimeframe] = useState<'daily' | 'weekly' | 'monthly' | 'yearly'>('daily');
   const [isLoading, setIsLoading] = useState(true);
   const [refreshTrigger, setRefreshTrigger] = useState(0);
 
@@ -933,28 +933,29 @@ function AnalyticsView({ orders, products = [], setCurrentView }: { orders: Orde
         const now = new Date();
         let filteredOrders = [...orders];
 
-        if (timeframe === '7d') {
+        if (timeframe === 'daily') {
+          const startOfToday = new Date(now);
+          startOfToday.setHours(0,0,0,0);
+          filteredOrders = orders.filter(o => {
+            if (!o.createdat) return false;
+            const d = new Date(o.createdat);
+            return !isNaN(d.getTime()) && d >= startOfToday;
+          });
+        } else if (timeframe === 'weekly') {
           const sevenDaysAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
           filteredOrders = orders.filter(o => {
             if (!o.createdat) return false;
             const d = new Date(o.createdat);
             return !isNaN(d.getTime()) && d >= sevenDaysAgo;
           });
-        } else if (timeframe === '30d') {
-          const thirtyDaysAgo = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
+        } else if (timeframe === 'monthly') {
+          const startOfRunningYear = new Date(now.getFullYear(), 0, 1);
           filteredOrders = orders.filter(o => {
             if (!o.createdat) return false;
             const d = new Date(o.createdat);
-            return !isNaN(d.getTime()) && d >= thirtyDaysAgo;
+            return !isNaN(d.getTime()) && d >= startOfRunningYear;
           });
-        } else if (timeframe === 'month') {
-          const startOfOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
-          filteredOrders = orders.filter(o => {
-            if (!o.createdat) return false;
-            const d = new Date(o.createdat);
-            return !isNaN(d.getTime()) && d >= startOfOfMonth;
-          });
-        } else if (timeframe === 'all') {
+        } else if (timeframe === 'yearly') {
           filteredOrders = orders.filter(o => {
             if (!o.createdat) return false;
             const d = new Date(o.createdat);
@@ -975,46 +976,115 @@ function AnalyticsView({ orders, products = [], setCurrentView }: { orders: Orde
 
         // Prepare Chart Data
         const dailyData: { [key: string]: number } = {};
-        
-        // Fill dates based on timeframe to avoid gaps
-        const generateDates = () => {
-          const dates: string[] = [];
-          const daysToGen = timeframe === '7d' ? 7 : timeframe === '30d' ? 30 : timeframe === 'month' ? 31 : 14;
-          
-          for (let i = daysToGen - 1; i >= 0; i--) {
-            const date = new Date(now.getTime() - i * 24 * 60 * 60 * 1000);
-            const key = date.toLocaleDateString('en-US', { day: 'numeric', month: 'short' });
-            dates.push(key);
-            dailyData[key] = 0;
-          }
-          return dates;
-        };
+        let formattedChartData: { date: string; amount: number }[] = [];
 
-        if (timeframe !== 'all') {
-          generateDates();
-        }
-
-        filteredOrders.forEach(order => {
-          if (!order.createdat) return;
-          const parsedDate = new Date(order.createdat);
-          if (isNaN(parsedDate.getTime())) return;
-          
-          const date = parsedDate.toLocaleDateString('en-US', { day: 'numeric', month: 'short' });
-          dailyData[date] = (dailyData[date] || 0) + (Number(order.total) || 0);
-        });
-
-        const formattedChartData = Object.entries(dailyData)
-          .map(([date, amount]) => ({ date, amount }))
-          .sort((a, b) => {
-            const currentYear = new Date().getFullYear();
-            const dateA = new Date(`${a.date} ${currentYear}`);
-            const dateB = new Date(`${b.date} ${currentYear}`);
-            if (isNaN(dateA.getTime()) || isNaN(dateB.getTime())) return 0;
-            return dateA.getTime() - dateB.getTime();
+        if (timeframe === 'daily') {
+          const slots = ["12 AM", "3 AM", "6 AM", "9 AM", "12 PM", "3 PM", "6 PM", "9 PM"];
+          slots.forEach(slot => {
+            dailyData[slot] = 0;
           });
 
-        // For 'all' we just take the last 14 unique active days if we didn't pre-fill
-        setChartData(timeframe === 'all' ? formattedChartData.slice(-14) : formattedChartData);
+          filteredOrders.forEach(order => {
+            if (!order.createdat) return;
+            const parsedDate = new Date(order.createdat);
+            if (isNaN(parsedDate.getTime())) return;
+
+            const hour = parsedDate.getHours();
+            let slot = "12 AM";
+            if (hour >= 3 && hour < 6) slot = "3 AM";
+            else if (hour >= 6 && hour < 9) slot = "6 AM";
+            else if (hour >= 9 && hour < 12) slot = "9 AM";
+            else if (hour >= 12 && hour < 15) slot = "12 PM";
+            else if (hour >= 15 && hour < 18) slot = "3 PM";
+            else if (hour >= 18 && hour < 21) slot = "6 PM";
+            else if (hour >= 21) slot = "9 PM";
+
+            dailyData[slot] = (dailyData[slot] || 0) + (Number(order.total) || 0);
+          });
+
+          formattedChartData = slots.map(slot => ({ date: slot, amount: dailyData[slot] }));
+
+        } else if (timeframe === 'weekly') {
+          for (let i = 6; i >= 0; i--) {
+            const date = new Date(now.getTime() - i * 24 * 60 * 60 * 1000);
+            const key = date.toLocaleDateString('en-US', { day: 'numeric', month: 'short' });
+            dailyData[key] = 0;
+          }
+
+          filteredOrders.forEach(order => {
+            if (!order.createdat) return;
+            const parsedDate = new Date(order.createdat);
+            if (isNaN(parsedDate.getTime())) return;
+
+            const date = parsedDate.toLocaleDateString('en-US', { day: 'numeric', month: 'short' });
+            if (dailyData[date] !== undefined) {
+              dailyData[date] = (dailyData[date] || 0) + (Number(order.total) || 0);
+            }
+          });
+
+          formattedChartData = Object.entries(dailyData)
+            .map(([date, amount]) => ({ date, amount }))
+            .sort((a, b) => {
+              const currentYear = new Date().getFullYear();
+              const dateA = new Date(`${a.date} ${currentYear}`);
+              const dateB = new Date(`${b.date} ${currentYear}`);
+              if (isNaN(dateA.getTime()) || isNaN(dateB.getTime())) return 0;
+              return dateA.getTime() - dateB.getTime();
+            });
+
+        } else if (timeframe === 'monthly') {
+          const months = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+          const currentMonthIdx = now.getMonth();
+          for (let i = 0; i <= currentMonthIdx; i++) {
+            dailyData[months[i]] = 0;
+          }
+
+          filteredOrders.forEach(order => {
+            if (!order.createdat) return;
+            const parsedDate = new Date(order.createdat);
+            if (isNaN(parsedDate.getTime())) return;
+
+            const monthKey = parsedDate.toLocaleDateString('en-US', { month: 'short' });
+            if (dailyData[monthKey] !== undefined) {
+              dailyData[monthKey] = (dailyData[monthKey] || 0) + (Number(order.total) || 0);
+            }
+          });
+
+          formattedChartData = months
+            .slice(0, currentMonthIdx + 1)
+            .map(m => ({ date: m, amount: dailyData[m] || 0 }));
+
+        } else if (timeframe === 'yearly') {
+          const years = new Set<number>();
+          orders.forEach(o => {
+            if (o.createdat) {
+              const d = new Date(o.createdat);
+              if (!isNaN(d.getTime())) {
+                years.add(d.getFullYear());
+              }
+            }
+          });
+          years.add(now.getFullYear());
+          const sortedYears = Array.from(years).sort((a, b) => a - b);
+          sortedYears.forEach(y => {
+            dailyData[y.toString()] = 0;
+          });
+
+          filteredOrders.forEach(order => {
+            if (!order.createdat) return;
+            const parsedDate = new Date(order.createdat);
+            if (isNaN(parsedDate.getTime())) return;
+
+            const yearKey = parsedDate.getFullYear().toString();
+            if (dailyData[yearKey] !== undefined) {
+              dailyData[yearKey] = (dailyData[yearKey] || 0) + (Number(order.total) || 0);
+            }
+          });
+
+          formattedChartData = sortedYears.map(y => ({ date: y.toString(), amount: dailyData[y.toString()] || 0 }));
+        }
+
+        setChartData(formattedChartData);
       } catch (err: any) {
         console.warn('Analytics processing warning (handled):', err?.message || err);
       } finally {
@@ -1067,10 +1137,10 @@ function AnalyticsView({ orders, products = [], setCurrentView }: { orders: Orde
   ];
 
   const ranges = [
-    { label: '7D', value: '7d' },
-    { label: '30D', value: '30d' },
-    { label: 'Month', value: 'month' },
-    { label: 'All', value: 'all' },
+    { label: 'Daily', value: 'daily' },
+    { label: 'Weekly', value: 'weekly' },
+    { label: 'Monthly', value: 'monthly' },
+    { label: 'Yearly', value: 'yearly' },
   ];
 
   return (
@@ -1243,95 +1313,141 @@ function AnalyticsView({ orders, products = [], setCurrentView }: { orders: Orde
 
       {/* Charts Section */}
       <div className="grid grid-cols-1 gap-8">
-        <motion.div
-          initial={{ opacity: 0, scale: 0.98 }}
-          animate={{ opacity: 1, scale: 1 }}
-          className="bg-white p-6 sm:p-10 rounded-[3rem] border border-black/5 shadow-premium overflow-hidden"
-        >
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-6 mb-10">
-            <div className="flex items-center gap-4">
-              <div className="w-12 h-12 bg-black text-white rounded-2xl flex items-center justify-center shadow-lg shadow-black/10">
-                <TrendingUp className="w-6 h-6" />
-              </div>
-              <div>
-                <h3 className="text-2xl font-black tracking-tight">Sales Overview</h3>
-                <p className="text-xs font-bold text-black/30 uppercase tracking-widest mt-1">Revenue performance analytics</p>
-              </div>
-            </div>
-            
-            <div className="flex items-center bg-black/5 p-1 rounded-2xl self-start">
-              {ranges.map((r) => (
-                <button
-                  key={r.value}
-                  onClick={() => setTimeframe(r.value as any)}
-                  className={`px-4 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all ${timeframe === r.value ? 'bg-white text-black shadow-sm' : 'text-black/40 hover:text-black/60'}`}
-                >
-                  {r.label}
-                </button>
-              ))}
-            </div>
-          </div>
+        {(() => {
+          const peakSales = chartData.length > 0 ? Math.max(...chartData.map(d => d.amount)) : 0;
+          const totalSalesInPeriod = chartData.reduce((sum, d) => sum + d.amount, 0);
+          const avgSales = chartData.length > 0 ? Math.round(totalSalesInPeriod / chartData.length) : 0;
+          const activeSalesDays = chartData.filter(d => d.amount > 0).length;
 
-          <div className="w-full" style={{ height: '400px', minHeight: '400px' }}>
-            <ResponsiveContainer width="100%" height={400}>
-              <AreaChart data={chartData} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
-                <defs>
-                  <linearGradient id="colorSales" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="5%" stopColor="#000" stopOpacity={0.15}/>
-                    <stop offset="95%" stopColor="#000" stopOpacity={0.01}/>
-                  </linearGradient>
-                </defs>
-                <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#00000008" />
-                <XAxis 
-                  dataKey="date" 
-                  axisLine={false} 
-                  tickLine={false} 
-                  tick={{ fontSize: 10, fill: '#00000040', fontWeight: 800 }}
-                  dy={15}
-                />
-                <YAxis 
-                  axisLine={false} 
-                  tickLine={false} 
-                  tick={{ fontSize: 10, fill: '#00000040', fontWeight: 800 }}
-                  tickFormatter={(val) => `৳${val >= 1000 ? (val/1000).toFixed(1) + 'k' : val}`}
-                />
-                <Tooltip 
-                  cursor={{ stroke: '#00000010', strokeWidth: 2 }}
-                  contentStyle={{ 
-                    backgroundColor: '#000', 
-                    borderRadius: '24px', 
-                    border: 'none',
-                    padding: '16px 20px',
-                    boxShadow: '0 20px 40px -10px rgba(0,0,0,0.2)'
-                  }}
-                  itemStyle={{ color: '#fff', fontSize: '14px', fontWeight: '900' }}
-                  labelStyle={{ color: '#ffffff60', fontSize: '10px', fontWeight: 'bold', textTransform: 'uppercase', marginBottom: '6px', letterSpacing: '1px' }}
-                  formatter={(value: any) => [`৳${Number(value).toLocaleString()}`, 'Revenue']}
-                />
-                <Area 
-                  type="step" 
-                  dataKey="amount" 
-                  stroke="#000" 
-                  strokeWidth={4}
-                  fillOpacity={1} 
-                  fill="url(#colorSales)"
-                  animationDuration={1500}
-                />
-              </AreaChart>
-            </ResponsiveContainer>
-          </div>
-          
-          <div className="flex items-center justify-center gap-8 mt-10 pt-8 border-t border-black/5">
-            <div className="flex items-center gap-2">
-              <div className="w-2 h-2 rounded-full bg-black"></div>
-              <span className="text-[10px] font-black uppercase tracking-widest text-black/40">Daily Revenue</span>
-            </div>
-            <div className="flex items-center gap-2">
-              <div className="w-2 h-2 rounded-full bg-black/10"></div>
-              <span className="text-[10px] font-black uppercase tracking-widest text-black/40">Projections</span>
-            </div>
-          </div>
-        </motion.div>
+          return (
+            <motion.div
+              initial={{ opacity: 0, scale: 0.98 }}
+              animate={{ opacity: 1, scale: 1 }}
+              className="bg-white p-6 sm:p-10 rounded-[3rem] border border-black/5 shadow-premium overflow-hidden"
+            >
+              <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-6 mb-10">
+                <div className="flex items-center gap-4">
+                  <div className="w-12 h-12 bg-black text-white rounded-2xl flex items-center justify-center shadow-lg shadow-black/10">
+                    <TrendingUp className="w-6 h-6" />
+                  </div>
+                  <div>
+                    <h3 className="text-2xl font-black tracking-tight">Sales Overview</h3>
+                    <p className="text-xs font-bold text-black/30 uppercase tracking-widest mt-1">Revenue performance analytics</p>
+                  </div>
+                </div>
+                
+                <div className="flex items-center bg-black/5 p-1 rounded-2xl self-start">
+                  {ranges.map((r) => (
+                    <button
+                      key={r.value}
+                      onClick={() => setTimeframe(r.value as any)}
+                      className={`px-4 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all ${timeframe === r.value ? 'bg-white text-black shadow-sm' : 'text-black/40 hover:text-black/60'}`}
+                    >
+                      {r.label}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              {/* Period Quick Insights */}
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-6 mb-8 bg-black/[0.01] border border-black/5 p-6 rounded-[2rem]">
+                <div className="flex flex-col">
+                  <span className="text-[10px] font-black text-black/30 uppercase tracking-widest">
+                    {timeframe === 'daily' ? 'Peak Hourly Revenue' : timeframe === 'weekly' ? 'Peak Daily Revenue' : timeframe === 'monthly' ? 'Peak Monthly Revenue' : 'Peak Yearly Revenue'}
+                  </span>
+                  <span className="text-xl font-black text-black mt-1">৳{peakSales.toLocaleString()}</span>
+                  <span className="text-[9px] font-bold text-green-600 uppercase tracking-wider mt-1 flex items-center gap-1">
+                    <span className="w-1.5 h-1.5 rounded-full bg-green-500 inline-block"></span> Highest performance point
+                  </span>
+                </div>
+                <div className="flex flex-col border-t sm:border-t-0 sm:border-l border-black/5 pt-4 sm:pt-0 sm:pl-6">
+                  <span className="text-[10px] font-black text-black/30 uppercase tracking-widest">
+                    {timeframe === 'daily' ? 'Hourly Average' : timeframe === 'weekly' ? 'Daily Average' : timeframe === 'monthly' ? 'Monthly Average' : 'Yearly Average'}
+                  </span>
+                  <span className="text-xl font-black text-black mt-1">৳{avgSales.toLocaleString()}</span>
+                  <span className="text-[9px] font-bold text-purple-600 uppercase tracking-wider mt-1 flex items-center gap-1">
+                    <span className="w-1.5 h-1.5 rounded-full bg-purple-500 inline-block"></span> Normalised performance value
+                  </span>
+                </div>
+                <div className="flex flex-col border-t sm:border-t-0 sm:border-l border-black/5 pt-4 sm:pt-0 sm:pl-6">
+                  <span className="text-[10px] font-black text-black/30 uppercase tracking-widest">
+                    {timeframe === 'daily' ? 'Active Sales Hours' : timeframe === 'weekly' ? 'Active Sales Days' : timeframe === 'monthly' ? 'Active Months' : 'Active Years'}
+                  </span>
+                  <span className="text-xl font-black text-black mt-1">
+                    {timeframe === 'daily' ? `${activeSalesDays} Hours` : timeframe === 'weekly' ? `${activeSalesDays} Days` : timeframe === 'monthly' ? `${activeSalesDays} Months` : `${activeSalesDays} Years`}
+                  </span>
+                  <span className="text-[9px] font-bold text-amber-600 uppercase tracking-wider mt-1 flex items-center gap-1">
+                    <span className="w-1.5 h-1.5 rounded-full bg-amber-500 inline-block"></span> Active timeline markers
+                  </span>
+                </div>
+              </div>
+
+              <div className="w-full" style={{ height: '400px', minHeight: '400px' }}>
+                <ResponsiveContainer width="100%" height={400}>
+                  <AreaChart data={chartData} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
+                    <defs>
+                      <linearGradient id="colorSales" x1="0" y1="0" x2="0" y2="1">
+                        <stop offset="5%" stopColor="#818cf8" stopOpacity={0.25}/>
+                        <stop offset="50%" stopColor="#c084fc" stopOpacity={0.08}/>
+                        <stop offset="95%" stopColor="#ffffff" stopOpacity={0}/>
+                      </linearGradient>
+                    </defs>
+                    <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#00000005" />
+                    <XAxis 
+                      dataKey="date" 
+                      axisLine={false} 
+                      tickLine={false} 
+                      tick={{ fontSize: 10, fill: '#00000040', fontWeight: 800 }}
+                      dy={15}
+                    />
+                    <YAxis 
+                      axisLine={false} 
+                      tickLine={false} 
+                      tick={{ fontSize: 10, fill: '#00000040', fontWeight: 800 }}
+                      tickFormatter={(val) => `৳${val >= 1000 ? (val/1000).toFixed(1) + 'k' : val}`}
+                    />
+                    <Tooltip 
+                      cursor={{ stroke: '#00000010', strokeWidth: 1.5 }}
+                      contentStyle={{ 
+                        backgroundColor: '#000', 
+                        borderRadius: '24px', 
+                        border: 'none',
+                        padding: '16px 20px',
+                        boxShadow: '0 20px 40px -10px rgba(0,0,0,0.25)'
+                      }}
+                      itemStyle={{ color: '#fff', fontSize: '14px', fontWeight: '900' }}
+                      labelStyle={{ color: '#ffffff60', fontSize: '10px', fontWeight: 'bold', textTransform: 'uppercase', marginBottom: '6px', letterSpacing: '1px' }}
+                      formatter={(value: any) => [`৳${Number(value).toLocaleString()}`, 'Revenue']}
+                    />
+                    <Area 
+                      type="monotone" 
+                      dataKey="amount" 
+                      stroke="#4f46e5" 
+                      strokeWidth={4}
+                      fillOpacity={1} 
+                      fill="url(#colorSales)"
+                      activeDot={{ r: 6, stroke: '#4f46e5', strokeWidth: 3, fill: '#ffffff' }}
+                      animationDuration={1500}
+                    />
+                  </AreaChart>
+                </ResponsiveContainer>
+              </div>
+              
+              <div className="flex items-center justify-center gap-8 mt-10 pt-8 border-t border-t-black/5">
+                <div className="flex items-center gap-2">
+                  <div className="w-2.5 h-2.5 rounded-full bg-indigo-600 shadow-sm shadow-indigo-600/20 animate-pulse"></div>
+                  <span className="text-[10px] font-black uppercase tracking-widest text-black/40">
+                    {timeframe === 'daily' ? 'Hourly Performance' : timeframe === 'weekly' ? 'Weekly Performance' : timeframe === 'monthly' ? 'Monthly Performance' : 'Yearly Performance'}
+                  </span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <div className="w-2.5 h-2.5 rounded-full bg-purple-500/30"></div>
+                  <span className="text-[10px] font-black uppercase tracking-widest text-black/40">Projections Fill</span>
+                </div>
+              </div>
+            </motion.div>
+          );
+        })()}
       </div>
     </div>
   );
