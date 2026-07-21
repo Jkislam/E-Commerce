@@ -860,11 +860,52 @@ function AnalyticsView({ orders, setCurrentView }: { orders: Order[], setCurrent
     totalSales: 0,
     totalOrders: 0,
     totalUsers: 0,
-    growth: 12.5 // Mock growth for UI
+    growth: 0
   });
   const [chartData, setChartData] = useState<{ date: string; amount: number }[]>([]);
   const [timeframe, setTimeframe] = useState<'7d' | '30d' | 'month' | 'all'>('all');
   const [isLoading, setIsLoading] = useState(true);
+  const [refreshTrigger, setRefreshTrigger] = useState(0);
+
+  useEffect(() => {
+    let isSubscribed = true;
+
+    // Real-time subscription to 'profiles' table to update Total Users in real-time
+    const profilesChannel = supabase
+      .channel('public:profiles-analytics-changes')
+      .on(
+        'postgres_changes',
+        { event: '*', schema: 'public', table: 'profiles' },
+        (payload) => {
+          console.log('Real-time profiles change received in Analytics:', payload);
+          if (isSubscribed) {
+            setRefreshTrigger(prev => prev + 1);
+          }
+        }
+      )
+      .subscribe();
+
+    // Subscribe to 'orders' table to ensure any order status or creation updates trigger analytics re-fetch instantly
+    const ordersChannel = supabase
+      .channel('public:orders-analytics-changes')
+      .on(
+        'postgres_changes',
+        { event: '*', schema: 'public', table: 'orders' },
+        (payload) => {
+          console.log('Real-time orders change received in Analytics:', payload);
+          if (isSubscribed) {
+            setRefreshTrigger(prev => prev + 1);
+          }
+        }
+      )
+      .subscribe();
+
+    return () => {
+      isSubscribed = false;
+      supabase.removeChannel(profilesChannel);
+      supabase.removeChannel(ordersChannel);
+    };
+  }, []);
 
   useEffect(() => {
     const fetchAnalytics = async () => {
@@ -921,12 +962,72 @@ function AnalyticsView({ orders, setCurrentView }: { orders: Order[], setCurrent
         const totalSales = filteredOrders.reduce((sum, order) => sum + (Number(order.total) || 0), 0);
         const totalOrders = filteredOrders.length;
 
-        setStats(prev => ({
-          ...prev,
+        // Calculate Dynamic Growth Rate based on selected timeframe
+        let growthValue = 0;
+        const nowTime = now.getTime();
+        
+        if (timeframe === '7d') {
+          const d7 = 7 * 24 * 60 * 60 * 1000;
+          const currentStart = nowTime - d7;
+          const previousStart = nowTime - (2 * d7);
+          
+          const currentSales = orders
+            .filter(o => o.createdat && new Date(o.createdat).getTime() >= currentStart)
+            .reduce((sum, o) => sum + (Number(o.total) || 0), 0);
+            
+          const previousSales = orders
+            .filter(o => o.createdat && new Date(o.createdat).getTime() >= previousStart && new Date(o.createdat).getTime() < currentStart)
+            .reduce((sum, o) => sum + (Number(o.total) || 0), 0);
+            
+          if (previousSales > 0) {
+            growthValue = Number(((currentSales - previousSales) / previousSales * 100).toFixed(1));
+          } else {
+            growthValue = currentSales > 0 ? 100 : 0;
+          }
+        } else if (timeframe === '30d') {
+          const d30 = 30 * 24 * 60 * 60 * 1000;
+          const currentStart = nowTime - d30;
+          const previousStart = nowTime - (2 * d30);
+          
+          const currentSales = orders
+            .filter(o => o.createdat && new Date(o.createdat).getTime() >= currentStart)
+            .reduce((sum, o) => sum + (Number(o.total) || 0), 0);
+            
+          const previousSales = orders
+            .filter(o => o.createdat && new Date(o.createdat).getTime() >= previousStart && new Date(o.createdat).getTime() < currentStart)
+            .reduce((sum, o) => sum + (Number(o.total) || 0), 0);
+            
+          if (previousSales > 0) {
+            growthValue = Number(((currentSales - previousSales) / previousSales * 100).toFixed(1));
+          } else {
+            growthValue = currentSales > 0 ? 100 : 0;
+          }
+        } else {
+          // 'month' or 'all' - compare this month to last month
+          const startOfThisMonth = new Date(now.getFullYear(), now.getMonth(), 1).getTime();
+          const startOfLastMonth = new Date(now.getFullYear(), now.getMonth() - 1, 1).getTime();
+          
+          const thisMonthSales = orders
+            .filter(o => o.createdat && new Date(o.createdat).getTime() >= startOfThisMonth)
+            .reduce((sum, o) => sum + (Number(o.total) || 0), 0);
+            
+          const lastMonthSales = orders
+            .filter(o => o.createdat && new Date(o.createdat).getTime() >= startOfLastMonth && new Date(o.createdat).getTime() < startOfThisMonth)
+            .reduce((sum, o) => sum + (Number(o.total) || 0), 0);
+            
+          if (lastMonthSales > 0) {
+            growthValue = Number(((thisMonthSales - lastMonthSales) / lastMonthSales * 100).toFixed(1));
+          } else {
+            growthValue = thisMonthSales > 0 ? 100 : 0;
+          }
+        }
+
+        setStats({
           totalSales,
           totalOrders,
-          totalUsers: count || 0
-        }));
+          totalUsers: count || 0,
+          growth: growthValue
+        });
 
         // Prepare Chart Data
         const dailyData: { [key: string]: number } = {};
@@ -978,7 +1079,7 @@ function AnalyticsView({ orders, setCurrentView }: { orders: Order[], setCurrent
     };
 
     fetchAnalytics();
-  }, [orders, timeframe]);
+  }, [orders, timeframe, refreshTrigger]);
 
   if (isLoading) {
     return (
