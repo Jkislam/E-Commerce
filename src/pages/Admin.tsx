@@ -1163,58 +1163,39 @@ function AnalyticsView({ orders, products = [], setCurrentView }: { orders: Orde
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.1 }}
-          className="bg-white p-8 rounded-[2.5rem] border border-black/5 shadow-premium"
+          className="bg-white p-8 rounded-[2.5rem] border border-black/5 shadow-premium flex flex-col justify-between"
         >
-          <div className="flex items-center justify-between mb-8">
-            <div className="flex items-center gap-4">
-              <div className="w-12 h-12 bg-black text-white rounded-2xl flex items-center justify-center shadow-lg shadow-black/10">
-                <Activity className="w-6 h-6" />
+          <div>
+            <div className="flex items-center justify-between mb-8">
+              <div className="flex items-center gap-4">
+                <div className="w-12 h-12 bg-black text-white rounded-2xl flex items-center justify-center shadow-lg shadow-black/10">
+                  <Activity className="w-6 h-6" />
+                </div>
+                <div>
+                  <h3 className="text-xl font-black tracking-tight">Today's Live Performance</h3>
+                  <p className="text-[10px] font-black text-black/30 uppercase tracking-widest mt-1">Real-time stats</p>
+                </div>
               </div>
-              <div>
-                <h3 className="text-xl font-black tracking-tight">Today's Live Performance</h3>
-                <p className="text-[10px] font-black text-black/30 uppercase tracking-widest mt-1">আজকের লাইভ পারফরম্যান্স</p>
+              <div className="flex items-center gap-2 px-3 py-1 bg-green-50 text-green-700 rounded-full text-[10px] font-black uppercase tracking-widest border border-green-100">
+                <span className="w-2 h-2 rounded-full bg-green-500 animate-ping animate-pulse" />
+                <span>LIVE</span>
               </div>
             </div>
-            <div className="flex items-center gap-2 px-3 py-1 bg-green-50 text-green-700 rounded-full text-[10px] font-black uppercase tracking-widest border border-green-100">
-              <span className="w-2 h-2 rounded-full bg-green-500 animate-ping animate-pulse" />
-              <span>LIVE</span>
-            </div>
-          </div>
 
-          <div className="grid grid-cols-3 gap-4 mb-8">
-            <div className="bg-black/[0.02] p-5 rounded-2xl border border-black/5">
-              <p className="text-[10px] font-black text-black/40 uppercase tracking-widest mb-1">Today's Sales</p>
-              <h4 className="text-xl font-black text-green-600">৳{todaySales.toLocaleString()}</h4>
-              <p className="text-[9px] font-bold text-black/30 mt-1">আজকের বিক্রি</p>
+            <div className="grid grid-cols-3 gap-4">
+              <div className="bg-black/[0.02] p-5 rounded-2xl border border-black/5">
+                <p className="text-[10px] font-black text-black/40 uppercase tracking-widest mb-1">Today's Sales</p>
+                <h4 className="text-xl font-black text-green-600">৳{todaySales.toLocaleString()}</h4>
+              </div>
+              <div className="bg-black/[0.02] p-5 rounded-2xl border border-black/5">
+                <p className="text-[10px] font-black text-black/40 uppercase tracking-widest mb-1">Today's Orders</p>
+                <h4 className="text-xl font-black text-black">{todayOrders.length}</h4>
+              </div>
+              <div className="bg-black/[0.02] p-5 rounded-2xl border border-black/5">
+                <p className="text-[10px] font-black text-black/40 uppercase tracking-widest mb-1">Pending Today</p>
+                <h4 className="text-xl font-black text-amber-600">{todayPendingCount}</h4>
+              </div>
             </div>
-            <div className="bg-black/[0.02] p-5 rounded-2xl border border-black/5">
-              <p className="text-[10px] font-black text-black/40 uppercase tracking-widest mb-1">Today's Orders</p>
-              <h4 className="text-xl font-black text-black">{todayOrders.length}</h4>
-              <p className="text-[9px] font-bold text-black/30 mt-1">আজকের অর্ডার</p>
-            </div>
-            <div className="bg-black/[0.02] p-5 rounded-2xl border border-black/5">
-              <p className="text-[10px] font-black text-black/40 uppercase tracking-widest mb-1">Pending Today</p>
-              <h4 className="text-xl font-black text-amber-600">{todayPendingCount}</h4>
-              <p className="text-[9px] font-bold text-black/30 mt-1">পেন্ডিং অর্ডার</p>
-            </div>
-          </div>
-
-          <div className="space-y-2">
-            <div className="flex justify-between text-xs font-black uppercase tracking-wider text-black/40">
-              <span>Processing Progress</span>
-              <span className="text-black">{todayProgressPercent}% ({todayProcessingCount}/{todayOrders.length || 1})</span>
-            </div>
-            <div className="w-full h-3 bg-black/5 rounded-full overflow-hidden">
-              <motion.div 
-                initial={{ width: 0 }}
-                animate={{ width: `${todayProgressPercent}%` }}
-                transition={{ duration: 0.8, ease: "easeOut" }}
-                className="h-full bg-black rounded-full"
-              />
-            </div>
-            <p className="text-[10px] font-bold text-black/30">
-              {todayOrders.length === 0 ? 'No orders placed today yet.' : 'Track the processing status of orders received today.'}
-            </p>
           </div>
         </motion.div>
 
@@ -1232,39 +1213,39 @@ function AnalyticsView({ orders, products = [], setCurrentView }: { orders: Orde
               </div>
               <div>
                 <h3 className="text-xl font-black tracking-tight">Operational Action Center</h3>
-                <p className="text-[10px] font-black text-black/30 uppercase tracking-widest mt-1">অপারেশনাল অ্যাকশন সেন্টারস</p>
+                <p className="text-[10px] font-black text-black/30 uppercase tracking-widest mt-1">System Alerts & Tasks</p>
               </div>
             </div>
 
             <div className="space-y-4">
               {/* Alert 1: Pending Orders */}
               {allPendingOrders.length > 0 ? (
-                <div className="p-5 bg-rose-50 rounded-2xl border border-rose-100 flex items-start gap-4">
-                  <div className="w-10 h-10 bg-rose-500/10 rounded-xl flex items-center justify-center shrink-0">
-                    <Clock className="w-5 h-5 text-rose-600" />
+                <div className="p-5 bg-rose-50 rounded-2xl border border-rose-100 flex items-start gap-4 transition-all hover:bg-rose-100/50">
+                  <div className="w-12 h-12 bg-rose-500 text-white rounded-xl flex items-center justify-center shrink-0 shadow-md shadow-rose-500/20">
+                    <Clock className="w-6 h-6" />
                   </div>
                   <div className="flex-1 min-w-0">
-                    <h4 className="text-sm font-black text-rose-900">Pending Orders Waiting!</h4>
+                    <h4 className="text-sm font-black text-rose-900 uppercase tracking-wider">Pending Orders Alert</h4>
                     <p className="text-xs font-bold text-rose-700/80 mt-1">
-                      {allPendingOrders.length} টি অর্ডার পেন্ডিং অবস্থায় আছে। দ্রুত প্রসেস করুন।
+                      There are {allPendingOrders.length} pending orders waiting for fulfillment.
                     </p>
                     <button
                       onClick={() => setCurrentView('orders')}
                       className="mt-3 px-4 py-2 bg-rose-600 hover:bg-rose-700 text-white text-[10px] font-black uppercase tracking-widest rounded-xl transition-all shadow-sm font-bold"
                     >
-                      Process Orders (অর্ডার প্রসেস করুন)
+                      Process Orders
                     </button>
                   </div>
                 </div>
               ) : (
-                <div className="p-5 bg-green-50 rounded-2xl border border-green-100 flex items-start gap-4">
-                  <div className="w-10 h-10 bg-green-500/10 rounded-xl flex items-center justify-center shrink-0">
-                    <CheckCircle2 className="w-5 h-5 text-green-600" />
+                <div className="p-5 bg-green-50 rounded-2xl border border-green-100 flex items-start gap-4 transition-all hover:bg-green-100/50">
+                  <div className="w-12 h-12 bg-green-500 text-white rounded-xl flex items-center justify-center shrink-0 shadow-md shadow-green-500/20">
+                    <CheckCircle2 className="w-6 h-6" />
                   </div>
                   <div>
-                    <h4 className="text-sm font-black text-green-900">All caught up!</h4>
+                    <h4 className="text-sm font-black text-green-900 uppercase tracking-wider">Orders Status Clear</h4>
                     <p className="text-xs font-bold text-green-700/80 mt-1">
-                      কোন পেন্ডিং অর্ডার নেই। চমৎকার কাজ করেছেন!
+                      All orders are fully processed and up to date!
                     </p>
                   </div>
                 </div>
@@ -1272,14 +1253,14 @@ function AnalyticsView({ orders, products = [], setCurrentView }: { orders: Orde
 
               {/* Alert 2: Low Stock Alert */}
               {lowStockProducts.length > 0 ? (
-                <div className="p-5 bg-amber-50 rounded-2xl border border-amber-100 flex items-start gap-4">
-                  <div className="w-10 h-10 bg-amber-500/10 rounded-xl flex items-center justify-center shrink-0">
-                    <AlertTriangle className="w-5 h-5 text-amber-600" />
+                <div className="p-5 bg-amber-50 rounded-2xl border border-amber-100 flex items-start gap-4 transition-all hover:bg-amber-100/50">
+                  <div className="w-12 h-12 bg-amber-500 text-white rounded-xl flex items-center justify-center shrink-0 shadow-md shadow-amber-500/20">
+                    <AlertTriangle className="w-6 h-6" />
                   </div>
                   <div className="flex-1 min-w-0">
-                    <h4 className="text-sm font-black text-amber-900">Low Stock Alert!</h4>
+                    <h4 className="text-sm font-black text-amber-900 uppercase tracking-wider">Critical Inventory Alert</h4>
                     <p className="text-xs font-bold text-amber-700/80 mt-1">
-                      {lowStockProducts.length} টি প্রোডাক্টের স্টক ৫ ইউনিটের কম রয়েছে।
+                      {lowStockProducts.length} items have critical stock level of less than 5 units.
                     </p>
                     <div className="flex flex-wrap gap-2 mt-2">
                       {lowStockProducts.slice(0, 3).map((p, idx) => (
@@ -1297,19 +1278,19 @@ function AnalyticsView({ orders, products = [], setCurrentView }: { orders: Orde
                       onClick={() => setCurrentView('inventory')}
                       className="mt-3 px-4 py-2 bg-amber-600 hover:bg-amber-700 text-white text-[10px] font-black uppercase tracking-widest rounded-xl transition-all shadow-sm font-bold"
                     >
-                      Manage Inventory (স্টক বাড়ান)
+                      Manage Inventory
                     </button>
                   </div>
                 </div>
               ) : (
-                <div className="p-5 bg-green-50 rounded-2xl border border-green-100 flex items-start gap-4">
-                  <div className="w-10 h-10 bg-green-500/10 rounded-xl flex items-center justify-center shrink-0">
-                    <CheckCircle2 className="w-5 h-5 text-green-600" />
+                <div className="p-5 bg-green-50 rounded-2xl border border-green-100 flex items-start gap-4 transition-all hover:bg-green-100/50">
+                  <div className="w-12 h-12 bg-green-500 text-white rounded-xl flex items-center justify-center shrink-0 shadow-md shadow-green-500/20">
+                    <CheckCircle2 className="w-6 h-6" />
                   </div>
                   <div>
-                    <h4 className="text-sm font-black text-green-900">Stock Levels Healthy!</h4>
+                    <h4 className="text-sm font-black text-green-900 uppercase tracking-wider">Stock Levels Healthy</h4>
                     <p className="text-xs font-bold text-green-700/80 mt-1">
-                      সব প্রোডাক্টের পর্যাপ্ত স্টক রয়েছে।
+                      All products have healthy inventory and adequate stock levels.
                     </p>
                   </div>
                 </div>
