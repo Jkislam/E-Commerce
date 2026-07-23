@@ -1583,7 +1583,7 @@ function InventoryView({
       if (error) {
         console.warn('Error updating stock in Supabase:', error.message);
       } else {
-        setSuccessMessage(`'${target.name.slice(0, 18)}...' এর স্টক ${newStock} করা হয়েছে`);
+        setSuccessMessage(`Stock of '${target.name.slice(0, 18)}...' updated to ${newStock}`);
       }
     } catch (err) {
       console.error('Stock adjust error:', err);
@@ -1626,7 +1626,7 @@ function InventoryView({
         })
         .eq('id', productId);
 
-      setSuccessMessage('স্টক আপডেট করা হয়েছে!');
+      setSuccessMessage('Stock updated successfully!');
     } catch (err) {
       console.error('Direct stock set error:', err);
     }
@@ -1648,7 +1648,7 @@ function InventoryView({
       if (error) {
         console.warn('Error updating islatest:', error.message);
       } else {
-        setSuccessMessage(`প্রোডাক্টটি ${newIsLatest ? 'লেটেস্ট ক্যাটাগরিতে যুক্ত' : 'লেটেস্ট ক্যাটাগরি থেকে রিমুভ'} করা হয়েছে`);
+        setSuccessMessage(`Product ${newIsLatest ? 'added to' : 'removed from'} latest showcase`);
       }
     } catch (err) {
       console.error('Latest toggle error:', err);
@@ -1657,7 +1657,7 @@ function InventoryView({
 
   const handleExportCSV = () => {
     if (filteredProducts.length === 0) {
-      alert('ডাউনলোড করার মত কোন পণ্য পাওয়া যায়নি');
+      alert('No products found to download');
       return;
     }
     
@@ -1707,10 +1707,10 @@ function InventoryView({
               <span className="text-xs text-white/50 font-bold">• Stock & Products</span>
             </div>
             <h1 className="text-2xl sm:text-3xl font-black tracking-tight text-white">
-              ইনভেন্টরি ম্যানেজমেন্ট ড্যাশবোর্ড
+              Inventory Management Dashboard
             </h1>
             <p className="text-xs sm:text-sm text-white/70 mt-1 max-w-xl font-medium">
-              আপনার অনলাইন স্টোরের সকল প্রোডাক্ট স্টক, প্রাইস ও ক্যাটাগরি এক ক্লিকে রিয়েল-টাইমে আপডেট করুন।
+              Manage and update product stock, pricing, and categories for your store in real time.
             </p>
           </div>
 
@@ -1718,17 +1718,17 @@ function InventoryView({
             <button 
               onClick={handleExportCSV}
               className="flex items-center gap-2 px-4 py-3 bg-white/10 hover:bg-white/20 text-white rounded-2xl font-bold text-xs backdrop-blur-md transition-all border border-white/10 hover:border-white/30"
-              title="ডাউনলোড সিএসভি রিপোর্ট"
+              title="Download CSV Report"
             >
               <FileSpreadsheet className="w-4 h-4 text-emerald-400" />
-              <span>রিপোর্ট ডাউনলোড</span>
+              <span>Export Report</span>
             </button>
             <button 
               onClick={() => setIsAddingNew(true)}
               className="flex items-center gap-2 px-6 py-3 bg-black hover:bg-gray-800 text-white rounded-2xl font-bold text-xs shadow-lg shadow-black/20 transition-all hover:scale-[1.02] active:scale-[0.98] border border-white/20"
             >
               <Plus className="w-4 h-4" />
-              <span>নতুন প্রোডাক্ট যোগ করুন</span>
+              <span>Add New Product</span>
             </button>
           </div>
         </div>
@@ -1737,47 +1737,47 @@ function InventoryView({
         <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3 sm:gap-4 mt-8 pt-6 border-t border-white/10">
           <div className="bg-white/5 backdrop-blur-md p-4 rounded-2xl border border-white/10 hover:bg-white/10 transition-all">
             <div className="flex items-center justify-between text-white/60 mb-2">
-              <span className="text-[10px] font-black uppercase tracking-wider">মোট প্রোডাক্ট</span>
+              <span className="text-[10px] font-black uppercase tracking-wider">Total Products</span>
               <Boxes className="w-4 h-4 text-indigo-400" />
             </div>
             <p className="text-2xl font-black text-white">{totalProductsCount}</p>
-            <p className="text-[9px] text-white/40 mt-1 font-bold">সকল অ্যাক্টিভ এসকিউ</p>
+            <p className="text-[9px] text-white/40 mt-1 font-bold">All Active SKUs</p>
           </div>
 
           <div className="bg-white/5 backdrop-blur-md p-4 rounded-2xl border border-white/10 hover:bg-white/10 transition-all">
             <div className="flex items-center justify-between text-white/60 mb-2">
-              <span className="text-[10px] font-black uppercase tracking-wider text-emerald-400">স্টকে আছে</span>
+              <span className="text-[10px] font-black uppercase tracking-wider text-emerald-400">In Stock</span>
               <CheckCircle2 className="w-4 h-4 text-emerald-400" />
             </div>
             <p className="text-2xl font-black text-emerald-400">{inStockCount}</p>
-            <p className="text-[9px] text-emerald-400/60 mt-1 font-bold">রেডি ফর শিপমেন্ট</p>
+            <p className="text-[9px] text-emerald-400/60 mt-1 font-bold">Ready for Shipment</p>
           </div>
 
           <div className="bg-white/5 backdrop-blur-md p-4 rounded-2xl border border-white/10 hover:bg-white/10 transition-all">
             <div className="flex items-center justify-between text-white/60 mb-2">
-              <span className="text-[10px] font-black uppercase tracking-wider text-amber-400">কম স্টক (&le; 5)</span>
+              <span className="text-[10px] font-black uppercase tracking-wider text-amber-400">Low Stock (&le; 5)</span>
               <AlertTriangle className="w-4 h-4 text-amber-400" />
             </div>
             <p className="text-2xl font-black text-amber-400">{lowStockCount}</p>
-            <p className="text-[9px] text-amber-400/60 mt-1 font-bold">রি-স্টক প্রয়োজন</p>
+            <p className="text-[9px] text-amber-400/60 mt-1 font-bold">Needs Restock</p>
           </div>
 
           <div className="bg-white/5 backdrop-blur-md p-4 rounded-2xl border border-white/10 hover:bg-white/10 transition-all">
             <div className="flex items-center justify-between text-white/60 mb-2">
-              <span className="text-[10px] font-black uppercase tracking-wider text-rose-400">স্টক শেষ</span>
+              <span className="text-[10px] font-black uppercase tracking-wider text-rose-400">Out of Stock</span>
               <XCircle className="w-4 h-4 text-rose-400" />
             </div>
             <p className="text-2xl font-black text-rose-400">{outOfStockCount}</p>
-            <p className="text-[9px] text-rose-400/60 mt-1 font-bold">অ্যাভেলেবল নাই</p>
+            <p className="text-[9px] text-rose-400/60 mt-1 font-bold">Not Available</p>
           </div>
 
           <div className="col-span-2 sm:col-span-1 bg-white/5 backdrop-blur-md p-4 rounded-2xl border border-white/10 hover:bg-white/10 transition-all">
             <div className="flex items-center justify-between text-white/60 mb-2">
-              <span className="text-[10px] font-black uppercase tracking-wider text-purple-300">মোট ইনভেন্টরি ভ্যালু</span>
+              <span className="text-[10px] font-black uppercase tracking-wider text-purple-300">Total Inventory Value</span>
               <TrendingUp className="w-4 h-4 text-purple-400" />
             </div>
             <p className="text-xl sm:text-2xl font-black text-purple-300">৳{totalStockValue.toLocaleString()}</p>
-            <p className="text-[9px] text-purple-300/60 mt-1 font-bold">স্টকের মোট মূল্য</p>
+            <p className="text-[9px] text-purple-300/60 mt-1 font-bold">Total Stock Value</p>
           </div>
         </div>
       </div>
@@ -1792,7 +1792,7 @@ function InventoryView({
               : 'text-black/60 hover:bg-black/5 hover:text-black'
           }`}
         >
-          <span>সব পণ্য</span>
+          <span>All Products</span>
           <span className={`px-2 py-0.5 rounded-full text-[10px] font-black ${
             inventoryTab === 'all' ? 'bg-white/20 text-white' : 'bg-black/5 text-black/60'
           }`}>
@@ -1809,7 +1809,7 @@ function InventoryView({
           }`}
         >
           <span className="w-2 h-2 rounded-full bg-emerald-400"></span>
-          <span>স্টকে আছে</span>
+          <span>In Stock</span>
           <span className={`px-2 py-0.5 rounded-full text-[10px] font-black ${
             inventoryTab === 'instock' ? 'bg-white/20 text-white' : 'bg-emerald-50 text-emerald-700'
           }`}>
@@ -1826,7 +1826,7 @@ function InventoryView({
           }`}
         >
           <span className="w-2 h-2 rounded-full bg-amber-300 animate-pulse"></span>
-          <span>কম স্টক</span>
+          <span>Low Stock</span>
           <span className={`px-2 py-0.5 rounded-full text-[10px] font-black ${
             inventoryTab === 'lowstock' ? 'bg-white/20 text-white' : 'bg-amber-50 text-amber-700'
           }`}>
@@ -1843,7 +1843,7 @@ function InventoryView({
           }`}
         >
           <span className="w-2 h-2 rounded-full bg-rose-300"></span>
-          <span>স্টক শেষ</span>
+          <span>Out of Stock</span>
           <span className={`px-2 py-0.5 rounded-full text-[10px] font-black ${
             inventoryTab === 'outstock' ? 'bg-white/20 text-white' : 'bg-rose-50 text-rose-700'
           }`}>
@@ -1860,7 +1860,7 @@ function InventoryView({
           }`}
         >
           <Sparkles className="w-3.5 h-3.5 text-amber-300" />
-          <span>লেটেস্ট আইটেম</span>
+          <span>Latest Items</span>
           <span className={`px-2 py-0.5 rounded-full text-[10px] font-black ${
             inventoryTab === 'latest' ? 'bg-white/20 text-white' : 'bg-indigo-50 text-indigo-700'
           }`}>
@@ -1876,7 +1876,7 @@ function InventoryView({
           <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-black/30" />
           <input 
             type="text"
-            placeholder="প্রোডাক্ট নাম, আইডি বা ক্যাটাগরি খুঁজুন..."
+            placeholder="Search by product name, ID or category..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
             className="w-full pl-11 pr-10 py-3 bg-gray-50 border border-black/5 rounded-2xl text-xs font-bold text-black focus:outline-none focus:ring-2 focus:ring-black/20 focus:bg-white transition-all"
@@ -1899,7 +1899,7 @@ function InventoryView({
               onChange={(e) => setSelectedCategory(e.target.value)}
               className="w-full sm:w-auto px-4 py-3 bg-gray-50 border border-black/5 rounded-2xl text-xs font-bold text-black focus:outline-none focus:ring-2 focus:ring-black/20 appearance-none pr-8 cursor-pointer"
             >
-              <option value="all">সকল ক্যাটাগরি</option>
+              <option value="all">All Categories</option>
               {categories.map(cat => (
                 <option key={cat} value={cat}>{cat}</option>
               ))}
@@ -1914,12 +1914,12 @@ function InventoryView({
               onChange={(e) => setSortBy(e.target.value as any)}
               className="w-full sm:w-auto px-4 py-3 bg-gray-50 border border-black/5 rounded-2xl text-xs font-bold text-black focus:outline-none focus:ring-2 focus:ring-black/20 appearance-none pr-8 cursor-pointer"
             >
-              <option value="newest">নতুন যুক্ত</option>
-              <option value="stock-asc">স্টক (কম থেকে বেশি)</option>
-              <option value="stock-desc">স্টক (বেশি থেকে কম)</option>
-              <option value="price-asc">মূল্য (কম থেকে বেশি)</option>
-              <option value="price-desc">মূল্য (বেশি থেকে কম)</option>
-              <option value="name-asc">নাম (A-Z)</option>
+              <option value="newest">Newest First</option>
+              <option value="stock-asc">Stock (Low to High)</option>
+              <option value="stock-desc">Stock (High to Low)</option>
+              <option value="price-asc">Price (Low to High)</option>
+              <option value="price-desc">Price (High to Low)</option>
+              <option value="name-asc">Name (A-Z)</option>
             </select>
             <ArrowUpDown className="absolute right-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-black/30 pointer-events-none" />
           </div>
@@ -1940,8 +1940,8 @@ function InventoryView({
                 {selectedIds.length}
               </span>
               <div>
-                <p className="text-xs font-bold text-white">টি প্রোডাক্ট সিলেক্ট করা আছে</p>
-                <p className="text-[10px] text-white/50">বাল্ক অ্যাকশন বেছে নিন</p>
+                <p className="text-xs font-bold text-white">{selectedIds.length === 1 ? 'Product Selected' : 'Products Selected'}</p>
+                <p className="text-[10px] text-white/50">Choose bulk action</p>
               </div>
             </div>
 
@@ -1951,13 +1951,13 @@ function InventoryView({
                 className="flex items-center gap-2 px-4 py-2 bg-rose-600 hover:bg-rose-700 text-white rounded-xl text-xs font-bold transition-all shadow-md"
               >
                 <Trash2 className="w-3.5 h-3.5" />
-                <span>সিলেক্ট করা প্রোডাক্ট ডিলেট</span>
+                <span>Delete Selected Products</span>
               </button>
               <button 
                 onClick={() => setSelectedIds([])}
                 className="px-3 py-2 bg-white/10 hover:bg-white/20 text-white rounded-xl text-xs font-bold transition-all"
               >
-                বাতিল
+                Cancel
               </button>
             </div>
           </motion.div>
@@ -1978,13 +1978,13 @@ function InventoryView({
                     className="w-4 h-4 rounded border-gray-300 text-black focus:ring-black cursor-pointer"
                   />
                 </th>
-                <th className="px-6 py-4 text-[10px] font-black uppercase tracking-widest text-black/40">প্রোডাক্ট তথ্য</th>
-                <th className="px-6 py-4 text-[10px] font-black uppercase tracking-widest text-black/40">ক্যাটাগরি</th>
-                <th className="px-6 py-4 text-[10px] font-black uppercase tracking-widest text-black/40">মূল্য (BDT)</th>
-                <th className="px-6 py-4 text-[10px] font-black uppercase tracking-widest text-black/40 text-center">স্টক অ্যাডজাস্ট</th>
-                <th className="px-6 py-4 text-[10px] font-black uppercase tracking-widest text-black/40">স্টক অবস্থা</th>
-                <th className="px-6 py-4 text-[10px] font-black uppercase tracking-widest text-black/40 text-center">লেটেস্ট শো-কেস</th>
-                <th className="px-6 py-4 text-[10px] font-black uppercase tracking-widest text-black/40 text-right">অ্যাকশন</th>
+                <th className="px-6 py-4 text-[10px] font-black uppercase tracking-widest text-black/40">Product Info</th>
+                <th className="px-6 py-4 text-[10px] font-black uppercase tracking-widest text-black/40">Category</th>
+                <th className="px-6 py-4 text-[10px] font-black uppercase tracking-widest text-black/40">Price (BDT)</th>
+                <th className="px-6 py-4 text-[10px] font-black uppercase tracking-widest text-black/40 text-center">Adjust Stock</th>
+                <th className="px-6 py-4 text-[10px] font-black uppercase tracking-widest text-black/40">Stock Status</th>
+                <th className="px-6 py-4 text-[10px] font-black uppercase tracking-widest text-black/40 text-center">Latest Showcase</th>
+                <th className="px-6 py-4 text-[10px] font-black uppercase tracking-widest text-black/40 text-right">Actions</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-black/5">
@@ -1995,8 +1995,8 @@ function InventoryView({
                       <div className="w-16 h-16 rounded-3xl bg-gray-100 flex items-center justify-center text-black/20 mb-4">
                         <Boxes className="w-8 h-8" />
                       </div>
-                      <h3 className="font-bold text-base text-black/70">কোন প্রোডাক্ট পাওয়া যায়নি</h3>
-                      <p className="text-xs text-black/40 mt-1">আপনার সার্চ বা ফিল্টার পরিবর্তন করে আবার চেষ্টা করুন</p>
+                      <h3 className="font-bold text-base text-black/70">No products found</h3>
+                      <p className="text-xs text-black/40 mt-1">Try changing your search query or filters</p>
                     </div>
                   </td>
                 </tr>
@@ -2061,7 +2061,7 @@ function InventoryView({
                             onClick={() => handleStockAdjust(product.id, -1)}
                             disabled={stock === 0}
                             className="w-7 h-7 rounded-xl bg-white text-black/70 hover:bg-rose-50 hover:text-rose-600 disabled:opacity-30 disabled:hover:bg-white flex items-center justify-center transition-all shadow-sm active:scale-95"
-                            title="১টি স্টক কমান"
+                            title="Decrease stock by 1"
                           >
                             <Minus className="w-3.5 h-3.5" />
                           </button>
@@ -2083,7 +2083,7 @@ function InventoryView({
                           <button
                             onClick={() => handleStockAdjust(product.id, 1)}
                             className="w-7 h-7 rounded-xl bg-white text-black/70 hover:bg-emerald-50 hover:text-emerald-600 flex items-center justify-center transition-all shadow-sm active:scale-95"
-                            title="১টি স্টক বাড়ান"
+                            title="Increase stock by 1"
                           >
                             <Plus className="w-3.5 h-3.5" />
                           </button>
@@ -2095,17 +2095,17 @@ function InventoryView({
                         {isOutOfStock ? (
                           <span className="px-3 py-1.5 bg-rose-50 text-rose-700 border border-rose-200 rounded-full text-[10px] font-black uppercase tracking-wider inline-flex items-center gap-1.5">
                             <XCircle className="w-3 h-3 text-rose-500" />
-                            স্টক শেষ (0)
+                            Out of Stock (0)
                           </span>
                         ) : isLowStock ? (
                           <span className="px-3 py-1.5 bg-amber-50 text-amber-700 border border-amber-200 rounded-full text-[10px] font-black uppercase tracking-wider inline-flex items-center gap-1.5">
                             <AlertTriangle className="w-3 h-3 text-amber-500" />
-                            কম স্টক ({stock})
+                            Low Stock ({stock})
                           </span>
                         ) : (
                           <span className="px-3 py-1.5 bg-emerald-50 text-emerald-700 border border-emerald-200 rounded-full text-[10px] font-black uppercase tracking-wider inline-flex items-center gap-1.5">
                             <CheckCircle2 className="w-3 h-3 text-emerald-500" />
-                            ইন স্টক ({stock})
+                            In Stock ({stock})
                           </span>
                         )}
                       </td>
@@ -2117,7 +2117,7 @@ function InventoryView({
                           className={`w-11 h-6 rounded-full p-1 transition-colors relative cursor-pointer mx-auto ${
                             product.islatest ? 'bg-black' : 'bg-gray-200'
                           }`}
-                          title="হোমপেজে লেটেস্ট হিসেবে দেখান"
+                          title="Show as latest on homepage"
                         >
                           <div className={`w-4 h-4 bg-white rounded-full transition-transform shadow-md ${
                             product.islatest ? 'translate-x-5' : 'translate-x-0'
@@ -2131,14 +2131,14 @@ function InventoryView({
                           <button 
                             onClick={() => setEditingProduct(product)}
                             className="p-2.5 hover:bg-gray-100 rounded-xl text-black/60 hover:text-black transition-colors"
-                            title="এডিট করুন"
+                            title="Edit Product"
                           >
                             <Edit3 className="w-4 h-4" />
                           </button>
                           <button 
                             onClick={() => onDelete(product.id)}
                             className="p-2.5 hover:bg-rose-50 rounded-xl text-rose-400 hover:text-rose-600 transition-colors"
-                            title="ডিলেট করুন"
+                            title="Delete Product"
                           >
                             <Trash2 className="w-4 h-4" />
                           </button>
@@ -2158,7 +2158,7 @@ function InventoryView({
         {filteredProducts.length === 0 ? (
           <div className="bg-white p-8 rounded-3xl text-center border border-black/5 shadow-sm">
             <Boxes className="w-10 h-10 text-black/20 mx-auto mb-2" />
-            <p className="font-bold text-sm text-black/70">কোন প্রোডাক্ট পাওয়া যায়নি</p>
+            <p className="font-bold text-sm text-black/70">No products found</p>
           </div>
         ) : (
           filteredProducts.map(product => {
@@ -2177,7 +2177,7 @@ function InventoryView({
                     <img src={product.image} alt={product.name} className="w-full h-full object-cover" />
                     {isOutOfStock && (
                       <span className="absolute bottom-0 inset-x-0 bg-rose-600/90 text-white text-[8px] font-black text-center py-0.5 uppercase tracking-tighter">
-                        আউট অব স্টক
+                        Out of Stock
                       </span>
                     )}
                   </div>
@@ -2194,15 +2194,15 @@ function InventoryView({
                     <div className="flex items-center gap-2 mt-2">
                       {isOutOfStock ? (
                         <span className="px-2.5 py-0.5 bg-rose-50 text-rose-600 border border-rose-200 rounded-md text-[9px] font-black">
-                          স্টক শেষ (0)
+                          Out of Stock (0)
                         </span>
                       ) : isLowStock ? (
                         <span className="px-2.5 py-0.5 bg-amber-50 text-amber-700 border border-amber-200 rounded-md text-[9px] font-black">
-                          কম স্টক ({stock})
+                          Low Stock ({stock})
                         </span>
                       ) : (
                         <span className="px-2.5 py-0.5 bg-emerald-50 text-emerald-700 border border-emerald-200 rounded-md text-[9px] font-black">
-                          ইন স্টক ({stock})
+                          In Stock ({stock})
                         </span>
                       )}
                     </div>
