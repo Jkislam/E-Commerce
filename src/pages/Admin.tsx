@@ -1461,7 +1461,7 @@ function AnalyticsView({ orders, products = [], setCurrentView }: { orders: Orde
   );
 }
 
-interface DarazInventoryViewProps {
+interface InventoryViewProps {
   products: Product[];
   setProducts: React.Dispatch<React.SetStateAction<Product[]>>;
   categories: string[];
@@ -1472,7 +1472,7 @@ interface DarazInventoryViewProps {
   setSuccessMessage: (msg: string) => void;
 }
 
-function DarazInventoryView({
+function InventoryView({
   products,
   setProducts,
   categories,
@@ -1481,7 +1481,7 @@ function DarazInventoryView({
   setEditingProduct,
   setIsAddingNew,
   setSuccessMessage
-}: DarazInventoryViewProps) {
+}: InventoryViewProps) {
   const [inventoryTab, setInventoryTab] = useState<'all' | 'instock' | 'lowstock' | 'outstock' | 'latest'>('all');
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedCategory, setSelectedCategory] = useState<string>('all');
@@ -1680,7 +1680,7 @@ function DarazInventoryView({
     const encodedUri = encodeURI(csvContent);
     const link = document.createElement("a");
     link.setAttribute("href", encodedUri);
-    link.setAttribute("download", `daraz_inventory_report_${new Date().toISOString().slice(0, 10)}.csv`);
+    link.setAttribute("download", `inventory_report_${new Date().toISOString().slice(0, 10)}.csv`);
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
@@ -1694,17 +1694,17 @@ function DarazInventoryView({
 
   return (
     <div className="space-y-6">
-      {/* Daraz Seller Center Header Banner */}
+      {/* Seller Center Header Banner */}
       <div className="bg-gradient-to-r from-slate-900 via-gray-900 to-slate-800 text-white rounded-[2rem] p-6 sm:p-8 shadow-xl relative overflow-hidden border border-white/10">
-        <div className="absolute right-0 top-0 w-96 h-96 bg-[#f57224]/10 rounded-full blur-3xl pointer-events-none" />
+        <div className="absolute right-0 top-0 w-96 h-96 bg-emerald-500/10 rounded-full blur-3xl pointer-events-none" />
         <div className="relative z-10 flex flex-col md:flex-row md:items-center justify-between gap-6">
           <div>
             <div className="flex items-center gap-2 mb-2">
-              <span className="px-3 py-1 bg-[#f57224] text-white text-[10px] font-black uppercase tracking-widest rounded-full shadow-md flex items-center gap-1.5">
+              <span className="px-3 py-1 bg-emerald-600 text-white text-[10px] font-black uppercase tracking-widest rounded-full shadow-md flex items-center gap-1.5">
                 <Boxes className="w-3 h-3" />
-                Daraz Seller Hub
+                Store Inventory
               </span>
-              <span className="text-xs text-white/50 font-bold">• Inventory Center</span>
+              <span className="text-xs text-white/50 font-bold">• Stock & Products</span>
             </div>
             <h1 className="text-2xl sm:text-3xl font-black tracking-tight text-white">
               ইনভেন্টরি ম্যানেজমেন্ট ড্যাশবোর্ড
@@ -1725,7 +1725,7 @@ function DarazInventoryView({
             </button>
             <button 
               onClick={() => setIsAddingNew(true)}
-              className="flex items-center gap-2 px-6 py-3 bg-[#f57224] hover:bg-[#e05d10] text-white rounded-2xl font-bold text-xs shadow-lg shadow-[#f57224]/30 transition-all hover:scale-[1.02] active:scale-[0.98]"
+              className="flex items-center gap-2 px-6 py-3 bg-black hover:bg-gray-800 text-white rounded-2xl font-bold text-xs shadow-lg shadow-black/20 transition-all hover:scale-[1.02] active:scale-[0.98] border border-white/20"
             >
               <Plus className="w-4 h-4" />
               <span>নতুন প্রোডাক্ট যোগ করুন</span>
@@ -1782,13 +1782,13 @@ function DarazInventoryView({
         </div>
       </div>
 
-      {/* Quick Navigation Filter Tabs (Daraz Style) */}
+      {/* Quick Navigation Filter Tabs */}
       <div className="bg-white p-2 rounded-2xl border border-black/5 shadow-sm flex items-center gap-1.5 overflow-x-auto no-scrollbar">
         <button
           onClick={() => setInventoryTab('all')}
           className={`px-4 py-2.5 rounded-xl text-xs font-bold transition-all shrink-0 flex items-center gap-2 ${
             inventoryTab === 'all' 
-              ? 'bg-[#f57224] text-white shadow-md shadow-[#f57224]/20' 
+              ? 'bg-black text-white shadow-md shadow-black/20' 
               : 'text-black/60 hover:bg-black/5 hover:text-black'
           }`}
         >
@@ -1879,7 +1879,7 @@ function DarazInventoryView({
             placeholder="প্রোডাক্ট নাম, আইডি বা ক্যাটাগরি খুঁজুন..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            className="w-full pl-11 pr-10 py-3 bg-gray-50 border border-black/5 rounded-2xl text-xs font-bold text-black focus:outline-none focus:ring-2 focus:ring-[#f57224]/20 focus:bg-white transition-all"
+            className="w-full pl-11 pr-10 py-3 bg-gray-50 border border-black/5 rounded-2xl text-xs font-bold text-black focus:outline-none focus:ring-2 focus:ring-black/20 focus:bg-white transition-all"
           />
           {searchQuery && (
             <button 
@@ -1897,7 +1897,7 @@ function DarazInventoryView({
             <select
               value={selectedCategory}
               onChange={(e) => setSelectedCategory(e.target.value)}
-              className="w-full sm:w-auto px-4 py-3 bg-gray-50 border border-black/5 rounded-2xl text-xs font-bold text-black focus:outline-none focus:ring-2 focus:ring-[#f57224]/20 appearance-none pr-8 cursor-pointer"
+              className="w-full sm:w-auto px-4 py-3 bg-gray-50 border border-black/5 rounded-2xl text-xs font-bold text-black focus:outline-none focus:ring-2 focus:ring-black/20 appearance-none pr-8 cursor-pointer"
             >
               <option value="all">সকল ক্যাটাগরি</option>
               {categories.map(cat => (
@@ -1912,7 +1912,7 @@ function DarazInventoryView({
             <select
               value={sortBy}
               onChange={(e) => setSortBy(e.target.value as any)}
-              className="w-full sm:w-auto px-4 py-3 bg-gray-50 border border-black/5 rounded-2xl text-xs font-bold text-black focus:outline-none focus:ring-2 focus:ring-[#f57224]/20 appearance-none pr-8 cursor-pointer"
+              className="w-full sm:w-auto px-4 py-3 bg-gray-50 border border-black/5 rounded-2xl text-xs font-bold text-black focus:outline-none focus:ring-2 focus:ring-black/20 appearance-none pr-8 cursor-pointer"
             >
               <option value="newest">নতুন যুক্ত</option>
               <option value="stock-asc">স্টক (কম থেকে বেশি)</option>
@@ -1936,7 +1936,7 @@ function DarazInventoryView({
             className="bg-slate-900 text-white p-4 rounded-2xl shadow-2xl border border-white/10 flex items-center justify-between gap-4 sticky top-24 z-20"
           >
             <div className="flex items-center gap-3">
-              <span className="w-8 h-8 rounded-xl bg-[#f57224] text-white flex items-center justify-center font-black text-xs">
+              <span className="w-8 h-8 rounded-xl bg-black text-white flex items-center justify-center font-black text-xs border border-white/20">
                 {selectedIds.length}
               </span>
               <div>
@@ -1975,7 +1975,7 @@ function DarazInventoryView({
                     type="checkbox" 
                     checked={selectedIds.length === filteredProducts.length && filteredProducts.length > 0}
                     onChange={toggleSelectAll}
-                    className="w-4 h-4 rounded border-gray-300 text-[#f57224] focus:ring-[#f57224] cursor-pointer"
+                    className="w-4 h-4 rounded border-gray-300 text-black focus:ring-black cursor-pointer"
                   />
                 </th>
                 <th className="px-6 py-4 text-[10px] font-black uppercase tracking-widest text-black/40">প্রোডাক্ট তথ্য</th>
@@ -2010,7 +2010,7 @@ function DarazInventoryView({
                     <tr 
                       key={product.id} 
                       className={`hover:bg-gray-50/80 transition-colors group ${
-                        selectedIds.includes(product.id) ? 'bg-[#f57224]/[0.03]' : ''
+                        selectedIds.includes(product.id) ? 'bg-gray-100/60' : ''
                       }`}
                     >
                       {/* Checkbox */}
@@ -2019,7 +2019,7 @@ function DarazInventoryView({
                           type="checkbox" 
                           checked={selectedIds.includes(product.id)}
                           onChange={() => toggleSelect(product.id)}
-                          className="w-4 h-4 rounded border-gray-300 text-[#f57224] focus:ring-[#f57224] cursor-pointer"
+                          className="w-4 h-4 rounded border-gray-300 text-black focus:ring-black cursor-pointer"
                         />
                       </td>
 
@@ -2030,13 +2030,13 @@ function DarazInventoryView({
                             <img src={product.image} alt={product.name} className="w-full h-full object-cover" />
                           </div>
                           <div className="min-w-0">
-                            <h4 className="font-bold text-sm text-black group-hover:text-[#f57224] transition-colors truncate max-w-xs">
+                            <h4 className="font-bold text-sm text-black group-hover:text-emerald-700 transition-colors truncate max-w-xs">
                               {product.name}
                             </h4>
                             <div className="flex items-center gap-2 mt-1">
                               <span className="text-[10px] font-mono text-black/40">ID: #{product.id}</span>
                               <span className="text-[10px] text-black/30">•</span>
-                              <span className="text-[10px] font-bold text-black/40">{product.store_name || 'Daraz Store'}</span>
+                              <span className="text-[10px] font-bold text-black/40">{product.store_name || 'Online Store'}</span>
                             </div>
                           </div>
                         </div>
@@ -2054,7 +2054,7 @@ function DarazInventoryView({
                         ৳{product.price.toLocaleString()}
                       </td>
 
-                      {/* Inline Stock Adjustment Control (Daraz Feature) */}
+                      {/* Inline Stock Adjustment Control */}
                       <td className="px-6 py-4">
                         <div className="flex items-center justify-center gap-1.5 bg-gray-100 p-1 rounded-2xl border border-black/5 w-fit mx-auto">
                           <button
@@ -2115,7 +2115,7 @@ function DarazInventoryView({
                         <button
                           onClick={() => handleToggleLatest(product.id)}
                           className={`w-11 h-6 rounded-full p-1 transition-colors relative cursor-pointer mx-auto ${
-                            product.islatest ? 'bg-[#f57224]' : 'bg-gray-200'
+                            product.islatest ? 'bg-black' : 'bg-gray-200'
                           }`}
                           title="হোমপেজে লেটেস্ট হিসেবে দেখান"
                         >
@@ -2189,7 +2189,7 @@ function DarazInventoryView({
                     </div>
 
                     <h4 className="font-bold text-sm text-black truncate mt-0.5">{product.name}</h4>
-                    <p className="text-base font-black text-[#f57224] mt-1">৳{product.price.toLocaleString()}</p>
+                    <p className="text-base font-black text-black mt-1">৳{product.price.toLocaleString()}</p>
 
                     <div className="flex items-center gap-2 mt-2">
                       {isOutOfStock ? (
@@ -2232,7 +2232,7 @@ function DarazInventoryView({
                     <button
                       onClick={() => handleToggleLatest(product.id)}
                       className={`px-3 py-1.5 rounded-xl text-[10px] font-black uppercase tracking-wider transition-colors flex items-center gap-1 ${
-                        product.islatest ? 'bg-indigo-100 text-indigo-700' : 'bg-gray-100 text-black/40'
+                        product.islatest ? 'bg-black text-white' : 'bg-gray-100 text-black/40'
                       }`}
                     >
                       <Sparkles className="w-3 h-3" />
@@ -3198,7 +3198,7 @@ export default function Admin({
         ) : currentView === 'users' ? (
           <UsersView setSuccessMessage={setSuccessMessage} />
         ) : currentView === 'inventory' ? (
-          <DarazInventoryView 
+          <InventoryView 
             products={products}
             setProducts={setProducts}
             categories={settings.categories || ['Panjabi', 'Attar']}
