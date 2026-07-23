@@ -41,7 +41,15 @@ import {
   Phone,
   AlertTriangle,
   Activity,
-  Zap
+  Zap,
+  Minus,
+  Download,
+  SlidersHorizontal,
+  ArrowUpDown,
+  Sparkles,
+  Boxes,
+  Check,
+  FileSpreadsheet
 } from 'lucide-react';
 import { Product, Order, AppSettings, SocialLink } from '../types';
 import { useAuth } from '../context/AuthContext';
@@ -1453,6 +1461,808 @@ function AnalyticsView({ orders, products = [], setCurrentView }: { orders: Orde
   );
 }
 
+interface DarazInventoryViewProps {
+  products: Product[];
+  setProducts: React.Dispatch<React.SetStateAction<Product[]>>;
+  categories: string[];
+  onDelete: (id: number | string) => void;
+  onBulkDelete: (ids: (number | string)[]) => void;
+  setEditingProduct: (p: Product) => void;
+  setIsAddingNew: (val: boolean) => void;
+  setSuccessMessage: (msg: string) => void;
+}
+
+function DarazInventoryView({
+  products,
+  setProducts,
+  categories,
+  onDelete,
+  onBulkDelete,
+  setEditingProduct,
+  setIsAddingNew,
+  setSuccessMessage
+}: DarazInventoryViewProps) {
+  const [inventoryTab, setInventoryTab] = useState<'all' | 'instock' | 'lowstock' | 'outstock' | 'latest'>('all');
+  const [searchQuery, setSearchQuery] = useState('');
+  const [selectedCategory, setSelectedCategory] = useState<string>('all');
+  const [sortBy, setSortBy] = useState<'newest' | 'stock-asc' | 'stock-desc' | 'price-asc' | 'price-desc' | 'name-asc'>('newest');
+  const [selectedIds, setSelectedIds] = useState<(number | string)[]>([]);
+
+  // Calculations for Overview Cards
+  const totalProductsCount = products.length;
+  const inStockCount = products.filter(p => (Number(p.stock) || 0) > 0).length;
+  const lowStockCount = products.filter(p => (Number(p.stock) || 0) > 0 && (Number(p.stock) || 0) <= 5).length;
+  const outOfStockCount = products.filter(p => (Number(p.stock) || 0) === 0).length;
+  const latestCount = products.filter(p => Boolean(p.islatest)).length;
+  const totalStockValue = products.reduce((acc, p) => acc + ((Number(p.price) || 0) * (Number(p.stock) || 0)), 0);
+
+  // Filtered & Sorted Products
+  const filteredProducts = products.filter(p => {
+    // Search query match
+    const q = searchQuery.toLowerCase().trim();
+    const matchesSearch = !q || 
+      p.name.toLowerCase().includes(q) ||
+      p.category.toLowerCase().includes(q) ||
+      String(p.id).toLowerCase().includes(q);
+
+    // Category filter
+    const matchesCategory = selectedCategory === 'all' || p.category === selectedCategory;
+
+    // Tab filter
+    const stock = Number(p.stock) || 0;
+    let matchesTab = true;
+    if (inventoryTab === 'instock') matchesTab = stock > 0;
+    else if (inventoryTab === 'lowstock') matchesTab = stock > 0 && stock <= 5;
+    else if (inventoryTab === 'outstock') matchesTab = stock === 0;
+    else if (inventoryTab === 'latest') matchesTab = Boolean(p.islatest);
+
+    return matchesSearch && matchesCategory && matchesTab;
+  }).sort((a, b) => {
+    const stockA = Number(a.stock) || 0;
+    const stockB = Number(b.stock) || 0;
+    const priceA = Number(a.price) || 0;
+    const priceB = Number(b.price) || 0;
+
+    if (sortBy === 'stock-asc') return stockA - stockB;
+    if (sortBy === 'stock-desc') return stockB - stockA;
+    if (sortBy === 'price-asc') return priceA - priceB;
+    if (sortBy === 'price-desc') return priceB - priceA;
+    if (sortBy === 'name-asc') return a.name.localeCompare(b.name);
+    return String(b.id).localeCompare(String(a.id));
+  });
+
+  const toggleSelectAll = () => {
+    if (selectedIds.length === filteredProducts.length && filteredProducts.length > 0) {
+      setSelectedIds([]);
+    } else {
+      setSelectedIds(filteredProducts.map(p => p.id));
+    }
+  };
+
+  const toggleSelect = (id: number | string) => {
+    setSelectedIds(prev => 
+      prev.includes(id) ? prev.filter(i => i !== id) : [...prev, id]
+    );
+  };
+
+  const handleStockAdjust = async (productId: string | number, delta: number) => {
+    const target = products.find(p => p.id === productId);
+    if (!target) return;
+    const currentStock = Number(target.stock) || 0;
+    const newStock = Math.max(0, currentStock + delta);
+
+    setProducts(prev => prev.map(p => p.id === productId ? { ...p, stock: newStock } : p));
+
+    try {
+      const { error } = await supabase
+        .from('products')
+        .update({
+          details: {
+            sizes: target.sizes,
+            volumes: target.volumes,
+            stock: newStock,
+            is_latest: target.islatest,
+            images: target.images || [],
+            delivery_days_min: target.delivery_days_min,
+            delivery_days_max: target.delivery_days_max,
+            delivery_charge: target.delivery_charge,
+            delivery_charge_active: target.delivery_charge_active,
+            cod_available: target.cod_available,
+            change_of_mind_available: target.change_of_mind_available,
+            easy_return_days: target.easy_return_days,
+            warranty_available: target.warranty_available,
+            warranty_duration: target.warranty_duration,
+            store_name: target.store_name,
+            seller_rating: target.seller_rating,
+            ship_on_time: target.ship_on_time,
+            chat_response_rate: target.chat_response_rate
+          }
+        })
+        .eq('id', productId);
+
+      if (error) {
+        console.warn('Error updating stock in Supabase:', error.message);
+      } else {
+        setSuccessMessage(`'${target.name.slice(0, 18)}...' এর স্টক ${newStock} করা হয়েছে`);
+      }
+    } catch (err) {
+      console.error('Stock adjust error:', err);
+    }
+  };
+
+  const handleDirectStockSet = async (productId: string | number, valueStr: string) => {
+    const parsedVal = parseInt(valueStr, 10);
+    if (isNaN(parsedVal)) return;
+    const newStock = Math.max(0, parsedVal);
+    const target = products.find(p => p.id === productId);
+    if (!target || target.stock === newStock) return;
+
+    setProducts(prev => prev.map(p => p.id === productId ? { ...p, stock: newStock } : p));
+
+    try {
+      await supabase
+        .from('products')
+        .update({
+          details: {
+            sizes: target.sizes,
+            volumes: target.volumes,
+            stock: newStock,
+            is_latest: target.islatest,
+            images: target.images || [],
+            delivery_days_min: target.delivery_days_min,
+            delivery_days_max: target.delivery_days_max,
+            delivery_charge: target.delivery_charge,
+            delivery_charge_active: target.delivery_charge_active,
+            cod_available: target.cod_available,
+            change_of_mind_available: target.change_of_mind_available,
+            easy_return_days: target.easy_return_days,
+            warranty_available: target.warranty_available,
+            warranty_duration: target.warranty_duration,
+            store_name: target.store_name,
+            seller_rating: target.seller_rating,
+            ship_on_time: target.ship_on_time,
+            chat_response_rate: target.chat_response_rate
+          }
+        })
+        .eq('id', productId);
+
+      setSuccessMessage('স্টক আপডেট করা হয়েছে!');
+    } catch (err) {
+      console.error('Direct stock set error:', err);
+    }
+  };
+
+  const handleToggleLatest = async (productId: string | number) => {
+    const target = products.find(p => p.id === productId);
+    if (!target) return;
+    const newIsLatest = !target.islatest;
+
+    setProducts(prev => prev.map(p => p.id === productId ? { ...p, islatest: newIsLatest } : p));
+
+    try {
+      const { error } = await supabase
+        .from('products')
+        .update({ islatest: newIsLatest })
+        .eq('id', productId);
+
+      if (error) {
+        console.warn('Error updating islatest:', error.message);
+      } else {
+        setSuccessMessage(`প্রোডাক্টটি ${newIsLatest ? 'লেটেস্ট ক্যাটাগরিতে যুক্ত' : 'লেটেস্ট ক্যাটাগরি থেকে রিমুভ'} করা হয়েছে`);
+      }
+    } catch (err) {
+      console.error('Latest toggle error:', err);
+    }
+  };
+
+  const handleExportCSV = () => {
+    if (filteredProducts.length === 0) {
+      alert('ডাউনলোড করার মত কোন পণ্য পাওয়া যায়নি');
+      return;
+    }
+    
+    const headers = ["ID", "Product Name", "Category", "Price (BDT)", "Stock", "Stock Status", "Is Latest"];
+    const rows = filteredProducts.map(p => {
+      const stock = Number(p.stock) || 0;
+      const status = stock === 0 ? "Out of Stock" : stock <= 5 ? "Low Stock" : "In Stock";
+      return [
+        `"${p.id}"`,
+        `"${(p.name || '').replace(/"/g, '""')}"`,
+        `"${(p.category || '').replace(/"/g, '""')}"`,
+        p.price,
+        stock,
+        `"${status}"`,
+        p.islatest ? "Yes" : "No"
+      ];
+    });
+
+    const csvContent = "data:text/csv;charset=utf-8,\uFEFF" + [headers.join(","), ...rows.map(e => e.join(","))].join("\n");
+    const encodedUri = encodeURI(csvContent);
+    const link = document.createElement("a");
+    link.setAttribute("href", encodedUri);
+    link.setAttribute("download", `daraz_inventory_report_${new Date().toISOString().slice(0, 10)}.csv`);
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  };
+
+  const handleBulkDeleteAction = () => {
+    if (selectedIds.length === 0) return;
+    onBulkDelete(selectedIds);
+    setSelectedIds([]);
+  };
+
+  return (
+    <div className="space-y-6">
+      {/* Daraz Seller Center Header Banner */}
+      <div className="bg-gradient-to-r from-slate-900 via-gray-900 to-slate-800 text-white rounded-[2rem] p-6 sm:p-8 shadow-xl relative overflow-hidden border border-white/10">
+        <div className="absolute right-0 top-0 w-96 h-96 bg-[#f57224]/10 rounded-full blur-3xl pointer-events-none" />
+        <div className="relative z-10 flex flex-col md:flex-row md:items-center justify-between gap-6">
+          <div>
+            <div className="flex items-center gap-2 mb-2">
+              <span className="px-3 py-1 bg-[#f57224] text-white text-[10px] font-black uppercase tracking-widest rounded-full shadow-md flex items-center gap-1.5">
+                <Boxes className="w-3 h-3" />
+                Daraz Seller Hub
+              </span>
+              <span className="text-xs text-white/50 font-bold">• Inventory Center</span>
+            </div>
+            <h1 className="text-2xl sm:text-3xl font-black tracking-tight text-white">
+              ইনভেন্টরি ম্যানেজমেন্ট ড্যাশবোর্ড
+            </h1>
+            <p className="text-xs sm:text-sm text-white/70 mt-1 max-w-xl font-medium">
+              আপনার অনলাইন স্টোরের সকল প্রোডাক্ট স্টক, প্রাইস ও ক্যাটাগরি এক ক্লিকে রিয়েল-টাইমে আপডেট করুন।
+            </p>
+          </div>
+
+          <div className="flex items-center gap-3 shrink-0">
+            <button 
+              onClick={handleExportCSV}
+              className="flex items-center gap-2 px-4 py-3 bg-white/10 hover:bg-white/20 text-white rounded-2xl font-bold text-xs backdrop-blur-md transition-all border border-white/10 hover:border-white/30"
+              title="ডাউনলোড সিএসভি রিপোর্ট"
+            >
+              <FileSpreadsheet className="w-4 h-4 text-emerald-400" />
+              <span>রিপোর্ট ডাউনলোড</span>
+            </button>
+            <button 
+              onClick={() => setIsAddingNew(true)}
+              className="flex items-center gap-2 px-6 py-3 bg-[#f57224] hover:bg-[#e05d10] text-white rounded-2xl font-bold text-xs shadow-lg shadow-[#f57224]/30 transition-all hover:scale-[1.02] active:scale-[0.98]"
+            >
+              <Plus className="w-4 h-4" />
+              <span>নতুন প্রোডাক্ট যোগ করুন</span>
+            </button>
+          </div>
+        </div>
+
+        {/* 5 KPI Metric Widgets */}
+        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3 sm:gap-4 mt-8 pt-6 border-t border-white/10">
+          <div className="bg-white/5 backdrop-blur-md p-4 rounded-2xl border border-white/10 hover:bg-white/10 transition-all">
+            <div className="flex items-center justify-between text-white/60 mb-2">
+              <span className="text-[10px] font-black uppercase tracking-wider">মোট প্রোডাক্ট</span>
+              <Boxes className="w-4 h-4 text-indigo-400" />
+            </div>
+            <p className="text-2xl font-black text-white">{totalProductsCount}</p>
+            <p className="text-[9px] text-white/40 mt-1 font-bold">সকল অ্যাক্টিভ এসকিউ</p>
+          </div>
+
+          <div className="bg-white/5 backdrop-blur-md p-4 rounded-2xl border border-white/10 hover:bg-white/10 transition-all">
+            <div className="flex items-center justify-between text-white/60 mb-2">
+              <span className="text-[10px] font-black uppercase tracking-wider text-emerald-400">স্টকে আছে</span>
+              <CheckCircle2 className="w-4 h-4 text-emerald-400" />
+            </div>
+            <p className="text-2xl font-black text-emerald-400">{inStockCount}</p>
+            <p className="text-[9px] text-emerald-400/60 mt-1 font-bold">রেডি ফর শিপমেন্ট</p>
+          </div>
+
+          <div className="bg-white/5 backdrop-blur-md p-4 rounded-2xl border border-white/10 hover:bg-white/10 transition-all">
+            <div className="flex items-center justify-between text-white/60 mb-2">
+              <span className="text-[10px] font-black uppercase tracking-wider text-amber-400">কম স্টক (&le; 5)</span>
+              <AlertTriangle className="w-4 h-4 text-amber-400" />
+            </div>
+            <p className="text-2xl font-black text-amber-400">{lowStockCount}</p>
+            <p className="text-[9px] text-amber-400/60 mt-1 font-bold">রি-স্টক প্রয়োজন</p>
+          </div>
+
+          <div className="bg-white/5 backdrop-blur-md p-4 rounded-2xl border border-white/10 hover:bg-white/10 transition-all">
+            <div className="flex items-center justify-between text-white/60 mb-2">
+              <span className="text-[10px] font-black uppercase tracking-wider text-rose-400">স্টক শেষ</span>
+              <XCircle className="w-4 h-4 text-rose-400" />
+            </div>
+            <p className="text-2xl font-black text-rose-400">{outOfStockCount}</p>
+            <p className="text-[9px] text-rose-400/60 mt-1 font-bold">অ্যাভেলেবল নাই</p>
+          </div>
+
+          <div className="col-span-2 sm:col-span-1 bg-white/5 backdrop-blur-md p-4 rounded-2xl border border-white/10 hover:bg-white/10 transition-all">
+            <div className="flex items-center justify-between text-white/60 mb-2">
+              <span className="text-[10px] font-black uppercase tracking-wider text-purple-300">মোট ইনভেন্টরি ভ্যালু</span>
+              <TrendingUp className="w-4 h-4 text-purple-400" />
+            </div>
+            <p className="text-xl sm:text-2xl font-black text-purple-300">৳{totalStockValue.toLocaleString()}</p>
+            <p className="text-[9px] text-purple-300/60 mt-1 font-bold">স্টকের মোট মূল্য</p>
+          </div>
+        </div>
+      </div>
+
+      {/* Quick Navigation Filter Tabs (Daraz Style) */}
+      <div className="bg-white p-2 rounded-2xl border border-black/5 shadow-sm flex items-center gap-1.5 overflow-x-auto no-scrollbar">
+        <button
+          onClick={() => setInventoryTab('all')}
+          className={`px-4 py-2.5 rounded-xl text-xs font-bold transition-all shrink-0 flex items-center gap-2 ${
+            inventoryTab === 'all' 
+              ? 'bg-[#f57224] text-white shadow-md shadow-[#f57224]/20' 
+              : 'text-black/60 hover:bg-black/5 hover:text-black'
+          }`}
+        >
+          <span>সব পণ্য</span>
+          <span className={`px-2 py-0.5 rounded-full text-[10px] font-black ${
+            inventoryTab === 'all' ? 'bg-white/20 text-white' : 'bg-black/5 text-black/60'
+          }`}>
+            {totalProductsCount}
+          </span>
+        </button>
+
+        <button
+          onClick={() => setInventoryTab('instock')}
+          className={`px-4 py-2.5 rounded-xl text-xs font-bold transition-all shrink-0 flex items-center gap-2 ${
+            inventoryTab === 'instock' 
+              ? 'bg-emerald-600 text-white shadow-md shadow-emerald-600/20' 
+              : 'text-black/60 hover:bg-black/5 hover:text-black'
+          }`}
+        >
+          <span className="w-2 h-2 rounded-full bg-emerald-400"></span>
+          <span>স্টকে আছে</span>
+          <span className={`px-2 py-0.5 rounded-full text-[10px] font-black ${
+            inventoryTab === 'instock' ? 'bg-white/20 text-white' : 'bg-emerald-50 text-emerald-700'
+          }`}>
+            {inStockCount}
+          </span>
+        </button>
+
+        <button
+          onClick={() => setInventoryTab('lowstock')}
+          className={`px-4 py-2.5 rounded-xl text-xs font-bold transition-all shrink-0 flex items-center gap-2 ${
+            inventoryTab === 'lowstock' 
+              ? 'bg-amber-500 text-white shadow-md shadow-amber-500/20' 
+              : 'text-black/60 hover:bg-black/5 hover:text-black'
+          }`}
+        >
+          <span className="w-2 h-2 rounded-full bg-amber-300 animate-pulse"></span>
+          <span>কম স্টক</span>
+          <span className={`px-2 py-0.5 rounded-full text-[10px] font-black ${
+            inventoryTab === 'lowstock' ? 'bg-white/20 text-white' : 'bg-amber-50 text-amber-700'
+          }`}>
+            {lowStockCount}
+          </span>
+        </button>
+
+        <button
+          onClick={() => setInventoryTab('outstock')}
+          className={`px-4 py-2.5 rounded-xl text-xs font-bold transition-all shrink-0 flex items-center gap-2 ${
+            inventoryTab === 'outstock' 
+              ? 'bg-rose-600 text-white shadow-md shadow-rose-600/20' 
+              : 'text-black/60 hover:bg-black/5 hover:text-black'
+          }`}
+        >
+          <span className="w-2 h-2 rounded-full bg-rose-300"></span>
+          <span>স্টক শেষ</span>
+          <span className={`px-2 py-0.5 rounded-full text-[10px] font-black ${
+            inventoryTab === 'outstock' ? 'bg-white/20 text-white' : 'bg-rose-50 text-rose-700'
+          }`}>
+            {outOfStockCount}
+          </span>
+        </button>
+
+        <button
+          onClick={() => setInventoryTab('latest')}
+          className={`px-4 py-2.5 rounded-xl text-xs font-bold transition-all shrink-0 flex items-center gap-2 ${
+            inventoryTab === 'latest' 
+              ? 'bg-indigo-600 text-white shadow-md shadow-indigo-600/20' 
+              : 'text-black/60 hover:bg-black/5 hover:text-black'
+          }`}
+        >
+          <Sparkles className="w-3.5 h-3.5 text-amber-300" />
+          <span>লেটেস্ট আইটেম</span>
+          <span className={`px-2 py-0.5 rounded-full text-[10px] font-black ${
+            inventoryTab === 'latest' ? 'bg-white/20 text-white' : 'bg-indigo-50 text-indigo-700'
+          }`}>
+            {latestCount}
+          </span>
+        </button>
+      </div>
+
+      {/* Control Bar: Search, Category Filter & Sorting */}
+      <div className="bg-white p-4 sm:p-5 rounded-3xl border border-black/5 shadow-sm space-y-4 md:space-y-0 md:flex md:items-center md:justify-between md:gap-4">
+        {/* Search Field */}
+        <div className="relative flex-1">
+          <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-black/30" />
+          <input 
+            type="text"
+            placeholder="প্রোডাক্ট নাম, আইডি বা ক্যাটাগরি খুঁজুন..."
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            className="w-full pl-11 pr-10 py-3 bg-gray-50 border border-black/5 rounded-2xl text-xs font-bold text-black focus:outline-none focus:ring-2 focus:ring-[#f57224]/20 focus:bg-white transition-all"
+          />
+          {searchQuery && (
+            <button 
+              onClick={() => setSearchQuery('')}
+              className="absolute right-3 top-1/2 -translate-y-1/2 p-1 text-black/30 hover:text-black transition-colors"
+            >
+              <X className="w-4 h-4" />
+            </button>
+          )}
+        </div>
+
+        <div className="flex items-center gap-2 sm:gap-3 flex-wrap sm:flex-nowrap">
+          {/* Category Dropdown */}
+          <div className="relative shrink-0 flex-1 sm:flex-none">
+            <select
+              value={selectedCategory}
+              onChange={(e) => setSelectedCategory(e.target.value)}
+              className="w-full sm:w-auto px-4 py-3 bg-gray-50 border border-black/5 rounded-2xl text-xs font-bold text-black focus:outline-none focus:ring-2 focus:ring-[#f57224]/20 appearance-none pr-8 cursor-pointer"
+            >
+              <option value="all">সকল ক্যাটাগরি</option>
+              {categories.map(cat => (
+                <option key={cat} value={cat}>{cat}</option>
+              ))}
+            </select>
+            <Tag className="absolute right-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-black/30 pointer-events-none" />
+          </div>
+
+          {/* Sort By Dropdown */}
+          <div className="relative shrink-0 flex-1 sm:flex-none">
+            <select
+              value={sortBy}
+              onChange={(e) => setSortBy(e.target.value as any)}
+              className="w-full sm:w-auto px-4 py-3 bg-gray-50 border border-black/5 rounded-2xl text-xs font-bold text-black focus:outline-none focus:ring-2 focus:ring-[#f57224]/20 appearance-none pr-8 cursor-pointer"
+            >
+              <option value="newest">নতুন যুক্ত</option>
+              <option value="stock-asc">স্টক (কম থেকে বেশি)</option>
+              <option value="stock-desc">স্টক (বেশি থেকে কম)</option>
+              <option value="price-asc">মূল্য (কম থেকে বেশি)</option>
+              <option value="price-desc">মূল্য (বেশি থেকে কম)</option>
+              <option value="name-asc">নাম (A-Z)</option>
+            </select>
+            <ArrowUpDown className="absolute right-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-black/30 pointer-events-none" />
+          </div>
+        </div>
+      </div>
+
+      {/* Selected Items Floating Action Bar */}
+      <AnimatePresence>
+        {selectedIds.length > 0 && (
+          <motion.div 
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: 20 }}
+            className="bg-slate-900 text-white p-4 rounded-2xl shadow-2xl border border-white/10 flex items-center justify-between gap-4 sticky top-24 z-20"
+          >
+            <div className="flex items-center gap-3">
+              <span className="w-8 h-8 rounded-xl bg-[#f57224] text-white flex items-center justify-center font-black text-xs">
+                {selectedIds.length}
+              </span>
+              <div>
+                <p className="text-xs font-bold text-white">টি প্রোডাক্ট সিলেক্ট করা আছে</p>
+                <p className="text-[10px] text-white/50">বাল্ক অ্যাকশন বেছে নিন</p>
+              </div>
+            </div>
+
+            <div className="flex items-center gap-2">
+              <button 
+                onClick={handleBulkDeleteAction}
+                className="flex items-center gap-2 px-4 py-2 bg-rose-600 hover:bg-rose-700 text-white rounded-xl text-xs font-bold transition-all shadow-md"
+              >
+                <Trash2 className="w-3.5 h-3.5" />
+                <span>সিলেক্ট করা প্রোডাক্ট ডিলেট</span>
+              </button>
+              <button 
+                onClick={() => setSelectedIds([])}
+                className="px-3 py-2 bg-white/10 hover:bg-white/20 text-white rounded-xl text-xs font-bold transition-all"
+              >
+                বাতিল
+              </button>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* Main Inventory Desktop Table View */}
+      <div className="hidden md:block bg-white rounded-[2rem] border border-black/5 shadow-sm overflow-hidden">
+        <div className="overflow-x-auto">
+          <table className="w-full text-left border-collapse">
+            <thead>
+              <tr className="bg-gray-50/80 border-b border-black/5">
+                <th className="px-6 py-4 w-12 text-center">
+                  <input 
+                    type="checkbox" 
+                    checked={selectedIds.length === filteredProducts.length && filteredProducts.length > 0}
+                    onChange={toggleSelectAll}
+                    className="w-4 h-4 rounded border-gray-300 text-[#f57224] focus:ring-[#f57224] cursor-pointer"
+                  />
+                </th>
+                <th className="px-6 py-4 text-[10px] font-black uppercase tracking-widest text-black/40">প্রোডাক্ট তথ্য</th>
+                <th className="px-6 py-4 text-[10px] font-black uppercase tracking-widest text-black/40">ক্যাটাগরি</th>
+                <th className="px-6 py-4 text-[10px] font-black uppercase tracking-widest text-black/40">মূল্য (BDT)</th>
+                <th className="px-6 py-4 text-[10px] font-black uppercase tracking-widest text-black/40 text-center">স্টক অ্যাডজাস্ট</th>
+                <th className="px-6 py-4 text-[10px] font-black uppercase tracking-widest text-black/40">স্টক অবস্থা</th>
+                <th className="px-6 py-4 text-[10px] font-black uppercase tracking-widest text-black/40 text-center">লেটেস্ট শো-কেস</th>
+                <th className="px-6 py-4 text-[10px] font-black uppercase tracking-widest text-black/40 text-right">অ্যাকশন</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-black/5">
+              {filteredProducts.length === 0 ? (
+                <tr>
+                  <td colSpan={8} className="px-6 py-16 text-center">
+                    <div className="flex flex-col items-center justify-center max-w-sm mx-auto">
+                      <div className="w-16 h-16 rounded-3xl bg-gray-100 flex items-center justify-center text-black/20 mb-4">
+                        <Boxes className="w-8 h-8" />
+                      </div>
+                      <h3 className="font-bold text-base text-black/70">কোন প্রোডাক্ট পাওয়া যায়নি</h3>
+                      <p className="text-xs text-black/40 mt-1">আপনার সার্চ বা ফিল্টার পরিবর্তন করে আবার চেষ্টা করুন</p>
+                    </div>
+                  </td>
+                </tr>
+              ) : (
+                filteredProducts.map(product => {
+                  const stock = Number(product.stock) || 0;
+                  const isOutOfStock = stock === 0;
+                  const isLowStock = stock > 0 && stock <= 5;
+
+                  return (
+                    <tr 
+                      key={product.id} 
+                      className={`hover:bg-gray-50/80 transition-colors group ${
+                        selectedIds.includes(product.id) ? 'bg-[#f57224]/[0.03]' : ''
+                      }`}
+                    >
+                      {/* Checkbox */}
+                      <td className="px-6 py-4 text-center">
+                        <input 
+                          type="checkbox" 
+                          checked={selectedIds.includes(product.id)}
+                          onChange={() => toggleSelect(product.id)}
+                          className="w-4 h-4 rounded border-gray-300 text-[#f57224] focus:ring-[#f57224] cursor-pointer"
+                        />
+                      </td>
+
+                      {/* Product Info */}
+                      <td className="px-6 py-4">
+                        <div className="flex items-center gap-4">
+                          <div className="w-14 h-14 rounded-2xl overflow-hidden bg-gray-100 border border-black/5 flex-shrink-0 group-hover:scale-105 transition-transform duration-300 relative">
+                            <img src={product.image} alt={product.name} className="w-full h-full object-cover" />
+                          </div>
+                          <div className="min-w-0">
+                            <h4 className="font-bold text-sm text-black group-hover:text-[#f57224] transition-colors truncate max-w-xs">
+                              {product.name}
+                            </h4>
+                            <div className="flex items-center gap-2 mt-1">
+                              <span className="text-[10px] font-mono text-black/40">ID: #{product.id}</span>
+                              <span className="text-[10px] text-black/30">•</span>
+                              <span className="text-[10px] font-bold text-black/40">{product.store_name || 'Daraz Store'}</span>
+                            </div>
+                          </div>
+                        </div>
+                      </td>
+
+                      {/* Category */}
+                      <td className="px-6 py-4">
+                        <span className="px-3 py-1 bg-gray-100 text-black/70 rounded-full text-[10px] font-bold uppercase tracking-wider inline-block">
+                          {product.category}
+                        </span>
+                      </td>
+
+                      {/* Price */}
+                      <td className="px-6 py-4 font-black text-sm text-black">
+                        ৳{product.price.toLocaleString()}
+                      </td>
+
+                      {/* Inline Stock Adjustment Control (Daraz Feature) */}
+                      <td className="px-6 py-4">
+                        <div className="flex items-center justify-center gap-1.5 bg-gray-100 p-1 rounded-2xl border border-black/5 w-fit mx-auto">
+                          <button
+                            onClick={() => handleStockAdjust(product.id, -1)}
+                            disabled={stock === 0}
+                            className="w-7 h-7 rounded-xl bg-white text-black/70 hover:bg-rose-50 hover:text-rose-600 disabled:opacity-30 disabled:hover:bg-white flex items-center justify-center transition-all shadow-sm active:scale-95"
+                            title="১টি স্টক কমান"
+                          >
+                            <Minus className="w-3.5 h-3.5" />
+                          </button>
+                          
+                          <input
+                            type="number"
+                            min="0"
+                            value={stock}
+                            onChange={(e) => {
+                              const val = parseInt(e.target.value, 10);
+                              if (!isNaN(val) && val >= 0) {
+                                setProducts(prev => prev.map(p => p.id === product.id ? { ...p, stock: val } : p));
+                              }
+                            }}
+                            onBlur={(e) => handleDirectStockSet(product.id, e.target.value)}
+                            className="w-12 text-center text-xs font-black bg-transparent text-black focus:outline-none"
+                          />
+
+                          <button
+                            onClick={() => handleStockAdjust(product.id, 1)}
+                            className="w-7 h-7 rounded-xl bg-white text-black/70 hover:bg-emerald-50 hover:text-emerald-600 flex items-center justify-center transition-all shadow-sm active:scale-95"
+                            title="১টি স্টক বাড়ান"
+                          >
+                            <Plus className="w-3.5 h-3.5" />
+                          </button>
+                        </div>
+                      </td>
+
+                      {/* Stock Status Pill Badge */}
+                      <td className="px-6 py-4">
+                        {isOutOfStock ? (
+                          <span className="px-3 py-1.5 bg-rose-50 text-rose-700 border border-rose-200 rounded-full text-[10px] font-black uppercase tracking-wider inline-flex items-center gap-1.5">
+                            <XCircle className="w-3 h-3 text-rose-500" />
+                            স্টক শেষ (0)
+                          </span>
+                        ) : isLowStock ? (
+                          <span className="px-3 py-1.5 bg-amber-50 text-amber-700 border border-amber-200 rounded-full text-[10px] font-black uppercase tracking-wider inline-flex items-center gap-1.5">
+                            <AlertTriangle className="w-3 h-3 text-amber-500" />
+                            কম স্টক ({stock})
+                          </span>
+                        ) : (
+                          <span className="px-3 py-1.5 bg-emerald-50 text-emerald-700 border border-emerald-200 rounded-full text-[10px] font-black uppercase tracking-wider inline-flex items-center gap-1.5">
+                            <CheckCircle2 className="w-3 h-3 text-emerald-500" />
+                            ইন স্টক ({stock})
+                          </span>
+                        )}
+                      </td>
+
+                      {/* Latest Showcase Switch */}
+                      <td className="px-6 py-4 text-center">
+                        <button
+                          onClick={() => handleToggleLatest(product.id)}
+                          className={`w-11 h-6 rounded-full p-1 transition-colors relative cursor-pointer mx-auto ${
+                            product.islatest ? 'bg-[#f57224]' : 'bg-gray-200'
+                          }`}
+                          title="হোমপেজে লেটেস্ট হিসেবে দেখান"
+                        >
+                          <div className={`w-4 h-4 bg-white rounded-full transition-transform shadow-md ${
+                            product.islatest ? 'translate-x-5' : 'translate-x-0'
+                          }`} />
+                        </button>
+                      </td>
+
+                      {/* Actions */}
+                      <td className="px-6 py-4 text-right">
+                        <div className="flex items-center justify-end gap-1">
+                          <button 
+                            onClick={() => setEditingProduct(product)}
+                            className="p-2.5 hover:bg-gray-100 rounded-xl text-black/60 hover:text-black transition-colors"
+                            title="এডিট করুন"
+                          >
+                            <Edit3 className="w-4 h-4" />
+                          </button>
+                          <button 
+                            onClick={() => onDelete(product.id)}
+                            className="p-2.5 hover:bg-rose-50 rounded-xl text-rose-400 hover:text-rose-600 transition-colors"
+                            title="ডিলেট করুন"
+                          >
+                            <Trash2 className="w-4 h-4" />
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                  );
+                })
+              )}
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      {/* Main Inventory Mobile Cards View */}
+      <div className="md:hidden space-y-4">
+        {filteredProducts.length === 0 ? (
+          <div className="bg-white p-8 rounded-3xl text-center border border-black/5 shadow-sm">
+            <Boxes className="w-10 h-10 text-black/20 mx-auto mb-2" />
+            <p className="font-bold text-sm text-black/70">কোন প্রোডাক্ট পাওয়া যায়নি</p>
+          </div>
+        ) : (
+          filteredProducts.map(product => {
+            const stock = Number(product.stock) || 0;
+            const isOutOfStock = stock === 0;
+            const isLowStock = stock > 0 && stock <= 5;
+
+            return (
+              <div 
+                key={product.id} 
+                className="bg-white p-5 rounded-3xl border border-black/5 shadow-sm space-y-4 hover:shadow-md transition-shadow"
+              >
+                <div className="flex items-start gap-4">
+                  {/* Image with status badge */}
+                  <div className="relative w-20 h-20 rounded-2xl overflow-hidden bg-gray-100 border border-black/5 shrink-0">
+                    <img src={product.image} alt={product.name} className="w-full h-full object-cover" />
+                    {isOutOfStock && (
+                      <span className="absolute bottom-0 inset-x-0 bg-rose-600/90 text-white text-[8px] font-black text-center py-0.5 uppercase tracking-tighter">
+                        আউট অব স্টক
+                      </span>
+                    )}
+                  </div>
+
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center justify-between gap-2">
+                      <span className="text-[10px] font-bold text-black/40 uppercase tracking-wider">{product.category}</span>
+                      <span className="text-[9px] font-mono text-black/30">#{product.id}</span>
+                    </div>
+
+                    <h4 className="font-bold text-sm text-black truncate mt-0.5">{product.name}</h4>
+                    <p className="text-base font-black text-[#f57224] mt-1">৳{product.price.toLocaleString()}</p>
+
+                    <div className="flex items-center gap-2 mt-2">
+                      {isOutOfStock ? (
+                        <span className="px-2.5 py-0.5 bg-rose-50 text-rose-600 border border-rose-200 rounded-md text-[9px] font-black">
+                          স্টক শেষ (0)
+                        </span>
+                      ) : isLowStock ? (
+                        <span className="px-2.5 py-0.5 bg-amber-50 text-amber-700 border border-amber-200 rounded-md text-[9px] font-black">
+                          কম স্টক ({stock})
+                        </span>
+                      ) : (
+                        <span className="px-2.5 py-0.5 bg-emerald-50 text-emerald-700 border border-emerald-200 rounded-md text-[9px] font-black">
+                          ইন স্টক ({stock})
+                        </span>
+                      )}
+                    </div>
+                  </div>
+                </div>
+
+                {/* Mobile Stock Adjuster & Latest Switch */}
+                <div className="flex items-center justify-between pt-3 border-t border-black/5 gap-2">
+                  <div className="flex items-center gap-1 bg-gray-100 p-1 rounded-xl">
+                    <button
+                      onClick={() => handleStockAdjust(product.id, -1)}
+                      disabled={stock === 0}
+                      className="w-7 h-7 rounded-lg bg-white text-black active:bg-rose-100 disabled:opacity-30 flex items-center justify-center"
+                    >
+                      <Minus className="w-3.5 h-3.5" />
+                    </button>
+                    <span className="w-8 text-center text-xs font-black">{stock}</span>
+                    <button
+                      onClick={() => handleStockAdjust(product.id, 1)}
+                      className="w-7 h-7 rounded-lg bg-white text-black active:bg-emerald-100 flex items-center justify-center"
+                    >
+                      <Plus className="w-3.5 h-3.5" />
+                    </button>
+                  </div>
+
+                  <div className="flex items-center gap-2">
+                    <button
+                      onClick={() => handleToggleLatest(product.id)}
+                      className={`px-3 py-1.5 rounded-xl text-[10px] font-black uppercase tracking-wider transition-colors flex items-center gap-1 ${
+                        product.islatest ? 'bg-indigo-100 text-indigo-700' : 'bg-gray-100 text-black/40'
+                      }`}
+                    >
+                      <Sparkles className="w-3 h-3" />
+                      {product.islatest ? 'Latest' : 'Normal'}
+                    </button>
+
+                    <button 
+                      onClick={() => setEditingProduct(product)}
+                      className="p-2 bg-gray-100 text-black/60 rounded-xl"
+                    >
+                      <Edit3 className="w-4 h-4" />
+                    </button>
+
+                    <button 
+                      onClick={() => onDelete(product.id)}
+                      className="p-2 bg-rose-50 text-rose-500 rounded-xl"
+                    >
+                      <Trash2 className="w-4 h-4" />
+                    </button>
+                  </div>
+                </div>
+              </div>
+            );
+          })
+        )}
+      </div>
+    </div>
+  );
+}
+
 function UsersView({ setSuccessMessage }: { setSuccessMessage: (msg: string) => void }) {
   const [users, setUsers] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
@@ -2353,45 +3163,28 @@ export default function Admin({
             </motion.div>
           )}
         </AnimatePresence>
-        {/* Stats & Search */}
-        {(currentView === 'inventory' || currentView === 'orders') && (
+        {/* Stats & Search for Orders */}
+        {currentView === 'orders' && (
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-            {(currentView === 'orders' || currentView === 'inventory') && (
-              <div 
-                onClick={currentView === 'inventory' ? () => setCurrentView('users') : undefined}
-                className={`bg-white p-6 rounded-3xl border border-black/5 shadow-sm group ${
-                  currentView === 'inventory' 
-                    ? 'cursor-pointer hover:border-black/20 hover:shadow-md transition-all active:scale-[0.98]' 
-                    : ''
-                }`}
-              >
-                <div className="flex items-center justify-between mb-1">
-                  <p className="text-xs font-bold text-black/40 uppercase tracking-widest">
-                    {currentView === 'inventory' ? 'Total Users' : 'Total Orders'}
-                  </p>
-                  {currentView === 'inventory' ? (
-                    <Users className="w-4 h-4 text-black/10 group-hover:text-black/40 transition-colors" />
-                  ) : (
-                    <ShoppingBag className="w-4 h-4 text-black/10 transition-colors" />
-                  )}
-                </div>
-                <p className="text-3xl font-black">
-                  {currentView === 'inventory' ? userCount : orders.length}
+            <div className="bg-white p-6 rounded-3xl border border-black/5 shadow-sm group">
+              <div className="flex items-center justify-between mb-1">
+                <p className="text-xs font-bold text-black/40 uppercase tracking-widest">
+                  Total Orders
                 </p>
-                <p className="text-[10px] text-black/40 font-bold mt-1 flex items-center gap-1">
-                  {currentView === 'inventory' ? (
-                    <>Manage Users <ChevronRight className="w-3 h-3" /></>
-                  ) : (
-                    <>All registered orders</>
-                  )}
-                </p>
+                <ShoppingBag className="w-4 h-4 text-black/10 transition-colors" />
               </div>
-            )}
-            <div className={`${currentView === 'orders' || currentView === 'inventory' ? 'md:col-span-2' : 'md:col-span-3'} relative`}>
+              <p className="text-3xl font-black">
+                {orders.length}
+              </p>
+              <p className="text-[10px] text-black/40 font-bold mt-1 flex items-center gap-1">
+                All registered orders
+              </p>
+            </div>
+            <div className="md:col-span-2 relative">
               <Search className="absolute left-5 top-1/2 -translate-y-1/2 w-5 h-5 text-black/20" />
               <input 
                 type="text"
-                placeholder={currentView === 'inventory' ? "Search by name or category..." : "Search by Order ID or Customer..."}
+                placeholder="Search by Order ID or Customer..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
                 className="w-full h-full min-h-[70px] pl-14 pr-6 bg-white border border-black/5 rounded-3xl focus:outline-none focus:ring-2 focus:ring-black/5 shadow-sm"
@@ -2405,135 +3198,16 @@ export default function Admin({
         ) : currentView === 'users' ? (
           <UsersView setSuccessMessage={setSuccessMessage} />
         ) : currentView === 'inventory' ? (
-          /* Product List - Responsive */
-          <div className="space-y-4">
-            {/* Desktop Table */}
-            <div className="hidden md:block bg-white rounded-[2.5rem] border border-black/5 shadow-sm overflow-hidden">
-              <div className="overflow-x-auto">
-                <table className="w-full text-left border-collapse">
-                  <thead>
-                    <tr className="bg-black/5">
-                      <th className="px-6 py-4 w-10">
-                        <input 
-                          type="checkbox" 
-                          checked={selectedIds.length === filteredProducts.length && filteredProducts.length > 0}
-                          onChange={toggleSelectAll}
-                          className="w-4 h-4 rounded border-black/10 text-black focus:ring-black cursor-pointer"
-                        />
-                      </th>
-                      <th className="px-6 py-4 text-[10px] font-black uppercase tracking-widest text-black/40">Product</th>
-                      <th className="px-6 py-4 text-[10px] font-black uppercase tracking-widest text-black/40">Category</th>
-                      <th className="px-6 py-4 text-[10px] font-black uppercase tracking-widest text-black/40">Latest</th>
-                      <th className="px-6 py-4 text-[10px] font-black uppercase tracking-widest text-black/40">Price</th>
-                      <th className="px-6 py-4 text-[10px] font-black uppercase tracking-widest text-black/40">Stock</th>
-                      <th className="px-6 py-4 text-[10px] font-black uppercase tracking-widest text-black/40 text-right">Actions</th>
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-black/5">
-                    {filteredProducts.map(product => (
-                      <tr key={product.id} className={`hover:bg-black/[0.02] transition-colors ${selectedIds.includes(product.id) ? 'bg-black/[0.03]' : ''}`}>
-                        <td className="px-6 py-4">
-                          <input 
-                            type="checkbox" 
-                            checked={selectedIds.includes(product.id)}
-                            onChange={() => toggleSelect(product.id)}
-                            className="w-4 h-4 rounded border-black/10 text-black focus:ring-black cursor-pointer"
-                          />
-                        </td>
-                        <td className="px-6 py-4">
-                          <div className="flex items-center gap-4">
-                            <div className="w-12 h-12 rounded-xl overflow-hidden bg-black/5 flex-shrink-0">
-                              <img src={product.image} alt={product.name} className="w-full h-full object-cover" />
-                            </div>
-                            <span className="font-bold text-sm">{product.name}</span>
-                          </div>
-                        </td>
-                        <td className="px-6 py-4">
-                          <span className="px-3 py-1 bg-black/5 rounded-full text-[10px] font-bold uppercase tracking-wider">
-                            {product.category}
-                          </span>
-                        </td>
-                        <td className="px-6 py-4">
-                          <div className={`w-8 h-4 rounded-full relative transition-colors cursor-pointer ${product.islatest ? 'bg-black' : 'bg-black/10'}`}
-                            onClick={async () => {
-                              const newIsLatest = !product.islatest;
-                              const { error } = await supabase.from('products').update({ islatest: newIsLatest }).eq('id', product.id);
-                              if(!error) {
-                                setProducts(prev => prev.map(p => p.id === product.id ? { ...p, islatest: newIsLatest } : p));
-                                setSuccessMessage(`সফল ভাবে ${newIsLatest ? 'এড' : 'রিমুভ'} হয়েছে।`);
-                              }
-                            }}
-                          >
-                            <div className={`absolute top-0.5 w-3 h-3 bg-white rounded-full transition-all ${product.islatest ? 'left-4.5' : 'left-0.5'}`} />
-                          </div>
-                        </td>
-                        <td className="px-6 py-4 font-bold text-sm">৳{product.price}</td>
-                        <td className="px-6 py-4">
-                          <span className={`text-xs font-bold ${product.stock < 5 ? 'text-red-500' : 'text-black/60'}`}>
-                            {product.stock} units
-                          </span>
-                        </td>
-                        <td className="px-6 py-4 text-right">
-                          <div className="flex items-center justify-end gap-2">
-                            <button 
-                              onClick={() => setEditingProduct(product)}
-                              className="p-2 hover:bg-black/5 rounded-lg text-black/60 hover:text-black transition-colors"
-                            >
-                              <Edit3 className="w-4 h-4" />
-                            </button>
-                            <button 
-                              onClick={() => handleDelete(product.id)}
-                              className="p-2 hover:bg-red-50 rounded-lg text-red-400 hover:text-red-600 transition-colors"
-                            >
-                              <Trash2 className="w-4 h-4" />
-                            </button>
-                          </div>
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-            </div>
-
-            {/* Mobile Cards */}
-            <div className="md:hidden space-y-4">
-              {filteredProducts.map(product => (
-                <div key={product.id} className="bg-white p-5 rounded-3xl border border-black/5 shadow-sm flex items-center gap-4">
-                  <div className="w-16 h-16 rounded-2xl overflow-hidden bg-black/5 flex-shrink-0">
-                    <img src={product.image} alt={product.name} className="w-full h-full object-cover" />
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <h3 className="font-bold text-sm truncate">{product.name}</h3>
-                    <div className="flex items-center gap-2 mt-1">
-                      <span className="text-[10px] font-bold text-black/40 uppercase tracking-widest">{product.category}</span>
-                      <span className="w-1 h-1 bg-black/10 rounded-full" />
-                      <span className={`text-[10px] font-bold uppercase tracking-widest ${product.islatest ? 'text-black' : 'text-black/20'}`}>Latest</span>
-                      <span className="w-1 h-1 bg-black/10 rounded-full" />
-                      <span className="text-xs font-bold">৳{product.price}</span>
-                    </div>
-                    <p className={`text-[10px] font-bold mt-1 ${product.stock < 5 ? 'text-red-500' : 'text-black/40'}`}>
-                      {product.stock} units in stock
-                    </p>
-                  </div>
-                  <div className="flex flex-col gap-2">
-                    <button 
-                      onClick={() => setEditingProduct(product)}
-                      className="p-2.5 bg-black/5 rounded-xl text-black/60 active:bg-black/10 transition-colors"
-                    >
-                      <Edit3 className="w-4 h-4" />
-                    </button>
-                    <button 
-                      onClick={() => handleDelete(product.id)}
-                      className="p-2.5 bg-red-50 rounded-xl text-red-400 active:bg-red-100 transition-colors"
-                    >
-                      <Trash2 className="w-4 h-4" />
-                    </button>
-                  </div>
-                </div>
-              ))}
-            </div>
-          </div>
+          <DarazInventoryView 
+            products={products}
+            setProducts={setProducts}
+            categories={settings.categories || ['Panjabi', 'Attar']}
+            onDelete={handleDelete}
+            onBulkDelete={handleBulkDelete}
+            setEditingProduct={setEditingProduct}
+            setIsAddingNew={setIsAddingNew}
+            setSuccessMessage={setSuccessMessage}
+          />
         ) : currentView === 'settings' ? (
           <SettingsView 
             settings={settings} 
