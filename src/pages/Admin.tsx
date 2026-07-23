@@ -1906,23 +1906,6 @@ function InventoryView({
             </select>
             <Tag className="absolute right-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-black/30 pointer-events-none" />
           </div>
-
-          {/* Sort By Dropdown */}
-          <div className="relative shrink-0 flex-1 sm:flex-none">
-            <select
-              value={sortBy}
-              onChange={(e) => setSortBy(e.target.value as any)}
-              className="w-full sm:w-auto px-4 py-3 bg-gray-50 border border-black/5 rounded-2xl text-xs font-bold text-black focus:outline-none focus:ring-2 focus:ring-black/20 appearance-none pr-8 cursor-pointer"
-            >
-              <option value="newest">Newest First</option>
-              <option value="stock-asc">Stock (Low to High)</option>
-              <option value="stock-desc">Stock (High to Low)</option>
-              <option value="price-asc">Price (Low to High)</option>
-              <option value="price-desc">Price (High to Low)</option>
-              <option value="name-asc">Name (A-Z)</option>
-            </select>
-            <ArrowUpDown className="absolute right-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-black/30 pointer-events-none" />
-          </div>
         </div>
       </div>
 
