@@ -1782,8 +1782,8 @@ function InventoryView({
         </div>
       </div>
 
-      {/* Quick Navigation Filter Tabs */}
-      <div className="bg-white p-2 rounded-2xl border border-black/5 shadow-sm flex items-center gap-1.5 overflow-x-auto no-scrollbar">
+      {/* Quick Navigation Filter Tabs (Desktop) */}
+      <div className="hidden md:flex bg-white p-2 rounded-2xl border border-black/5 shadow-sm items-center gap-1.5 overflow-x-auto no-scrollbar">
         <button
           onClick={() => setInventoryTab('all')}
           className={`px-4 py-2.5 rounded-xl text-xs font-bold transition-all shrink-0 flex items-center gap-2 ${
@@ -1869,7 +1869,7 @@ function InventoryView({
         </button>
       </div>
 
-      {/* Control Bar: Search, Category Filter & Sorting */}
+      {/* Control Bar: Search, Category Filter & Mobile Status Filter */}
       <div className="bg-white p-4 sm:p-5 rounded-3xl border border-black/5 shadow-sm space-y-4 md:space-y-0 md:flex md:items-center md:justify-between md:gap-4">
         {/* Search Field */}
         <div className="relative flex-1">
@@ -1905,6 +1905,22 @@ function InventoryView({
               ))}
             </select>
             <Tag className="absolute right-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-black/30 pointer-events-none" />
+          </div>
+
+          {/* Status Filter Dropdown (Mobile Only) */}
+          <div className="relative shrink-0 flex-1 sm:flex-none md:hidden">
+            <select
+              value={inventoryTab}
+              onChange={(e) => setInventoryTab(e.target.value as any)}
+              className="w-full sm:w-auto px-4 py-3 bg-gray-50 border border-black/5 rounded-2xl text-xs font-bold text-black focus:outline-none focus:ring-2 focus:ring-black/20 appearance-none pr-8 cursor-pointer"
+            >
+              <option value="all">All Products</option>
+              <option value="instock">In Stock</option>
+              <option value="lowstock">Low Stock</option>
+              <option value="outstock">Out of Stock</option>
+              <option value="latest">Latest Items</option>
+            </select>
+            <SlidersHorizontal className="absolute right-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-black/30 pointer-events-none" />
           </div>
         </div>
       </div>
