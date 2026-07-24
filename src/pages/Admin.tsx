@@ -3405,233 +3405,362 @@ export default function Admin({
         )}
       </div>
 
-      {/* Edit/Add Modal */}
+      {/* Edit/Add Modal - Modern Seller Center UI */}
       <AnimatePresence>
         {(editingProduct || isAddingNew) && (
-          <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
+          <div className="fixed inset-0 z-[100] flex items-center justify-center p-3 sm:p-6">
             <motion.div 
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
               onClick={() => { setEditingProduct(null); setIsAddingNew(false); }}
-              className="absolute inset-0 bg-black/60 backdrop-blur-sm"
+              className="absolute inset-0 bg-black/60 backdrop-blur-md"
             />
             <motion.div 
-              initial={{ opacity: 0, scale: 0.9, y: 20 }}
+              initial={{ opacity: 0, scale: 0.95, y: 15 }}
               animate={{ opacity: 1, scale: 1, y: 0 }}
-              exit={{ opacity: 0, scale: 0.9, y: 20 }}
-              className="relative w-full max-w-2xl max-h-[calc(100vh-2rem)] bg-white rounded-[2rem] sm:rounded-[2.5rem] shadow-2xl overflow-hidden flex flex-col"
+              exit={{ opacity: 0, scale: 0.95, y: 15 }}
+              className="relative w-full max-w-4xl max-h-[calc(100vh-2rem)] bg-white rounded-3xl sm:rounded-[2.5rem] shadow-2xl overflow-hidden flex flex-col border border-black/10"
             >
-              <div className="p-6 sm:p-8 border-b border-black/5 flex justify-between items-center bg-gray-50 flex-shrink-0">
-                <h2 className="text-xl sm:text-2xl font-bold">
-                  {isAddingNew ? 'Add New Product' : 'Edit Product'}
-                </h2>
+              {/* Header */}
+              <div className="p-5 sm:p-6 border-b border-black/5 bg-slate-900 text-white flex-shrink-0 flex items-center justify-between">
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 rounded-2xl bg-white/10 flex items-center justify-center text-amber-400 border border-white/10">
+                    <Boxes className="w-5 h-5" />
+                  </div>
+                  <div>
+                    <div className="flex items-center gap-2">
+                      <span className="px-2 py-0.5 rounded-md bg-amber-400/20 text-amber-300 text-[9px] font-black uppercase tracking-widest border border-amber-400/30">
+                        Seller Center
+                      </span>
+                      <span className="text-xs text-white/50 font-bold">• Product Management</span>
+                    </div>
+                    <h2 className="text-lg sm:text-xl font-bold mt-0.5 truncate max-w-md">
+                      {isAddingNew ? 'Add New Product' : `Edit Product: ${editingProduct?.name || ''}`}
+                    </h2>
+                  </div>
+                </div>
                 <button 
                   onClick={() => { setEditingProduct(null); setIsAddingNew(false); }}
-                  className="p-2 hover:bg-black/5 rounded-full transition-colors"
+                  className="w-9 h-9 flex items-center justify-center hover:bg-white/10 rounded-full transition-colors text-white/70 hover:text-white"
                 >
-                  <X className="w-6 h-6" />
+                  <X className="w-5 h-5" />
                 </button>
               </div>
 
+              {/* Modal Body / Form */}
               <form 
                 onSubmit={isAddingNew ? handleAddNew : handleSaveEdit}
-                className="p-6 sm:p-8 space-y-6 overflow-y-auto custom-scrollbar flex-1"
+                className="p-5 sm:p-8 space-y-8 overflow-y-auto custom-scrollbar flex-1 bg-slate-50/50"
               >
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
-                  <div className="space-y-2">
-                    <label className="text-[10px] font-black uppercase tracking-widest text-black/40 ml-1">Product Name</label>
-                    <div className="relative">
-                      <Package className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-black/20" />
-                      <input 
-                        required
-                        type="text"
-                        value={isAddingNew ? newProduct.name : (editingProduct?.name || '')}
-                        onChange={(e) => isAddingNew 
-                          ? setNewProduct({...newProduct, name: e.target.value})
-                          : setEditingProduct({...editingProduct!, name: e.target.value})
-                        }
-                        className="w-full pl-11 pr-4 py-3.5 bg-black/5 rounded-2xl focus:outline-none focus:ring-2 focus:ring-black/5 transition-all"
-                      />
-                    </div>
+                {/* 1. Basic Information */}
+                <div className="bg-white p-5 sm:p-6 rounded-2xl border border-black/5 shadow-sm space-y-5">
+                  <div className="flex items-center gap-2 pb-3 border-b border-black/5">
+                    <Package className="w-4 h-4 text-slate-700" />
+                    <h3 className="text-xs font-black uppercase tracking-widest text-slate-800">
+                      1. Basic Information (প্রাথমিক তথ্য)
+                    </h3>
                   </div>
-                  <div className="space-y-2">
-                    <label className="text-[10px] font-black uppercase tracking-widest text-black/40 ml-1">Category</label>
-                    <div className="relative">
-                      <Tag className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-black/20" />
-                      <select 
-                        value={isAddingNew ? newProduct.category : (editingProduct?.category || '')}
-                        onChange={(e) => isAddingNew 
-                          ? setNewProduct({...newProduct, category: e.target.value})
-                          : setEditingProduct({...editingProduct!, category: e.target.value})
-                        }
-                        className="w-full pl-11 pr-4 py-3.5 bg-black/5 rounded-2xl focus:outline-none focus:ring-2 focus:ring-black/5 transition-all appearance-none"
-                      >
-                        {settings.categories.map(cat => (
-                          <option key={cat} value={cat}>{cat}</option>
-                        ))}
-                      </select>
-                    </div>
-                  </div>
-                </div>
 
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
-                  <div className="space-y-2">
-                    <label className="text-[10px] font-black uppercase tracking-widest text-black/40 ml-1">Price (৳)</label>
-                    <div className="relative">
-                      <DollarSign className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-black/20" />
-                      <input 
-                        required
-                        type="number"
-                        value={isAddingNew ? newProduct.price : (editingProduct?.price ?? 0)}
-                        onChange={(e) => isAddingNew 
-                          ? setNewProduct({...newProduct, price: Number(e.target.value)})
-                          : setEditingProduct({...editingProduct!, price: Number(e.target.value)})
-                        }
-                        className="w-full pl-11 pr-4 py-3.5 bg-black/5 rounded-2xl focus:outline-none focus:ring-2 focus:ring-black/5 transition-all"
-                      />
-                    </div>
-                  </div>
-                  <div className="space-y-2">
-                    <label className="text-[10px] font-black uppercase tracking-widest text-black/40 ml-1">Stock Units</label>
-                    <div className="relative">
-                      <Layers className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-black/20" />
-                      <input 
-                        required
-                        type="number"
-                        min="0"
-                        value={isAddingNew ? newProduct.stock : (editingProduct?.stock ?? 0)}
-                        onChange={(e) => isAddingNew 
-                          ? setNewProduct({...newProduct, stock: Number(e.target.value)})
-                          : setEditingProduct({...editingProduct!, stock: Number(e.target.value)})
-                        }
-                        className="w-full pl-11 pr-4 py-3.5 bg-black/5 rounded-2xl focus:outline-none focus:ring-2 focus:ring-black/5 transition-all"
-                      />
-                    </div>
-                  </div>
-                </div>
-
-                {/* Main Product Image */}
-                <div className="space-y-2">
-                  <label className="text-[10px] font-black uppercase tracking-widest text-black/40 ml-1">Main Product Image (Required)</label>
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                    <div className="relative">
-                      <ImageIcon className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-black/20" />
-                      <input 
-                        required
-                        type="text"
-                        value={isAddingNew ? newProduct.image : (editingProduct?.image || '')}
-                        onChange={(e) => isAddingNew 
-                          ? setNewProduct({...newProduct, image: e.target.value})
-                          : setEditingProduct({...editingProduct!, image: e.target.value})
-                        }
-                        placeholder="Image URL..."
-                        className="w-full pl-11 pr-4 py-3.5 bg-black/5 rounded-2xl focus:outline-none focus:ring-2 focus:ring-black/5 transition-all text-xs"
-                      />
-                    </div>
-                    <div className="relative">
-                      <label className="flex items-center justify-center gap-2 w-full h-full min-h-[50px] bg-black/5 rounded-2xl border-2 border-dashed border-black/10 hover:border-black/20 cursor-pointer transition-all">
-                        <Upload className="w-4 h-4 text-black/40" />
-                        <span className="text-xs font-bold text-black/40">Upload File</span>
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-5">
+                    <div className="sm:col-span-2 space-y-1.5">
+                      <div className="flex justify-between items-center">
+                        <label className="text-[10px] font-black uppercase tracking-widest text-black/50 ml-1">
+                          Product Name <span className="text-rose-500">*</span>
+                        </label>
+                        <span className="text-[10px] text-black/35 font-mono">
+                          {(isAddingNew ? newProduct.name : (editingProduct?.name || '')).length}/200
+                        </span>
+                      </div>
+                      <div className="relative">
+                        <Package className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-black/20" />
                         <input 
-                          type="file"
-                          accept="image/*"
-                          onChange={(e) => handleImageUpload(e, !isAddingNew)}
-                          className="hidden"
+                          required
+                          type="text"
+                          maxLength={200}
+                          placeholder="e.g. Exclusive Premium Cotton Panjabi..."
+                          value={isAddingNew ? newProduct.name : (editingProduct?.name || '')}
+                          onChange={(e) => isAddingNew 
+                            ? setNewProduct({...newProduct, name: e.target.value})
+                            : setEditingProduct({...editingProduct!, name: e.target.value})
+                          }
+                          className="w-full pl-11 pr-4 py-3 bg-gray-50 border border-black/5 rounded-2xl text-xs font-bold focus:bg-white focus:outline-none focus:ring-2 focus:ring-slate-900 transition-all"
                         />
-                      </label>
+                      </div>
                     </div>
-                  </div>
-                  {(isAddingNew ? newProduct.image : editingProduct?.image) && (
-                    <div className="mt-2 w-20 h-20 rounded-xl overflow-hidden border border-black/5">
-                      <img 
-                        src={isAddingNew ? newProduct.image : editingProduct?.image} 
-                        alt="Preview" 
-                        className="w-full h-full object-cover"
-                      />
-                    </div>
-                  )}
-                </div>
 
-                {/* Additional Product Images */}
-                <div className="space-y-4 pt-2">
-                  <div>
-                    <label className="text-[10px] font-black uppercase tracking-widest text-black/40 ml-1">
-                      Additional Product Images (Optional - Up to 4)
-                    </label>
-                    <p className="text-[10px] text-black/35 ml-1">These will appear as a thumbnail gallery on the product details page.</p>
-                  </div>
-
-                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-                    {[0, 1, 2, 3].map((index) => {
-                      const imagesList = isAddingNew ? (newProduct.images || []) : (editingProduct?.images || []);
-                      const currentImageUrl = imagesList[index] || '';
-
-                      return (
-                        <div key={index} className="p-4 bg-black/[0.02] border border-black/5 rounded-2xl space-y-3 flex flex-col justify-between">
-                          <p className="text-[9px] font-black uppercase tracking-widest text-black/30">Slot {index + 1}</p>
-                          
-                          {currentImageUrl ? (
-                            <div className="relative group aspect-square rounded-xl overflow-hidden border border-black/5">
-                              <img src={currentImageUrl} alt={`Slot ${index + 1}`} className="w-full h-full object-cover" />
-                              <button
-                                type="button"
-                                onClick={() => handleRemoveAdditionalImage(index, !isAddingNew)}
-                                className="absolute inset-0 bg-black/40 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity text-white font-bold text-xs"
-                              >
-                                Remove
-                              </button>
-                            </div>
-                          ) : (
-                            <div className="space-y-2">
-                              <input 
-                                type="text"
-                                placeholder="Image URL..."
-                                value={currentImageUrl}
-                                onChange={(e) => handleAdditionalImageUrlChange(e.target.value, index, !isAddingNew)}
-                                className="w-full px-3 py-2 bg-black/5 rounded-xl focus:outline-none focus:ring-1 focus:ring-black/10 text-[10px] font-bold"
-                              />
-                              <label className="flex items-center justify-center gap-1.5 w-full h-10 bg-black/5 hover:bg-black/10 rounded-xl border border-dashed border-black/10 cursor-pointer transition-all">
-                                <Upload className="w-3.5 h-3.5 text-black/40" />
-                                <span className="text-[10px] font-bold text-black/40">Upload File</span>
-                                <input 
-                                  type="file"
-                                  accept="image/*"
-                                  onChange={(e) => handleAdditionalImageUpload(e, index, !isAddingNew)}
-                                  className="hidden"
-                                />
-                              </label>
-                            </div>
-                          )}
-                        </div>
-                      );
-                    })}
-                  </div>
-                </div>
-
-                <div className="space-y-2">
-                  <label className="text-[10px] font-black uppercase tracking-widest text-black/40 ml-1">Description</label>
-                  <textarea 
-                    required
-                    rows={4}
-                    value={isAddingNew ? newProduct.description : (editingProduct?.description || '')}
-                    onChange={(e) => isAddingNew 
-                      ? setNewProduct({...newProduct, description: e.target.value})
-                      : setEditingProduct({...editingProduct!, description: e.target.value})
-                    }
-                    className="w-full px-5 py-4 bg-black/5 rounded-2xl focus:outline-none focus:ring-2 focus:ring-black/5 transition-all resize-none"
-                  />
-                </div>
-
-                {/* Daraz-style Delivery & Service Options */}
-                <div className="space-y-6 border border-black/10 rounded-3xl p-5 bg-black/[0.01]">
-                  <h3 className="text-sm font-black uppercase tracking-wider text-black">
-                    Delivery & Service Options (Daraz Style)
-                  </h3>
-                  
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <div className="space-y-1.5">
-                      <label className="text-[10px] font-black uppercase tracking-widest text-black/40">Standard Delivery Charge (৳)</label>
+                      <label className="text-[10px] font-black uppercase tracking-widest text-black/50 ml-1">
+                        Category <span className="text-rose-500">*</span>
+                      </label>
+                      <div className="relative">
+                        <Tag className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-black/20" />
+                        <select 
+                          value={isAddingNew ? newProduct.category : (editingProduct?.category || '')}
+                          onChange={(e) => isAddingNew 
+                            ? setNewProduct({...newProduct, category: e.target.value})
+                            : setEditingProduct({...editingProduct!, category: e.target.value})
+                          }
+                          className="w-full pl-11 pr-8 py-3 bg-gray-50 border border-black/5 rounded-2xl text-xs font-bold focus:bg-white focus:outline-none focus:ring-2 focus:ring-slate-900 transition-all appearance-none cursor-pointer"
+                        >
+                          {settings.categories.map(cat => (
+                            <option key={cat} value={cat}>{cat}</option>
+                          ))}
+                        </select>
+                        <SlidersHorizontal className="absolute right-3.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-black/30 pointer-events-none" />
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="space-y-1.5">
+                    <label className="text-[10px] font-black uppercase tracking-widest text-black/50 ml-1">
+                      Product Description <span className="text-rose-500">*</span>
+                    </label>
+                    <textarea 
+                      required
+                      rows={3}
+                      placeholder="Write comprehensive product description, specs, fabric guidelines, and details for buyers..."
+                      value={isAddingNew ? newProduct.description : (editingProduct?.description || '')}
+                      onChange={(e) => isAddingNew 
+                        ? setNewProduct({...newProduct, description: e.target.value})
+                        : setEditingProduct({...editingProduct!, description: e.target.value})
+                      }
+                      className="w-full p-4 bg-gray-50 border border-black/5 rounded-2xl text-xs font-medium focus:bg-white focus:outline-none focus:ring-2 focus:ring-slate-900 transition-all resize-none leading-relaxed"
+                    />
+                  </div>
+                </div>
+
+                {/* 2. Product Media Gallery */}
+                <div className="bg-white p-5 sm:p-6 rounded-2xl border border-black/5 shadow-sm space-y-5">
+                  <div className="flex items-center justify-between pb-3 border-b border-black/5">
+                    <div className="flex items-center gap-2">
+                      <ImageIcon className="w-4 h-4 text-slate-700" />
+                      <h3 className="text-xs font-black uppercase tracking-widest text-slate-800">
+                        2. Images & Gallery (প্রোডাক্ট ছবি ও গ্যালারি)
+                      </h3>
+                    </div>
+                    <span className="text-[10px] text-black/40 font-bold">High Quality 1:1 Images Recommended</span>
+                  </div>
+
+                  {/* Main Cover Image */}
+                  <div className="p-4 bg-slate-50 border border-black/5 rounded-2xl space-y-3">
+                    <div className="flex items-center justify-between">
+                      <label className="text-[10px] font-black uppercase tracking-widest text-slate-700">
+                        Main Cover Image (Required)
+                      </label>
+                      <span className="px-2 py-0.5 bg-slate-900 text-white rounded text-[8px] font-black uppercase tracking-wider">Primary</span>
+                    </div>
+
+                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 items-center">
+                      <div className="sm:col-span-2 space-y-2">
+                        <div className="relative">
+                          <ImageIcon className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-black/20" />
+                          <input 
+                            required
+                            type="text"
+                            value={isAddingNew ? newProduct.image : (editingProduct?.image || '')}
+                            onChange={(e) => isAddingNew 
+                              ? setNewProduct({...newProduct, image: e.target.value})
+                              : setEditingProduct({...editingProduct!, image: e.target.value})
+                            }
+                            placeholder="Paste image URL..."
+                            className="w-full pl-10 pr-3 py-2.5 bg-white border border-black/10 rounded-xl text-xs font-bold focus:outline-none focus:ring-1 focus:ring-slate-900"
+                          />
+                        </div>
+                        <label className="flex items-center justify-center gap-2 py-2.5 bg-white border border-dashed border-slate-300 hover:border-slate-800 rounded-xl cursor-pointer transition-all">
+                          <Upload className="w-3.5 h-3.5 text-slate-600" />
+                          <span className="text-xs font-bold text-slate-700">Upload Image File</span>
+                          <input 
+                            type="file"
+                            accept="image/*"
+                            onChange={(e) => handleImageUpload(e, !isAddingNew)}
+                            className="hidden"
+                          />
+                        </label>
+                      </div>
+
+                      <div className="flex justify-center sm:justify-end">
+                        {(isAddingNew ? newProduct.image : editingProduct?.image) ? (
+                          <div className="relative w-20 h-20 rounded-xl overflow-hidden border-2 border-slate-900 shadow-md">
+                            <img 
+                              src={isAddingNew ? newProduct.image : editingProduct?.image} 
+                              alt="Cover Preview" 
+                              className="w-full h-full object-cover"
+                            />
+                          </div>
+                        ) : (
+                          <div className="w-20 h-20 rounded-xl border-2 border-dashed border-slate-200 bg-white flex flex-col items-center justify-center text-slate-300">
+                            <ImageIcon className="w-6 h-6" />
+                            <span className="text-[8px] font-bold mt-1">No Image</span>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Additional Product Images Gallery */}
+                  <div className="space-y-3 pt-1">
+                    <label className="text-[10px] font-black uppercase tracking-widest text-black/50 ml-1">
+                      Gallery Images (Up to 4 slots)
+                    </label>
+
+                    <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                      {[0, 1, 2, 3].map((index) => {
+                        const imagesList = isAddingNew ? (newProduct.images || []) : (editingProduct?.images || []);
+                        const currentImageUrl = imagesList[index] || '';
+
+                        return (
+                          <div key={index} className="p-3 bg-slate-50 border border-black/5 rounded-2xl flex flex-col justify-between space-y-2">
+                            <div className="flex justify-between items-center">
+                              <span className="text-[9px] font-black uppercase text-black/40">Slot {index + 1}</span>
+                              {currentImageUrl && (
+                                <span className="w-2 h-2 rounded-full bg-emerald-500" />
+                              )}
+                            </div>
+                            
+                            {currentImageUrl ? (
+                              <div className="relative group aspect-square rounded-xl overflow-hidden border border-black/10">
+                                <img src={currentImageUrl} alt={`Slot ${index + 1}`} className="w-full h-full object-cover" />
+                                <button
+                                  type="button"
+                                  onClick={() => handleRemoveAdditionalImage(index, !isAddingNew)}
+                                  className="absolute inset-0 bg-slate-900/80 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity text-white font-bold text-xs gap-1"
+                                >
+                                  <Trash2 className="w-3.5 h-3.5" /> Remove
+                                </button>
+                              </div>
+                            ) : (
+                              <div className="space-y-2">
+                                <input 
+                                  type="text"
+                                  placeholder="Image URL..."
+                                  value={currentImageUrl}
+                                  onChange={(e) => handleAdditionalImageUrlChange(e.target.value, index, !isAddingNew)}
+                                  className="w-full px-2.5 py-1.5 bg-white border border-black/10 rounded-lg focus:outline-none focus:ring-1 focus:ring-slate-900 text-[10px] font-bold"
+                                />
+                                <label className="flex items-center justify-center gap-1 py-1.5 bg-white hover:bg-slate-100 rounded-lg border border-dashed border-slate-300 cursor-pointer transition-all">
+                                  <Upload className="w-3 h-3 text-slate-500" />
+                                  <span className="text-[9px] font-bold text-slate-600">Upload</span>
+                                  <input 
+                                    type="file"
+                                    accept="image/*"
+                                    onChange={(e) => handleAdditionalImageUpload(e, index, !isAddingNew)}
+                                    className="hidden"
+                                  />
+                                </label>
+                              </div>
+                            )}
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </div>
+                </div>
+
+                {/* 3. Pricing & Inventory */}
+                <div className="bg-white p-5 sm:p-6 rounded-2xl border border-black/5 shadow-sm space-y-5">
+                  <div className="flex items-center gap-2 pb-3 border-b border-black/5">
+                    <DollarSign className="w-4 h-4 text-slate-700" />
+                    <h3 className="text-xs font-black uppercase tracking-widest text-slate-800">
+                      3. Pricing & Stock Inventory (মূল্য ও স্টক)
+                    </h3>
+                  </div>
+
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-5">
+                    <div className="space-y-1.5">
+                      <label className="text-[10px] font-black uppercase tracking-widest text-black/50 ml-1">
+                        Price (৳ BDT) <span className="text-rose-500">*</span>
+                      </label>
+                      <div className="relative">
+                        <span className="absolute left-4 top-1/2 -translate-y-1/2 font-black text-sm text-slate-400">৳</span>
+                        <input 
+                          required
+                          type="number"
+                          min="0"
+                          value={isAddingNew ? newProduct.price : (editingProduct?.price ?? 0)}
+                          onChange={(e) => isAddingNew 
+                            ? setNewProduct({...newProduct, price: Number(e.target.value)})
+                            : setEditingProduct({...editingProduct!, price: Number(e.target.value)})
+                          }
+                          className="w-full pl-9 pr-4 py-3 bg-gray-50 border border-black/5 rounded-2xl text-xs font-black focus:bg-white focus:outline-none focus:ring-2 focus:ring-slate-900 transition-all"
+                        />
+                      </div>
+                    </div>
+
+                    <div className="space-y-1.5">
+                      <div className="flex justify-between items-center">
+                        <label className="text-[10px] font-black uppercase tracking-widest text-black/50 ml-1">
+                          Stock Quantity <span className="text-rose-500">*</span>
+                        </label>
+                        {((isAddingNew ? newProduct.stock : (editingProduct?.stock ?? 0)) === 0) ? (
+                          <span className="text-[9px] font-black text-rose-600 bg-rose-50 px-2 py-0.5 rounded border border-rose-100">Out of Stock</span>
+                        ) : ((isAddingNew ? newProduct.stock : (editingProduct?.stock ?? 0)) <= 5) ? (
+                          <span className="text-[9px] font-black text-amber-600 bg-amber-50 px-2 py-0.5 rounded border border-amber-100">Low Stock</span>
+                        ) : (
+                          <span className="text-[9px] font-black text-emerald-600 bg-emerald-50 px-2 py-0.5 rounded border border-emerald-100">In Stock</span>
+                        )}
+                      </div>
+                      <div className="relative">
+                        <Layers className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-black/20" />
+                        <input 
+                          required
+                          type="number"
+                          min="0"
+                          value={isAddingNew ? newProduct.stock : (editingProduct?.stock ?? 0)}
+                          onChange={(e) => isAddingNew 
+                            ? setNewProduct({...newProduct, stock: Number(e.target.value)})
+                            : setEditingProduct({...editingProduct!, stock: Number(e.target.value)})
+                          }
+                          className="w-full pl-11 pr-4 py-3 bg-gray-50 border border-black/5 rounded-2xl text-xs font-black focus:bg-white focus:outline-none focus:ring-2 focus:ring-slate-900 transition-all"
+                        />
+                      </div>
+                    </div>
+
+                    <div className="flex flex-col justify-end">
+                      <div 
+                        onClick={() => isAddingNew 
+                          ? setNewProduct({...newProduct, islatest: !newProduct.islatest})
+                          : setEditingProduct({...editingProduct!, islatest: !editingProduct?.islatest})
+                        }
+                        className={`p-3 rounded-2xl border flex items-center justify-between cursor-pointer transition-all ${
+                          (isAddingNew ? newProduct.islatest : editingProduct?.islatest) 
+                            ? 'bg-slate-900 text-white border-slate-900 shadow-md' 
+                            : 'bg-gray-50 text-slate-700 border-black/5 hover:border-black/20'
+                        }`}
+                      >
+                        <div className="flex items-center gap-2">
+                          <Sparkles className={`w-4 h-4 ${(isAddingNew ? newProduct.islatest : editingProduct?.islatest) ? 'text-amber-400' : 'text-slate-400'}`} />
+                          <div>
+                            <p className="text-xs font-black">Latest Showcase</p>
+                            <p className="text-[9px] opacity-60">Show in home hero slider</p>
+                          </div>
+                        </div>
+                        <div className={`w-8 h-4 rounded-full relative transition-colors ${
+                          (isAddingNew ? newProduct.islatest : editingProduct?.islatest) ? 'bg-amber-400' : 'bg-black/20'
+                        }`}>
+                          <div className={`absolute top-0.5 w-3 h-3 bg-white rounded-full transition-all ${
+                            (isAddingNew ? newProduct.islatest : editingProduct?.islatest) ? 'left-4.5' : 'left-0.5'
+                          }`} />
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                {/* 4. Logistics, Delivery & Services */}
+                <div className="bg-white p-5 sm:p-6 rounded-2xl border border-black/5 shadow-sm space-y-5">
+                  <div className="flex items-center gap-2 pb-3 border-b border-black/5">
+                    <Truck className="w-4 h-4 text-slate-700" />
+                    <h3 className="text-xs font-black uppercase tracking-widest text-slate-800">
+                      4. Delivery & Service Logistics (ডেলিভারি ও সার্ভিস সেটিং)
+                    </h3>
+                  </div>
+
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
+                    <div className="space-y-1.5">
+                      <label className="text-[10px] font-black uppercase tracking-widest text-black/50 ml-1">
+                        Standard Delivery Charge (৳ BDT)
+                      </label>
                       <input 
                         type="number"
                         min="0"
@@ -3640,13 +3769,15 @@ export default function Admin({
                           ? setNewProduct({...newProduct, delivery_charge: Number(e.target.value)})
                           : setEditingProduct({...editingProduct!, delivery_charge: Number(e.target.value)})
                         }
-                        className="w-full px-4 py-2.5 bg-black/5 rounded-xl text-xs font-bold focus:outline-none focus:ring-1 focus:ring-black/20"
+                        className="w-full px-4 py-2.5 bg-gray-50 border border-black/5 rounded-xl text-xs font-bold focus:bg-white focus:outline-none focus:ring-1 focus:ring-slate-900"
                       />
                     </div>
-                    
-                    <div className="grid grid-cols-2 gap-2">
+
+                    <div className="grid grid-cols-2 gap-3">
                       <div className="space-y-1.5">
-                        <label className="text-[10px] font-black uppercase tracking-widest text-black/40">Min Days</label>
+                        <label className="text-[10px] font-black uppercase tracking-widest text-black/50 ml-1">
+                          Min Days
+                        </label>
                         <input 
                           type="number"
                           min="1"
@@ -3655,11 +3786,13 @@ export default function Admin({
                             ? setNewProduct({...newProduct, delivery_days_min: Number(e.target.value)})
                             : setEditingProduct({...editingProduct!, delivery_days_min: Number(e.target.value)})
                           }
-                          className="w-full px-4 py-2.5 bg-black/5 rounded-xl text-xs font-bold focus:outline-none focus:ring-1 focus:ring-black/20"
+                          className="w-full px-4 py-2.5 bg-gray-50 border border-black/5 rounded-xl text-xs font-bold focus:bg-white focus:outline-none focus:ring-1 focus:ring-slate-900"
                         />
                       </div>
                       <div className="space-y-1.5">
-                        <label className="text-[10px] font-black uppercase tracking-widest text-black/40">Max Days</label>
+                        <label className="text-[10px] font-black uppercase tracking-widest text-black/50 ml-1">
+                          Max Days
+                        </label>
                         <input 
                           type="number"
                           min="1"
@@ -3668,239 +3801,203 @@ export default function Admin({
                             ? setNewProduct({...newProduct, delivery_days_max: Number(e.target.value)})
                             : setEditingProduct({...editingProduct!, delivery_days_max: Number(e.target.value)})
                           }
-                          className="w-full px-4 py-2.5 bg-black/5 rounded-xl text-xs font-bold focus:outline-none focus:ring-1 focus:ring-black/20"
+                          className="w-full px-4 py-2.5 bg-gray-50 border border-black/5 rounded-xl text-xs font-bold focus:bg-white focus:outline-none focus:ring-1 focus:ring-slate-900"
                         />
                       </div>
                     </div>
                   </div>
 
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                    <div className="flex items-center gap-3 p-3 bg-white border border-black/5 rounded-xl">
-                      <button 
-                        type="button"
-                        onClick={() => isAddingNew 
-                          ? setNewProduct({...newProduct, delivery_charge_active: !(newProduct.delivery_charge_active ?? true)})
-                          : setEditingProduct({...editingProduct!, delivery_charge_active: !(editingProduct?.delivery_charge_active ?? true)})
-                        }
-                        className={`w-9 h-4.5 rounded-full relative transition-colors cursor-pointer focus:outline-none ${
-                          (isAddingNew ? (newProduct.delivery_charge_active ?? true) : (editingProduct?.delivery_charge_active ?? true)) ? 'bg-black' : 'bg-black/10'
-                        }`}
-                      >
-                        <div className={`absolute top-0.5 w-3.5 h-3.5 bg-white rounded-full transition-all ${
-                          (isAddingNew ? (newProduct.delivery_charge_active ?? true) : (editingProduct?.delivery_charge_active ?? true)) ? 'left-5' : 'left-0.5'
-                        }`} />
-                      </button>
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                    <div 
+                      onClick={() => isAddingNew 
+                        ? setNewProduct({...newProduct, delivery_charge_active: !(newProduct.delivery_charge_active ?? true)})
+                        : setEditingProduct({...editingProduct!, delivery_charge_active: !(editingProduct?.delivery_charge_active ?? true)})
+                      }
+                      className="p-3 bg-slate-50 border border-black/5 rounded-xl flex items-center justify-between cursor-pointer hover:border-black/20 transition-all"
+                    >
                       <div>
-                        <p className="text-[10px] font-bold">Standard Delivery</p>
-                        <p className="text-[8px] text-black/45">Show standard delivery details</p>
+                        <p className="text-xs font-bold text-slate-800">Standard Delivery</p>
+                        <p className="text-[9px] text-slate-500">Show shipping options</p>
+                      </div>
+                      <div className={`w-8 h-4 rounded-full relative transition-colors ${
+                        (isAddingNew ? (newProduct.delivery_charge_active ?? true) : (editingProduct?.delivery_charge_active ?? true)) ? 'bg-emerald-500' : 'bg-black/10'
+                      }`}>
+                        <div className={`absolute top-0.5 w-3 h-3 bg-white rounded-full transition-all ${
+                          (isAddingNew ? (newProduct.delivery_charge_active ?? true) : (editingProduct?.delivery_charge_active ?? true)) ? 'left-4.5' : 'left-0.5'
+                        }`} />
                       </div>
                     </div>
 
-                    <div className="flex items-center gap-3 p-3 bg-white border border-black/5 rounded-xl">
-                      <button 
-                        type="button"
-                        onClick={() => isAddingNew 
-                          ? setNewProduct({...newProduct, cod_available: !(newProduct.cod_available ?? true)})
-                          : setEditingProduct({...editingProduct!, cod_available: !(editingProduct?.cod_available ?? true)})
-                        }
-                        className={`w-9 h-4.5 rounded-full relative transition-colors cursor-pointer focus:outline-none ${
-                          (isAddingNew ? (newProduct.cod_available ?? true) : (editingProduct?.cod_available ?? true)) ? 'bg-black' : 'bg-black/10'
-                        }`}
-                      >
-                        <div className={`absolute top-0.5 w-3.5 h-3.5 bg-white rounded-full transition-all ${
-                          (isAddingNew ? (newProduct.cod_available ?? true) : (editingProduct?.cod_available ?? true)) ? 'left-5' : 'left-0.5'
-                        }`} />
-                      </button>
+                    <div 
+                      onClick={() => isAddingNew 
+                        ? setNewProduct({...newProduct, cod_available: !(newProduct.cod_available ?? true)})
+                        : setEditingProduct({...editingProduct!, cod_available: !(editingProduct?.cod_available ?? true)})
+                      }
+                      className="p-3 bg-slate-50 border border-black/5 rounded-xl flex items-center justify-between cursor-pointer hover:border-black/20 transition-all"
+                    >
                       <div>
-                        <p className="text-[10px] font-bold">Cash On Delivery (COD)</p>
-                        <p className="text-[8px] text-black/45">Toggle Cash on Delivery status</p>
+                        <p className="text-xs font-bold text-slate-800">Cash On Delivery</p>
+                        <p className="text-[9px] text-slate-500">Enable COD payment</p>
+                      </div>
+                      <div className={`w-8 h-4 rounded-full relative transition-colors ${
+                        (isAddingNew ? (newProduct.cod_available ?? true) : (editingProduct?.cod_available ?? true)) ? 'bg-emerald-500' : 'bg-black/10'
+                      }`}>
+                        <div className={`absolute top-0.5 w-3 h-3 bg-white rounded-full transition-all ${
+                          (isAddingNew ? (newProduct.cod_available ?? true) : (editingProduct?.cod_available ?? true)) ? 'left-4.5' : 'left-0.5'
+                        }`} />
+                      </div>
+                    </div>
+
+                    <div 
+                      onClick={() => isAddingNew 
+                        ? setNewProduct({...newProduct, change_of_mind_available: !(newProduct.change_of_mind_available ?? true)})
+                        : setEditingProduct({...editingProduct!, change_of_mind_available: !(editingProduct?.change_of_mind_available ?? true)})
+                      }
+                      className="p-3 bg-slate-50 border border-black/5 rounded-xl flex items-center justify-between cursor-pointer hover:border-black/20 transition-all"
+                    >
+                      <div>
+                        <p className="text-xs font-bold text-slate-800">Change of Mind</p>
+                        <p className="text-[9px] text-slate-500">Allow return policy</p>
+                      </div>
+                      <div className={`w-8 h-4 rounded-full relative transition-colors ${
+                        (isAddingNew ? (newProduct.change_of_mind_available ?? true) : (editingProduct?.change_of_mind_available ?? true)) ? 'bg-emerald-500' : 'bg-black/10'
+                      }`}>
+                        <div className={`absolute top-0.5 w-3 h-3 bg-white rounded-full transition-all ${
+                          (isAddingNew ? (newProduct.change_of_mind_available ?? true) : (editingProduct?.change_of_mind_available ?? true)) ? 'left-4.5' : 'left-0.5'
+                        }`} />
                       </div>
                     </div>
                   </div>
+                </div>
 
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                    <div className="flex items-center gap-3 p-3 bg-white border border-black/5 rounded-xl">
-                      <button 
-                        type="button"
-                        onClick={() => isAddingNew 
-                          ? setNewProduct({...newProduct, change_of_mind_available: !(newProduct.change_of_mind_available ?? true)})
-                          : setEditingProduct({...editingProduct!, change_of_mind_available: !(editingProduct?.change_of_mind_available ?? true)})
-                        }
-                        className={`w-9 h-4.5 rounded-full relative transition-colors cursor-pointer focus:outline-none ${
-                          (isAddingNew ? (newProduct.change_of_mind_available ?? true) : (editingProduct?.change_of_mind_available ?? true)) ? 'bg-black' : 'bg-black/10'
-                        }`}
-                      >
-                        <div className={`absolute top-0.5 w-3.5 h-3.5 bg-white rounded-full transition-all ${
-                          (isAddingNew ? (newProduct.change_of_mind_available ?? true) : (editingProduct?.change_of_mind_available ?? true)) ? 'left-5' : 'left-0.5'
-                        }`} />
-                      </button>
+                {/* 5. Warranty & Seller Information */}
+                <div className="bg-white p-5 sm:p-6 rounded-2xl border border-black/5 shadow-sm space-y-5">
+                  <div className="flex items-center gap-2 pb-3 border-b border-black/5">
+                    <User className="w-4 h-4 text-slate-700" />
+                    <h3 className="text-xs font-black uppercase tracking-widest text-slate-800">
+                      5. Warranty & Seller Profile (ওয়ারেন্টি ও সেলার প্রোফাইল)
+                    </h3>
+                  </div>
+
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
+                    <div 
+                      onClick={() => isAddingNew 
+                        ? setNewProduct({...newProduct, warranty_available: !(newProduct.warranty_available ?? false)})
+                        : setEditingProduct({...editingProduct!, warranty_available: !(editingProduct?.warranty_available ?? false)})
+                      }
+                      className="p-3 bg-slate-50 border border-black/5 rounded-xl flex items-center justify-between cursor-pointer hover:border-black/20 transition-all"
+                    >
                       <div>
-                        <p className="text-[10px] font-bold">Change of Mind</p>
-                        <p className="text-[8px] text-black/45">Is change of mind allowed?</p>
+                        <p className="text-xs font-bold text-slate-800">Warranty Protection</p>
+                        <p className="text-[9px] text-slate-500">Enable brand/store warranty</p>
+                      </div>
+                      <div className={`w-8 h-4 rounded-full relative transition-colors ${
+                        (isAddingNew ? (newProduct.warranty_available ?? false) : (editingProduct?.warranty_available ?? false)) ? 'bg-emerald-500' : 'bg-black/10'
+                      }`}>
+                        <div className={`absolute top-0.5 w-3 h-3 bg-white rounded-full transition-all ${
+                          (isAddingNew ? (newProduct.warranty_available ?? false) : (editingProduct?.warranty_available ?? false)) ? 'left-4.5' : 'left-0.5'
+                        }`} />
                       </div>
                     </div>
 
                     <div className="space-y-1.5">
-                      <label className="text-[10px] font-black uppercase tracking-widest text-black/40">Easy Return Days</label>
-                      <input 
-                        type="number"
-                        min="0"
-                        placeholder="e.g. 14 (0 for none)"
-                        value={isAddingNew ? (newProduct.easy_return_days ?? 14) : (editingProduct?.easy_return_days ?? 14)}
-                        onChange={(e) => isAddingNew 
-                          ? setNewProduct({...newProduct, easy_return_days: Number(e.target.value)})
-                          : setEditingProduct({...editingProduct!, easy_return_days: Number(e.target.value)})
-                        }
-                        className="w-full px-4 py-2.5 bg-black/5 rounded-xl text-xs font-bold focus:outline-none focus:ring-1 focus:ring-black/20"
-                      />
-                    </div>
-                  </div>
-
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                    <div className="flex items-center gap-3 p-3 bg-white border border-black/5 rounded-xl">
-                      <button 
-                        type="button"
-                        onClick={() => isAddingNew 
-                          ? setNewProduct({...newProduct, warranty_available: !(newProduct.warranty_available ?? false)})
-                          : setEditingProduct({...editingProduct!, warranty_available: !(editingProduct?.warranty_available ?? false)})
-                        }
-                        className={`w-9 h-4.5 rounded-full relative transition-colors cursor-pointer focus:outline-none ${
-                          (isAddingNew ? (newProduct.warranty_available ?? false) : (editingProduct?.warranty_available ?? false)) ? 'bg-black' : 'bg-black/10'
-                        }`}
-                      >
-                        <div className={`absolute top-0.5 w-3.5 h-3.5 bg-white rounded-full transition-all ${
-                          (isAddingNew ? (newProduct.warranty_available ?? false) : (editingProduct?.warranty_available ?? false)) ? 'left-5' : 'left-0.5'
-                        }`} />
-                      </button>
-                      <div>
-                        <p className="text-[10px] font-bold">Warranty Available</p>
-                        <p className="text-[8px] text-black/45">Toggle warranty support</p>
-                      </div>
-                    </div>
-
-                    <div className="space-y-1.5">
-                      <label className="text-[10px] font-black uppercase tracking-widest text-black/40">Warranty Details</label>
+                      <label className="text-[10px] font-black uppercase tracking-widest text-black/50 ml-1">
+                        Warranty Duration / Details
+                      </label>
                       <input 
                         type="text"
-                        placeholder="e.g. 1 Year Brand Warranty"
+                        placeholder="e.g. 1 Year Official Brand Warranty"
                         value={isAddingNew ? (newProduct.warranty_duration || '') : (editingProduct?.warranty_duration || '')}
                         onChange={(e) => isAddingNew 
                           ? setNewProduct({...newProduct, warranty_duration: e.target.value})
                           : setEditingProduct({...editingProduct!, warranty_duration: e.target.value})
                         }
-                        className="w-full px-4 py-2.5 bg-black/5 rounded-xl text-xs font-bold focus:outline-none focus:ring-1 focus:ring-black/20"
+                        className="w-full px-4 py-2.5 bg-gray-50 border border-black/5 rounded-xl text-xs font-bold focus:bg-white focus:outline-none focus:ring-1 focus:ring-slate-900"
                       />
                     </div>
                   </div>
 
-                  <div className="border-t border-black/5 pt-4 space-y-4">
-                    <h4 className="text-xs font-black uppercase tracking-widest text-black/60">
-                      Seller / Store Information
-                    </h4>
-                    
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                      <div className="space-y-1.5">
-                        <label className="text-[10px] font-black uppercase tracking-widest text-black/40">Store Name</label>
-                        <input 
-                          type="text"
-                          value={isAddingNew ? (newProduct.store_name || 'Buy More Save More Store') : (editingProduct?.store_name || 'Buy More Save More Store')}
-                          onChange={(e) => isAddingNew 
-                            ? setNewProduct({...newProduct, store_name: e.target.value})
-                            : setEditingProduct({...editingProduct!, store_name: e.target.value})
-                          }
-                          className="w-full px-4 py-2.5 bg-black/5 rounded-xl text-xs font-bold focus:outline-none focus:ring-1 focus:ring-black/20"
-                        />
-                      </div>
-
-                      <div className="space-y-1.5">
-                        <label className="text-[10px] font-black uppercase tracking-widest text-black/40">Seller Ratings (Positive)</label>
-                        <input 
-                          type="text"
-                          placeholder="e.g. 88%"
-                          value={isAddingNew ? (newProduct.seller_rating || '88%') : (editingProduct?.seller_rating || '88%')}
-                          onChange={(e) => isAddingNew 
-                            ? setNewProduct({...newProduct, seller_rating: e.target.value})
-                            : setEditingProduct({...editingProduct!, seller_rating: e.target.value})
-                          }
-                          className="w-full px-4 py-2.5 bg-black/5 rounded-xl text-xs font-bold focus:outline-none focus:ring-1 focus:ring-black/20"
-                        />
-                      </div>
+                  <div className="grid grid-cols-1 sm:grid-cols-4 gap-4 pt-2 border-t border-black/5">
+                    <div className="space-y-1">
+                      <label className="text-[9px] font-black uppercase tracking-wider text-black/40">Store Name</label>
+                      <input 
+                        type="text"
+                        value={isAddingNew ? (newProduct.store_name || 'Buy More Save More Store') : (editingProduct?.store_name || 'Buy More Save More Store')}
+                        onChange={(e) => isAddingNew 
+                          ? setNewProduct({...newProduct, store_name: e.target.value})
+                          : setEditingProduct({...editingProduct!, store_name: e.target.value})
+                        }
+                        className="w-full px-3 py-2 bg-gray-50 border border-black/5 rounded-xl text-xs font-bold focus:bg-white focus:outline-none"
+                      />
                     </div>
 
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                      <div className="space-y-1.5">
-                        <label className="text-[10px] font-black uppercase tracking-widest text-black/40">Ship on Time Rate</label>
-                        <input 
-                          type="text"
-                          placeholder="e.g. 100%"
-                          value={isAddingNew ? (newProduct.ship_on_time || '100%') : (editingProduct?.ship_on_time || '100%')}
-                          onChange={(e) => isAddingNew 
-                            ? setNewProduct({...newProduct, ship_on_time: e.target.value})
-                            : setEditingProduct({...editingProduct!, ship_on_time: e.target.value})
-                          }
-                          className="w-full px-4 py-2.5 bg-black/5 rounded-xl text-xs font-bold focus:outline-none focus:ring-1 focus:ring-black/20"
-                        />
-                      </div>
+                    <div className="space-y-1">
+                      <label className="text-[9px] font-black uppercase tracking-wider text-black/40">Seller Rating</label>
+                      <input 
+                        type="text"
+                        placeholder="e.g. 88%"
+                        value={isAddingNew ? (newProduct.seller_rating || '88%') : (editingProduct?.seller_rating || '88%')}
+                        onChange={(e) => isAddingNew 
+                          ? setNewProduct({...newProduct, seller_rating: e.target.value})
+                          : setEditingProduct({...editingProduct!, seller_rating: e.target.value})
+                        }
+                        className="w-full px-3 py-2 bg-gray-50 border border-black/5 rounded-xl text-xs font-bold focus:bg-white focus:outline-none"
+                      />
+                    </div>
 
-                      <div className="space-y-1.5">
-                        <label className="text-[10px] font-black uppercase tracking-widest text-black/40">Chat Response Rate</label>
-                        <input 
-                          type="text"
-                          placeholder="e.g. 95% or Not enough data"
-                          value={isAddingNew ? (newProduct.chat_response_rate || 'Not enough data') : (editingProduct?.chat_response_rate || 'Not enough data')}
-                          onChange={(e) => isAddingNew 
-                            ? setNewProduct({...newProduct, chat_response_rate: e.target.value})
-                            : setEditingProduct({...editingProduct!, chat_response_rate: e.target.value})
-                          }
-                          className="w-full px-4 py-2.5 bg-black/5 rounded-xl text-xs font-bold focus:outline-none focus:ring-1 focus:ring-black/20"
-                        />
-                      </div>
+                    <div className="space-y-1">
+                      <label className="text-[9px] font-black uppercase tracking-wider text-black/40">Ship on Time</label>
+                      <input 
+                        type="text"
+                        placeholder="e.g. 100%"
+                        value={isAddingNew ? (newProduct.ship_on_time || '100%') : (editingProduct?.ship_on_time || '100%')}
+                        onChange={(e) => isAddingNew 
+                          ? setNewProduct({...newProduct, ship_on_time: e.target.value})
+                          : setEditingProduct({...editingProduct!, ship_on_time: e.target.value})
+                        }
+                        className="w-full px-3 py-2 bg-gray-50 border border-black/5 rounded-xl text-xs font-bold focus:bg-white focus:outline-none"
+                      />
+                    </div>
+
+                    <div className="space-y-1">
+                      <label className="text-[9px] font-black uppercase tracking-wider text-black/40">Chat Response</label>
+                      <input 
+                        type="text"
+                        placeholder="e.g. 95%"
+                        value={isAddingNew ? (newProduct.chat_response_rate || 'Not enough data') : (editingProduct?.chat_response_rate || 'Not enough data')}
+                        onChange={(e) => isAddingNew 
+                          ? setNewProduct({...newProduct, chat_response_rate: e.target.value})
+                          : setEditingProduct({...editingProduct!, chat_response_rate: e.target.value})
+                        }
+                        className="w-full px-3 py-2 bg-gray-50 border border-black/5 rounded-xl text-xs font-bold focus:bg-white focus:outline-none"
+                      />
                     </div>
                   </div>
                 </div>
 
-                <div className="flex items-center gap-3 p-4 bg-black/5 rounded-2xl border border-black/5">
-                  <div 
-                    onClick={() => isAddingNew 
-                      ? setNewProduct({...newProduct, islatest: !newProduct.islatest})
-                      : setEditingProduct({...editingProduct!, islatest: !editingProduct?.islatest})
-                    }
-                    className={`w-10 h-5 rounded-full relative transition-colors cursor-pointer ${
-                      (isAddingNew ? newProduct.islatest : editingProduct?.islatest) ? 'bg-black' : 'bg-black/10'
-                    }`}
-                  >
-                    <div className={`absolute top-1 w-3 h-3 bg-white rounded-full transition-all ${
-                      (isAddingNew ? newProduct.islatest : editingProduct?.islatest) ? 'left-6' : 'left-1'
-                    }`} />
-                  </div>
-                  <div>
-                    <p className="text-xs font-bold">Mark as Latest Product</p>
-                    <p className="text-[10px] text-black/40">This product will appear in the home page hero slider.</p>
-                  </div>
-                </div>
-
-                <div className="pt-6 flex gap-4">
+                {/* Bottom Action Footer */}
+                <div className="pt-4 flex items-center justify-end gap-3 sticky bottom-0 bg-slate-50/90 backdrop-blur-md p-4 rounded-2xl border border-black/5">
                   <button 
                     type="button"
                     onClick={() => { setEditingProduct(null); setIsAddingNew(false); }}
-                    className="flex-1 py-4 border border-black/10 rounded-2xl font-bold hover:bg-black/5 transition-all"
+                    className="px-6 py-3 bg-white border border-black/10 rounded-xl font-bold text-xs text-slate-700 hover:bg-slate-100 transition-all"
                   >
                     Cancel
                   </button>
                   <button 
                     type="submit"
                     disabled={isSaving}
-                    className="flex-1 py-4 bg-black text-white rounded-2xl font-bold hover:bg-black/90 transition-all shadow-xl flex items-center justify-center gap-2 disabled:bg-black/40 disabled:cursor-not-allowed"
+                    className="px-8 py-3 bg-slate-900 text-white rounded-xl font-bold text-xs hover:bg-slate-800 transition-all shadow-lg flex items-center gap-2 disabled:bg-slate-400 disabled:cursor-not-allowed"
                   >
                     {isSaving ? (
                       <>
-                        <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-                        Saving...
+                        <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                        Saving Product...
                       </>
                     ) : (
                       <>
-                        <Save className="w-5 h-5" />
-                        {isAddingNew ? 'Add Product' : 'Save Changes'}
+                        <Save className="w-4 h-4" />
+                        {isAddingNew ? 'Publish Product' : 'Save Changes'}
                       </>
                     )}
                   </button>
