@@ -11,7 +11,6 @@ import {
   User, 
   MapPin, 
   CreditCard, 
-  Hash, 
   Calendar, 
   Trash2, 
   ChevronLeft, 
@@ -19,16 +18,11 @@ import {
   Copy, 
   Check, 
   FileSpreadsheet, 
-  Filter, 
   Phone, 
-  Download, 
-  ExternalLink,
   ChevronRight,
   Sparkles,
   SlidersHorizontal,
-  ArrowUpDown,
-  Tag,
-  DollarSign
+  ArrowUpDown
 } from 'lucide-react';
 import { Order, AppSettings } from '../types';
 
@@ -63,7 +57,7 @@ export default function OrdersView({
     setTimeout(() => setCopiedId(null), 2000);
   };
 
-  // Status counts for Daraz Seller Center tabs
+  // Status counts for order tabs
   const counts = {
     All: orders.length,
     Pending: orders.filter(o => o.status === 'Pending').length,
@@ -142,7 +136,7 @@ export default function OrdersView({
     const encodedUri = encodeURI(csvContent);
     const link = document.createElement('a');
     link.setAttribute('href', encodedUri);
-    link.setAttribute('download', `Daraz_Orders_Report_${new Date().toISOString().slice(0, 10)}.csv`);
+    link.setAttribute('download', `Orders_Report_${new Date().toISOString().slice(0, 10)}.csv`);
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
@@ -207,7 +201,7 @@ export default function OrdersView({
       );
     }
     return (
-      <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-md text-[10px] font-black uppercase tracking-wider bg-orange-100 text-orange-800 border border-orange-200">
+      <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-md text-[10px] font-black uppercase tracking-wider bg-slate-100 text-slate-800 border border-slate-200">
         COD (Cash on Delivery)
       </span>
     );
@@ -241,8 +235,8 @@ export default function OrdersView({
             </button>
             <div>
               <div className="flex items-center gap-2">
-                <span className="px-2 py-0.5 rounded bg-orange-500 text-white text-[9px] font-black uppercase tracking-widest">
-                  Daraz Seller Center
+                <span className="px-2 py-0.5 rounded bg-amber-500 text-black text-[9px] font-black uppercase tracking-widest">
+                  Merchant Portal
                 </span>
                 <span className="text-xs text-white/60">• Order Management</span>
               </div>
@@ -262,7 +256,7 @@ export default function OrdersView({
           <div className="flex items-center gap-3">
             <button 
               onClick={() => setPrintInvoiceOrder(selectedOrder)}
-              className="px-4 py-2.5 bg-white text-slate-900 rounded-xl font-black text-xs hover:bg-orange-500 hover:text-white transition-all flex items-center gap-2 shadow-sm"
+              className="px-4 py-2.5 bg-white text-slate-900 rounded-xl font-black text-xs hover:bg-amber-500 hover:text-black transition-all flex items-center gap-2 shadow-sm"
             >
               <Printer className="w-4 h-4" /> Print Shipping Label
             </button>
@@ -282,11 +276,11 @@ export default function OrdersView({
           </div>
         </div>
 
-        {/* Order Stepper Tracker (Daraz Fulfillment Tracker) */}
+        {/* Order Stepper Tracker */}
         <div className="bg-white p-6 rounded-3xl border border-black/5 shadow-sm space-y-4">
           <div className="flex items-center justify-between pb-3 border-b border-black/5">
             <h3 className="text-xs font-black uppercase tracking-widest text-slate-700 flex items-center gap-2">
-              <Truck className="w-4 h-4 text-orange-500" /> Fulfillment Progress (ডেলিভারি ট্র্যাকিং)
+              <Truck className="w-4 h-4 text-amber-500" /> Fulfillment Progress
             </h3>
             {getStatusBadge(selectedOrder.status)}
           </div>
@@ -307,7 +301,7 @@ export default function OrdersView({
                     key={step.key} 
                     className={`p-4 rounded-2xl border transition-all ${
                       isCurrent 
-                        ? 'bg-orange-50 border-orange-400 shadow-md ring-2 ring-orange-200' 
+                        ? 'bg-amber-50 border-amber-400 shadow-md ring-2 ring-amber-200' 
                         : isCompleted 
                           ? 'bg-emerald-50/50 border-emerald-200' 
                           : 'bg-slate-50 border-slate-200 opacity-60'
@@ -320,7 +314,7 @@ export default function OrdersView({
                         {isCompleted ? <Check className="w-3.5 h-3.5" /> : idx + 1}
                       </span>
                       {isCurrent && (
-                        <span className="px-2 py-0.5 rounded bg-orange-500 text-white text-[8px] font-black uppercase">
+                        <span className="px-2 py-0.5 rounded bg-amber-500 text-black text-[8px] font-black uppercase">
                           Active State
                         </span>
                       )}
@@ -360,7 +354,7 @@ export default function OrdersView({
                           {item.category || 'Product'}
                         </span>
                         {item.selectedAttr && (
-                          <span className="px-2 py-0.5 rounded bg-orange-100 text-orange-800 text-[10px] font-bold">
+                          <span className="px-2 py-0.5 rounded bg-amber-100 text-amber-800 text-[10px] font-bold">
                             Variant: {item.selectedAttr}
                           </span>
                         )}
@@ -418,7 +412,7 @@ export default function OrdersView({
                   <div className="flex-1">
                     <p className="text-[10px] font-black uppercase text-slate-400">Contact Number</p>
                     <div className="flex items-center gap-2 mt-0.5">
-                      <a href={`tel:${selectedOrder.customerphone}`} className="text-xs font-bold text-slate-900 hover:text-orange-600 transition-colors">
+                      <a href={`tel:${selectedOrder.customerphone}`} className="text-xs font-bold text-slate-900 hover:text-amber-600 transition-colors">
                         {selectedOrder.customerphone}
                       </a>
                       <button 
@@ -481,9 +475,9 @@ export default function OrdersView({
             {/* Quick Status Control */}
             <div className="bg-white p-6 rounded-3xl border border-black/5 shadow-sm space-y-3">
               <h3 className="text-xs font-black uppercase tracking-widest text-slate-800 flex items-center gap-2">
-                <Sparkles className="w-4 h-4 text-orange-500" /> Change Order Status
+                <Sparkles className="w-4 h-4 text-amber-500" /> Change Order Status
               </h3>
-              <p className="text-[10px] text-slate-400">Select new status to immediately notify seller center pipeline.</p>
+              <p className="text-[10px] text-slate-400">Select new status to immediately update order status.</p>
               
               <div className="grid grid-cols-1 gap-2 pt-1">
                 {(['Pending', 'Processing', 'Shipped', 'Delivered', 'Cancelled'] as Order['status'][]).map(st => (
@@ -514,22 +508,22 @@ export default function OrdersView({
 
   return (
     <div className="space-y-6 max-w-7xl mx-auto">
-      {/* 1. Header & Summary Metric Cards (Daraz Seller Dashboard) */}
+      {/* 1. Header & Summary Metric Cards */}
       <div className="bg-slate-900 text-white p-6 rounded-3xl shadow-xl space-y-6">
         <div className="flex flex-wrap items-center justify-between gap-4 border-b border-white/10 pb-5">
           <div className="flex items-center gap-3">
-            <div className="w-12 h-12 rounded-2xl bg-orange-500 text-white flex items-center justify-center font-black shadow-lg shadow-orange-500/30">
+            <div className="w-12 h-12 rounded-2xl bg-amber-500 text-black flex items-center justify-center font-black shadow-lg shadow-amber-500/20">
               <ShoppingBag className="w-6 h-6" />
             </div>
             <div>
               <div className="flex items-center gap-2">
-                <span className="px-2 py-0.5 rounded bg-orange-500 text-white text-[9px] font-black uppercase tracking-widest">
-                  Daraz Seller Center
+                <span className="px-2 py-0.5 rounded bg-amber-500 text-black text-[9px] font-black uppercase tracking-widest">
+                  Merchant Portal
                 </span>
                 <span className="text-xs text-white/50 font-bold">• Orders Portal</span>
               </div>
               <h1 className="text-xl sm:text-2xl font-bold tracking-tight text-white mt-0.5">
-                Orders Management (অর্ডার ব্যবস্থাপনা)
+                Order Management
               </h1>
             </div>
           </div>
@@ -544,7 +538,7 @@ export default function OrdersView({
             </button>
             <button
               onClick={() => window.print()}
-              className="px-4 py-2.5 bg-orange-500 hover:bg-orange-600 text-white rounded-xl font-bold text-xs transition-all flex items-center gap-2 shadow-lg shadow-orange-500/20"
+              className="px-4 py-2.5 bg-amber-500 hover:bg-amber-600 text-black rounded-xl font-black text-xs transition-all flex items-center gap-2 shadow-lg shadow-amber-500/20"
             >
               <Printer className="w-4 h-4" />
               <span>Print Page</span>
@@ -581,16 +575,16 @@ export default function OrdersView({
         </div>
       </div>
 
-      {/* 2. Status Navigation Tabs (Daraz Style Horizontal Bar) */}
+      {/* 2. Status Navigation Tabs */}
       <div className="bg-white p-2 rounded-2xl border border-black/5 shadow-sm overflow-x-auto custom-scrollbar">
         <div className="flex items-center gap-1 min-w-max">
           {[
-            { id: 'All', label: 'All Orders (সকল)', count: counts.All, color: 'hover:text-slate-900' },
-            { id: 'Pending', label: 'Pending (পেন্ডিং)', count: counts.Pending, color: 'text-amber-600' },
-            { id: 'Processing', label: 'Ready to Ship (প্রসেসিং)', count: counts.Processing, color: 'text-sky-600' },
-            { id: 'Shipped', label: 'In Transit (শিপড)', count: counts.Shipped, color: 'text-indigo-600' },
-            { id: 'Delivered', label: 'Delivered (সম্পন্ন)', count: counts.Delivered, color: 'text-emerald-600' },
-            { id: 'Cancelled', label: 'Cancelled (বাতিল)', count: counts.Cancelled, color: 'text-rose-600' },
+            { id: 'All', label: 'All Orders', count: counts.All },
+            { id: 'Pending', label: 'Pending', count: counts.Pending },
+            { id: 'Processing', label: 'Processing', count: counts.Processing },
+            { id: 'Shipped', label: 'In Transit', count: counts.Shipped },
+            { id: 'Delivered', label: 'Delivered', count: counts.Delivered },
+            { id: 'Cancelled', label: 'Cancelled', count: counts.Cancelled },
           ].map((tab) => {
             const isActive = activeTab === tab.id;
             return (
@@ -605,7 +599,7 @@ export default function OrdersView({
               >
                 <span>{tab.label}</span>
                 <span className={`px-2 py-0.5 rounded-full text-[10px] font-black ${
-                  isActive ? 'bg-orange-500 text-white' : 'bg-slate-200 text-slate-700'
+                  isActive ? 'bg-amber-500 text-black' : 'bg-slate-200 text-slate-700'
                 }`}>
                   {tab.count}
                 </span>
@@ -669,14 +663,14 @@ export default function OrdersView({
         </div>
       </div>
 
-      {/* 4. Order List (Daraz Seller Center Cards View) */}
+      {/* 4. Order List */}
       <div className="space-y-4">
         {filteredOrders.length === 0 ? (
           <div className="bg-white rounded-3xl p-12 text-center border border-black/5 shadow-sm space-y-3">
             <div className="w-16 h-16 bg-slate-100 text-slate-400 rounded-2xl flex items-center justify-center mx-auto">
               <ShoppingBag className="w-8 h-8" />
             </div>
-            <h3 className="text-lg font-bold text-slate-800">No Orders Found (কোন অর্ডার পাওয়া যায়নি)</h3>
+            <h3 className="text-lg font-bold text-slate-800">No Orders Found</h3>
             <p className="text-xs text-slate-500 max-w-md mx-auto">
               There are no orders matching your selected status filter or search parameters.
             </p>
@@ -693,7 +687,7 @@ export default function OrdersView({
               <div className="bg-slate-900 text-white px-5 py-3.5 flex flex-wrap items-center justify-between gap-3 border-b border-white/10">
                 <div className="flex items-center gap-3">
                   <div className="flex items-center gap-1.5">
-                    <span className="text-xs font-mono font-bold text-orange-400">#{order.id}</span>
+                    <span className="text-xs font-mono font-bold text-amber-400">#{order.id}</span>
                     <button
                       onClick={() => handleCopy(order.id, `id-${order.id}`)}
                       className="p-1 hover:bg-white/10 rounded transition-all text-white/60 hover:text-white"
@@ -738,7 +732,7 @@ export default function OrdersView({
                   </div>
                   <div className="flex items-center gap-2">
                     <Phone className="w-3.5 h-3.5 text-slate-400 shrink-0" />
-                    <a href={`tel:${order.customerphone}`} className="text-xs font-bold text-slate-700 hover:text-orange-600 transition-colors">
+                    <a href={`tel:${order.customerphone}`} className="text-xs font-bold text-slate-700 hover:text-amber-600 transition-colors">
                       {order.customerphone}
                     </a>
                   </div>
@@ -811,7 +805,7 @@ export default function OrdersView({
 
                     <button
                       onClick={() => setSelectedOrder(order)}
-                      className="px-3 py-1.5 bg-slate-900 text-white hover:bg-orange-600 rounded-xl text-[10px] font-black uppercase tracking-wider transition-all flex items-center gap-1 shadow-sm"
+                      className="px-3 py-1.5 bg-slate-900 text-white hover:bg-amber-500 hover:text-black rounded-xl text-[10px] font-black uppercase tracking-wider transition-all flex items-center gap-1 shadow-sm"
                     >
                       <span>Details</span>
                       <ChevronRight className="w-3.5 h-3.5" />
@@ -837,7 +831,7 @@ export default function OrdersView({
         )}
       </div>
 
-      {/* 5. Daraz Seller Shipping Label / Invoice Printable Modal */}
+      {/* 5. Shipping Label / Invoice Printable Modal */}
       <AnimatePresence>
         {printInvoiceOrder && (
           <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
@@ -857,13 +851,13 @@ export default function OrdersView({
               {/* Modal Control Header */}
               <div className="p-4 bg-slate-900 text-white flex justify-between items-center shrink-0">
                 <div className="flex items-center gap-2">
-                  <Printer className="w-4 h-4 text-orange-400" />
-                  <span className="text-xs font-bold uppercase tracking-wider">Daraz Fulfillment Shipping Label</span>
+                  <Printer className="w-4 h-4 text-amber-400" />
+                  <span className="text-xs font-bold uppercase tracking-wider">Shipping & Fulfillment Label</span>
                 </div>
                 <div className="flex items-center gap-2">
                   <button
                     onClick={() => window.print()}
-                    className="px-3 py-1.5 bg-orange-500 text-white rounded-lg text-xs font-bold hover:bg-orange-600 transition-colors flex items-center gap-1"
+                    className="px-3 py-1.5 bg-amber-500 text-black font-bold rounded-lg text-xs hover:bg-amber-400 transition-colors flex items-center gap-1"
                   >
                     <Printer className="w-3.5 h-3.5" /> Print Invoice
                   </button>
@@ -878,7 +872,7 @@ export default function OrdersView({
 
               {/* Printable Content Area */}
               <div className="p-8 space-y-6 overflow-y-auto custom-scrollbar font-sans text-slate-900">
-                {/* Store & Daraz Slip Header */}
+                {/* Store Slip Header */}
                 <div className="flex justify-between items-start border-b-2 border-slate-900 pb-4">
                   <div>
                     <span className="px-2 py-0.5 bg-slate-900 text-white text-[9px] font-black uppercase tracking-widest rounded">
@@ -889,7 +883,7 @@ export default function OrdersView({
                   </div>
                   <div className="text-right">
                     <p className="text-xs font-black uppercase text-slate-400">Order Reference</p>
-                    <p className="text-lg font-black font-mono text-orange-600">#{printInvoiceOrder.id}</p>
+                    <p className="text-lg font-black font-mono text-amber-600">#{printInvoiceOrder.id}</p>
                     <p className="text-[10px] text-slate-400">{new Date(printInvoiceOrder.createdat).toLocaleString()}</p>
                   </div>
                 </div>
@@ -949,18 +943,18 @@ export default function OrdersView({
                 </div>
 
                 {/* Amount to collect banner */}
-                <div className="p-4 bg-orange-50 border-2 border-orange-200 rounded-2xl flex items-center justify-between">
+                <div className="p-4 bg-amber-50 border-2 border-amber-200 rounded-2xl flex items-center justify-between">
                   <div>
-                    <p className="text-xs font-black uppercase text-orange-800">Payment Status ({printInvoiceOrder.paymentmethod})</p>
-                    <p className="text-[11px] text-orange-700">
+                    <p className="text-xs font-black uppercase text-amber-800">Payment Status ({printInvoiceOrder.paymentmethod})</p>
+                    <p className="text-[11px] text-amber-700">
                       {printInvoiceOrder.paymentmethod === 'Cash on Delivery' 
                         ? 'Collect cash from customer upon delivery' 
                         : `Prepaid via ${printInvoiceOrder.paymentmethod} (${printInvoiceOrder.transactionid || 'Verified'})`}
                     </p>
                   </div>
                   <div className="text-right">
-                    <span className="text-[10px] font-black uppercase text-orange-600">Total Amount</span>
-                    <p className="text-xl font-black text-orange-900">৳{printInvoiceOrder.total.toLocaleString()}</p>
+                    <span className="text-[10px] font-black uppercase text-amber-600">Total Amount</span>
+                    <p className="text-xl font-black text-amber-900">৳{printInvoiceOrder.total.toLocaleString()}</p>
                   </div>
                 </div>
               </div>
