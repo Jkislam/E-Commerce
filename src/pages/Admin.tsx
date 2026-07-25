@@ -52,6 +52,7 @@ import {
   FileSpreadsheet
 } from 'lucide-react';
 import { Product, Order, AppSettings, SocialLink } from '../types';
+import OrdersView from '../components/OrdersView';
 import { useAuth } from '../context/AuthContext';
 import { supabase } from '../lib/supabase';
 import { useSearchParams } from 'react-router-dom';
@@ -3162,36 +3163,6 @@ export default function Admin({
             </motion.div>
           )}
         </AnimatePresence>
-        {/* Stats & Search for Orders */}
-        {currentView === 'orders' && (
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-            <div className="bg-white p-6 rounded-3xl border border-black/5 shadow-sm group">
-              <div className="flex items-center justify-between mb-1">
-                <p className="text-xs font-bold text-black/40 uppercase tracking-widest">
-                  Total Orders
-                </p>
-                <ShoppingBag className="w-4 h-4 text-black/10 transition-colors" />
-              </div>
-              <p className="text-3xl font-black">
-                {orders.length}
-              </p>
-              <p className="text-[10px] text-black/40 font-bold mt-1 flex items-center gap-1">
-                All registered orders
-              </p>
-            </div>
-            <div className="md:col-span-2 relative">
-              <Search className="absolute left-5 top-1/2 -translate-y-1/2 w-5 h-5 text-black/20" />
-              <input 
-                type="text"
-                placeholder="Search by Order ID or Customer..."
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                className="w-full h-full min-h-[70px] pl-14 pr-6 bg-white border border-black/5 rounded-3xl focus:outline-none focus:ring-2 focus:ring-black/5 shadow-sm"
-              />
-            </div>
-          </div>
-        )}
-
         {currentView === 'analytics' ? (
           <AnalyticsView orders={orders} products={products} setCurrentView={setCurrentView} />
         ) : currentView === 'users' ? (
@@ -3213,195 +3184,14 @@ export default function Admin({
             setSettings={setSettings} 
             setSuccessMessage={setSuccessMessage} 
           />
-        ) : selectedOrder ? (
-          renderOrderDetails(selectedOrder)
         ) : (
-          /* Orders List - Responsive */
-          <div className="space-y-4">
-            {/* Desktop Table */}
-            <div className="hidden md:block bg-white rounded-[2.5rem] border border-black/5 shadow-sm overflow-hidden">
-              <div className="overflow-x-auto">
-                <table className="w-full text-left border-collapse">
-                  <thead>
-                    <tr className="bg-black/5">
-                      <th className="px-6 py-4 text-[10px] font-black uppercase tracking-widest text-black/40">Order ID</th>
-                      <th className="px-6 py-4 text-[10px] font-black uppercase tracking-widest text-black/40">Items</th>
-                      <th className="px-6 py-4 text-[10px] font-black uppercase tracking-widest text-black/40">Customer</th>
-                      <th className="px-6 py-4 text-[10px] font-black uppercase tracking-widest text-black/40">Total</th>
-                      <th className="px-6 py-4 text-[10px] font-black uppercase tracking-widest text-black/40">Status</th>
-                      <th className="px-6 py-4 text-[10px] font-black uppercase tracking-widest text-black/40 text-right">Actions</th>
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-black/5">
-                    {orders.filter(o => 
-                      o.id.toLowerCase().includes(searchTerm.toLowerCase()) || 
-                      o.customername.toLowerCase().includes(searchTerm.toLowerCase())
-                    ).map(order => (
-                      <tr key={order.id} className="hover:bg-black/[0.02] transition-colors">
-                        <td className="px-6 py-4">
-                          <div className="flex items-center gap-2">
-                            <span className="font-bold text-xs">{order.id}</span>
-                            {order.status === 'Pending' && (
-                              <span className="px-1.5 py-0.5 bg-red-500 text-white text-[8px] font-black uppercase tracking-tighter rounded-md animate-pulse">
-                                NEW
-                              </span>
-                            )}
-                          </div>
-                          <p className="text-[10px] text-black/40 mt-1">{new Date(order.createdat).toLocaleDateString()}</p>
-                        </td>
-                        <td className="px-6 py-4">
-                          <div className="flex flex-col gap-2">
-                            {order.items.map((item, idx) => (
-                              <div key={idx} className="flex items-center gap-2">
-                                <div className="w-8 h-8 rounded-md overflow-hidden bg-black/5 flex-shrink-0 border border-black/5">
-                                  <img src={item.image} alt={item.name} className="w-full h-full object-cover" />
-                                </div>
-                                <div className="flex flex-col">
-                                  <span className="text-[10px] font-bold leading-tight">{item.name}</span>
-                                  <span className="text-[8px] text-black/40 uppercase tracking-widest font-black">
-                                    {item.quantity}x {item.selectedAttr ? `| ${item.selectedAttr}` : ''}
-                                  </span>
-                                </div>
-                              </div>
-                            ))}
-                          </div>
-                        </td>
-                        <td className="px-6 py-4">
-                          <div className="flex flex-col">
-                            <span className="font-bold text-sm">{order.customername}</span>
-                            <span className="text-[10px] text-black/40">{order.customerphone}</span>
-                          </div>
-                        </td>
-                        <td className="px-6 py-4 font-bold text-sm">৳{order.total}</td>
-                        <td className="px-6 py-4">
-                          <div className="flex items-center gap-2">
-                            {getStatusIcon(order.status)}
-                            <span className="text-xs font-bold">{order.status}</span>
-                          </div>
-                        </td>
-                        <td className="px-6 py-4 text-right">
-                          <div className="flex items-center justify-end gap-2">
-                            <button 
-                              onClick={() => setSelectedOrder(order)}
-                              className="px-3 py-1.5 bg-black text-white rounded-lg text-[10px] font-bold uppercase tracking-wider hover:bg-black/80 transition-colors"
-                            >
-                              View Details
-                            </button>
-                            <select 
-                              value={order.status}
-                              onChange={(e) => updateOrderStatus(order.id, e.target.value as Order['status'])}
-                              className="px-3 py-1.5 bg-black/5 rounded-lg text-[10px] font-bold uppercase tracking-wider focus:outline-none focus:ring-1 focus:ring-black/10"
-                            >
-                              <option value="Pending">Pending</option>
-                              <option value="Processing">Processing</option>
-                              <option value="Shipped">Shipped</option>
-                              <option value="Delivered">Delivered</option>
-                              <option value="Cancelled">Cancelled</option>
-                            </select>
-                            <button 
-                              onClick={() => onDeleteOrder(order.id)}
-                              className="p-2 hover:bg-red-50 rounded-lg text-red-400 hover:text-red-600 transition-colors"
-                              title="Delete Order"
-                            >
-                              <Trash2 className="w-4 h-4" />
-                            </button>
-                          </div>
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-            </div>
-
-            {/* Mobile Cards */}
-            <div className="md:hidden space-y-4">
-              {orders.filter(o => 
-                o.id.toLowerCase().includes(searchTerm.toLowerCase()) || 
-                o.customername.toLowerCase().includes(searchTerm.toLowerCase())
-              ).map(order => (
-                <div key={order.id} className="bg-white p-5 rounded-3xl border border-black/5 shadow-sm space-y-4">
-                  <div className="flex justify-between items-start">
-                    <div>
-                      <div className="flex items-center gap-2">
-                        <span className="font-bold text-xs">{order.id}</span>
-                        {order.status === 'Pending' && (
-                          <span className="px-1.5 py-0.5 bg-red-500 text-white text-[8px] font-black uppercase tracking-tighter rounded-md">
-                            NEW
-                          </span>
-                        )}
-                      </div>
-                      <p className="text-[10px] text-black/40 mt-1">{new Date(order.createdat).toLocaleDateString()}</p>
-                    </div>
-                    <div className={`flex items-center gap-1.5 px-3 py-1 rounded-full text-[10px] font-bold ${
-                      order.status === 'Delivered' ? 'bg-green-50 text-green-600' :
-                      order.status === 'Cancelled' ? 'bg-red-50 text-red-600' :
-                      'bg-black/5 text-black'
-                    }`}>
-                      {getStatusIcon(order.status)}
-                      {order.status}
-                    </div>
-                  </div>
-
-                  <div className="flex items-center gap-3 py-3 border-y border-black/5">
-                    <div className="flex -space-x-3 overflow-hidden">
-                      {order.items.slice(0, 3).map((item, idx) => (
-                        <div key={idx} className="w-10 h-10 rounded-lg border-2 border-white overflow-hidden bg-black/5">
-                          <img src={item.image} alt={item.name} className="w-full h-full object-cover" />
-                        </div>
-                      ))}
-                      {order.items.length > 3 && (
-                        <div className="w-10 h-10 rounded-lg border-2 border-white bg-black text-white flex items-center justify-center text-[10px] font-bold">
-                          +{order.items.length - 3}
-                        </div>
-                      )}
-                    </div>
-                    <div className="flex-1">
-                      <p className="text-[10px] font-bold truncate">{order.items.map(i => i.name).join(', ')}</p>
-                      <p className="text-[9px] text-black/40 uppercase tracking-widest font-black mt-0.5">
-                        {order.items.length} Items • ৳{order.total}
-                      </p>
-                    </div>
-                  </div>
-
-                  <div className="flex justify-between items-end">
-                    <div className="space-y-1">
-                      <p className="text-[10px] font-black uppercase tracking-widest text-black/40">Customer</p>
-                      <p className="text-xs font-bold">{order.customername}</p>
-                      <p className="text-[10px] text-black/40">{order.customerphone}</p>
-                    </div>
-                    <div className="flex flex-col items-end gap-2">
-                      <div className="flex gap-2 w-full">
-                        <button 
-                          onClick={() => setSelectedOrder(order)}
-                          className="flex-1 px-4 py-2 bg-black/5 text-black rounded-xl text-[10px] font-bold uppercase tracking-wider flex items-center justify-center gap-2"
-                        >
-                          Details <ChevronRight className="w-3 h-3" />
-                        </button>
-                        <button 
-                          onClick={() => onDeleteOrder(order.id)}
-                          className="p-2 bg-red-50 text-red-400 rounded-xl active:bg-red-100 transition-colors"
-                        >
-                          <Trash2 className="w-4 h-4" />
-                        </button>
-                      </div>
-                      <select 
-                        value={order.status}
-                        onChange={(e) => updateOrderStatus(order.id, e.target.value as Order['status'])}
-                        className="w-full px-4 py-2 bg-black text-white rounded-xl text-[10px] font-bold uppercase tracking-wider focus:outline-none"
-                      >
-                        <option value="Pending">Pending</option>
-                        <option value="Processing">Processing</option>
-                        <option value="Shipped">Shipped</option>
-                        <option value="Delivered">Delivered</option>
-                        <option value="Cancelled">Cancelled</option>
-                      </select>
-                    </div>
-                  </div>
-                </div>
-              ))}
-            </div>
-          </div>
+          <OrdersView
+            orders={orders}
+            updateOrderStatus={updateOrderStatus}
+            onDeleteOrder={onDeleteOrder}
+            settings={settings}
+            setSuccessMessage={setSuccessMessage}
+          />
         )}
       </div>
 

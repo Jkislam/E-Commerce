@@ -1,0 +1,973 @@
+import React, { useState } from 'react';
+import { motion, AnimatePresence } from 'motion/react';
+import { 
+  Search, 
+  ShoppingBag, 
+  Clock, 
+  Package, 
+  Truck, 
+  CheckCircle2, 
+  XCircle, 
+  User, 
+  MapPin, 
+  CreditCard, 
+  Hash, 
+  Calendar, 
+  Trash2, 
+  ChevronLeft, 
+  Printer, 
+  Copy, 
+  Check, 
+  FileSpreadsheet, 
+  Filter, 
+  Phone, 
+  Download, 
+  ExternalLink,
+  ChevronRight,
+  Sparkles,
+  SlidersHorizontal,
+  ArrowUpDown,
+  Tag,
+  DollarSign
+} from 'lucide-react';
+import { Order, AppSettings } from '../types';
+
+interface OrdersViewProps {
+  orders: Order[];
+  updateOrderStatus: (orderId: string, status: Order['status']) => void;
+  onDeleteOrder: (orderId: string) => void;
+  settings: AppSettings;
+  setSuccessMessage: (msg: string) => void;
+}
+
+export default function OrdersView({
+  orders,
+  updateOrderStatus,
+  onDeleteOrder,
+  settings,
+  setSuccessMessage
+}: OrdersViewProps) {
+  const [searchTerm, setSearchTerm] = useState('');
+  const [activeTab, setActiveTab] = useState<'All' | 'Pending' | 'Processing' | 'Shipped' | 'Delivered' | 'Cancelled'>('All');
+  const [paymentFilter, setPaymentFilter] = useState<string>('All');
+  const [sortBy, setSortBy] = useState<'newest' | 'oldest' | 'amount-high' | 'amount-low'>('newest');
+  
+  const [selectedOrder, setSelectedOrder] = useState<Order | null>(null);
+  const [printInvoiceOrder, setPrintInvoiceOrder] = useState<Order | null>(null);
+  const [copiedId, setCopiedId] = useState<string | null>(null);
+
+  // Copy to clipboard helper
+  const handleCopy = (text: string, id: string) => {
+    navigator.clipboard.writeText(text);
+    setCopiedId(id);
+    setTimeout(() => setCopiedId(null), 2000);
+  };
+
+  // Status counts for Daraz Seller Center tabs
+  const counts = {
+    All: orders.length,
+    Pending: orders.filter(o => o.status === 'Pending').length,
+    Processing: orders.filter(o => o.status === 'Processing').length,
+    Shipped: orders.filter(o => o.status === 'Shipped').length,
+    Delivered: orders.filter(o => o.status === 'Delivered').length,
+    Cancelled: orders.filter(o => o.status === 'Cancelled').length,
+  };
+
+  const totalRevenue = orders
+    .filter(o => o.status !== 'Cancelled')
+    .reduce((sum, o) => sum + o.total, 0);
+
+  // Filter and Sort logic
+  const filteredOrders = orders.filter(order => {
+    // Status filter
+    if (activeTab !== 'All' && order.status !== activeTab) return false;
+
+    // Payment method filter
+    if (paymentFilter !== 'All' && order.paymentmethod !== paymentFilter) return false;
+
+    // Search query (Order ID, Customer Name, Phone, Address, Transaction ID)
+    if (searchTerm.trim()) {
+      const q = searchTerm.toLowerCase();
+      const matchId = order.id.toLowerCase().includes(q);
+      const matchName = order.customername.toLowerCase().includes(q);
+      const matchPhone = order.customerphone.toLowerCase().includes(q);
+      const matchAddr = order.customeraddress.toLowerCase().includes(q);
+      const matchTx = order.transactionid ? order.transactionid.toLowerCase().includes(q) : false;
+      const matchItems = order.items.some(i => i.name.toLowerCase().includes(q));
+
+      if (!matchId && !matchName && !matchPhone && !matchAddr && !matchTx && !matchItems) {
+        return false;
+      }
+    }
+
+    return true;
+  }).sort((a, b) => {
+    if (sortBy === 'newest') {
+      return new Date(b.createdat).getTime() - new Date(a.createdat).getTime();
+    }
+    if (sortBy === 'oldest') {
+      return new Date(a.createdat).getTime() - new Date(b.createdat).getTime();
+    }
+    if (sortBy === 'amount-high') {
+      return b.total - a.total;
+    }
+    if (sortBy === 'amount-low') {
+      return a.total - b.total;
+    }
+    return 0;
+  });
+
+  // Export CSV function
+  const handleExportCSV = () => {
+    if (filteredOrders.length === 0) {
+      alert('No orders available to export.');
+      return;
+    }
+
+    const headers = ['Order ID', 'Date', 'Customer Name', 'Phone', 'Address', 'Payment Method', 'Transaction ID', 'Items Count', 'Total Amount (BDT)', 'Status'];
+    const rows = filteredOrders.map(o => [
+      `"${o.id}"`,
+      `"${new Date(o.createdat).toLocaleString()}"`,
+      `"${o.customername.replace(/"/g, '""')}"`,
+      `"${o.customerphone}"`,
+      `"${o.customeraddress.replace(/"/g, '""')}"`,
+      `"${o.paymentmethod}"`,
+      `"${o.transactionid || 'N/A'}"`,
+      o.items.length,
+      o.total,
+      `"${o.status}"`
+    ]);
+
+    const csvContent = 'data:text/csv;charset=utf-8,\uFEFF' + [headers.join(','), ...rows.map(e => e.join(','))].join('\n');
+    const encodedUri = encodeURI(csvContent);
+    const link = document.createElement('a');
+    link.setAttribute('href', encodedUri);
+    link.setAttribute('download', `Daraz_Orders_Report_${new Date().toISOString().slice(0, 10)}.csv`);
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    setSuccessMessage('CSV Order Report downloaded successfully!');
+  };
+
+  const getStatusBadge = (status: Order['status']) => {
+    switch (status) {
+      case 'Pending':
+        return (
+          <span className="inline-flex items-center gap-1 px-3 py-1 rounded-full text-xs font-black uppercase tracking-wider bg-amber-100 text-amber-800 border border-amber-300">
+            <Clock className="w-3.5 h-3.5 text-amber-600 animate-pulse" /> Pending
+          </span>
+        );
+      case 'Processing':
+        return (
+          <span className="inline-flex items-center gap-1 px-3 py-1 rounded-full text-xs font-black uppercase tracking-wider bg-sky-100 text-sky-800 border border-sky-300">
+            <Package className="w-3.5 h-3.5 text-sky-600" /> Processing
+          </span>
+        );
+      case 'Shipped':
+        return (
+          <span className="inline-flex items-center gap-1 px-3 py-1 rounded-full text-xs font-black uppercase tracking-wider bg-indigo-100 text-indigo-800 border border-indigo-300">
+            <Truck className="w-3.5 h-3.5 text-indigo-600" /> Shipped
+          </span>
+        );
+      case 'Delivered':
+        return (
+          <span className="inline-flex items-center gap-1 px-3 py-1 rounded-full text-xs font-black uppercase tracking-wider bg-emerald-100 text-emerald-800 border border-emerald-300">
+            <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600" /> Delivered
+          </span>
+        );
+      case 'Cancelled':
+        return (
+          <span className="inline-flex items-center gap-1 px-3 py-1 rounded-full text-xs font-black uppercase tracking-wider bg-rose-100 text-rose-800 border border-rose-300">
+            <XCircle className="w-3.5 h-3.5 text-rose-600" /> Cancelled
+          </span>
+        );
+    }
+  };
+
+  const getPaymentBadge = (method: string) => {
+    if (method.includes('bKash')) {
+      return (
+        <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-md text-[10px] font-black uppercase tracking-wider bg-pink-100 text-pink-700 border border-pink-200">
+          bKash
+        </span>
+      );
+    }
+    if (method.includes('Nagad')) {
+      return (
+        <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-md text-[10px] font-black uppercase tracking-wider bg-amber-100 text-amber-800 border border-amber-200">
+          Nagad
+        </span>
+      );
+    }
+    if (method.includes('Rocket')) {
+      return (
+        <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-md text-[10px] font-black uppercase tracking-wider bg-purple-100 text-purple-700 border border-purple-200">
+          Rocket
+        </span>
+      );
+    }
+    return (
+      <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-md text-[10px] font-black uppercase tracking-wider bg-orange-100 text-orange-800 border border-orange-200">
+        COD (Cash on Delivery)
+      </span>
+    );
+  };
+
+  // Render Full Order Details Page / View
+  if (selectedOrder) {
+    const steps = [
+      { key: 'Pending', label: 'Order Placed', desc: 'Customer placed order' },
+      { key: 'Processing', label: 'Ready to Ship', desc: 'Packed in warehouse' },
+      { key: 'Shipped', label: 'In Transit', desc: 'Handed over to courier' },
+      { key: 'Delivered', label: 'Delivered', desc: 'Received by customer' },
+    ];
+
+    const currentStepIdx = selectedOrder.status === 'Cancelled' ? -1 : steps.findIndex(s => s.key === selectedOrder.status);
+
+    return (
+      <motion.div 
+        initial={{ opacity: 0, y: 15 }}
+        animate={{ opacity: 1, y: 0 }}
+        className="space-y-6 max-w-6xl mx-auto"
+      >
+        {/* Navigation Bar */}
+        <div className="bg-slate-900 text-white p-5 rounded-3xl shadow-xl flex flex-wrap items-center justify-between gap-4">
+          <div className="flex items-center gap-4">
+            <button 
+              onClick={() => setSelectedOrder(null)}
+              className="p-2.5 bg-white/10 hover:bg-white/20 rounded-2xl transition-all text-white"
+            >
+              <ChevronLeft className="w-5 h-5" />
+            </button>
+            <div>
+              <div className="flex items-center gap-2">
+                <span className="px-2 py-0.5 rounded bg-orange-500 text-white text-[9px] font-black uppercase tracking-widest">
+                  Daraz Seller Center
+                </span>
+                <span className="text-xs text-white/60">• Order Management</span>
+              </div>
+              <h2 className="text-xl font-bold mt-0.5 flex items-center gap-2">
+                Order #{selectedOrder.id}
+                <button 
+                  onClick={() => handleCopy(selectedOrder.id, 'id-detail')}
+                  className="p-1 hover:bg-white/10 rounded transition-all text-white/70"
+                  title="Copy Order ID"
+                >
+                  {copiedId === 'id-detail' ? <Check className="w-4 h-4 text-emerald-400" /> : <Copy className="w-4 h-4" />}
+                </button>
+              </h2>
+            </div>
+          </div>
+
+          <div className="flex items-center gap-3">
+            <button 
+              onClick={() => setPrintInvoiceOrder(selectedOrder)}
+              className="px-4 py-2.5 bg-white text-slate-900 rounded-xl font-black text-xs hover:bg-orange-500 hover:text-white transition-all flex items-center gap-2 shadow-sm"
+            >
+              <Printer className="w-4 h-4" /> Print Shipping Label
+            </button>
+            <button 
+              onClick={() => {
+                if (window.confirm('Are you sure you want to delete this order?')) {
+                  onDeleteOrder(selectedOrder.id);
+                  setSelectedOrder(null);
+                  setSuccessMessage('Order deleted successfully.');
+                }
+              }}
+              className="p-2.5 bg-rose-500/20 text-rose-300 hover:bg-rose-500 hover:text-white rounded-xl transition-all"
+              title="Delete Order"
+            >
+              <Trash2 className="w-4 h-4" />
+            </button>
+          </div>
+        </div>
+
+        {/* Order Stepper Tracker (Daraz Fulfillment Tracker) */}
+        <div className="bg-white p-6 rounded-3xl border border-black/5 shadow-sm space-y-4">
+          <div className="flex items-center justify-between pb-3 border-b border-black/5">
+            <h3 className="text-xs font-black uppercase tracking-widest text-slate-700 flex items-center gap-2">
+              <Truck className="w-4 h-4 text-orange-500" /> Fulfillment Progress (ডেলিভারি ট্র্যাকিং)
+            </h3>
+            {getStatusBadge(selectedOrder.status)}
+          </div>
+
+          {selectedOrder.status === 'Cancelled' ? (
+            <div className="p-4 bg-rose-50 border border-rose-200 rounded-2xl flex items-center gap-3 text-rose-800 text-xs font-bold">
+              <XCircle className="w-5 h-5 text-rose-600 shrink-0" />
+              <span>This order was cancelled. No further shipping updates are required.</span>
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 sm:grid-cols-4 gap-4 pt-2">
+              {steps.map((step, idx) => {
+                const isCompleted = idx <= currentStepIdx;
+                const isCurrent = idx === currentStepIdx;
+
+                return (
+                  <div 
+                    key={step.key} 
+                    className={`p-4 rounded-2xl border transition-all ${
+                      isCurrent 
+                        ? 'bg-orange-50 border-orange-400 shadow-md ring-2 ring-orange-200' 
+                        : isCompleted 
+                          ? 'bg-emerald-50/50 border-emerald-200' 
+                          : 'bg-slate-50 border-slate-200 opacity-60'
+                    }`}
+                  >
+                    <div className="flex items-center justify-between mb-2">
+                      <span className={`w-6 h-6 rounded-full flex items-center justify-center text-xs font-black ${
+                        isCompleted ? 'bg-emerald-500 text-white' : 'bg-slate-300 text-slate-700'
+                      }`}>
+                        {isCompleted ? <Check className="w-3.5 h-3.5" /> : idx + 1}
+                      </span>
+                      {isCurrent && (
+                        <span className="px-2 py-0.5 rounded bg-orange-500 text-white text-[8px] font-black uppercase">
+                          Active State
+                        </span>
+                      )}
+                    </div>
+                    <p className="text-xs font-black text-slate-900">{step.label}</p>
+                    <p className="text-[10px] text-slate-500 mt-0.5">{step.desc}</p>
+                  </div>
+                );
+              })}
+            </div>
+          )}
+        </div>
+
+        {/* Grid Body */}
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+          {/* Left Column: Order Items */}
+          <div className="lg:col-span-2 space-y-6">
+            <div className="bg-white p-6 rounded-3xl border border-black/5 shadow-sm space-y-6">
+              <div className="flex items-center justify-between pb-3 border-b border-black/5">
+                <h3 className="text-xs font-black uppercase tracking-widest text-slate-800 flex items-center gap-2">
+                  <ShoppingBag className="w-4 h-4 text-slate-600" />
+                  Order Package Items ({selectedOrder.items.length})
+                </h3>
+                <span className="text-xs font-bold text-slate-400">Merchant Store Fulfiller</span>
+              </div>
+
+              <div className="space-y-4">
+                {selectedOrder.items.map((item, idx) => (
+                  <div key={idx} className="flex items-center gap-4 p-4 bg-slate-50 border border-slate-200/80 rounded-2xl hover:border-slate-300 transition-all">
+                    <div className="w-16 h-16 rounded-xl overflow-hidden bg-white border border-slate-200 shrink-0">
+                      <img src={item.image} alt={item.name} className="w-full h-full object-cover" />
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <h4 className="font-bold text-sm text-slate-900 truncate">{item.name}</h4>
+                      <div className="flex items-center gap-2 mt-1">
+                        <span className="px-2 py-0.5 rounded bg-slate-200 text-slate-700 text-[10px] font-bold">
+                          {item.category || 'Product'}
+                        </span>
+                        {item.selectedAttr && (
+                          <span className="px-2 py-0.5 rounded bg-orange-100 text-orange-800 text-[10px] font-bold">
+                            Variant: {item.selectedAttr}
+                          </span>
+                        )}
+                      </div>
+                      <div className="flex justify-between items-center mt-2">
+                        <span className="text-xs text-slate-500 font-medium">৳{item.price.toLocaleString()} × {item.quantity}</span>
+                        <span className="text-sm font-black text-slate-900">৳{(item.price * item.quantity).toLocaleString()}</span>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+
+              {/* Price Breakdown */}
+              <div className="p-4 bg-slate-900 text-white rounded-2xl space-y-2">
+                <div className="flex justify-between text-xs text-white/70">
+                  <span>Subtotal Amount:</span>
+                  <span className="font-bold text-white">৳{selectedOrder.total.toLocaleString()}</span>
+                </div>
+                <div className="flex justify-between text-xs text-white/70">
+                  <span>Standard Delivery Fee:</span>
+                  <span className="font-bold text-emerald-400">INCLUDED</span>
+                </div>
+                <div className="pt-2 border-t border-white/10 flex justify-between items-center text-sm font-black">
+                  <span>Total Payable Amount:</span>
+                  <span className="text-xl font-black text-amber-400">৳{selectedOrder.total.toLocaleString()}</span>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Right Column: Customer & Payment Details */}
+          <div className="space-y-6">
+            {/* Customer Shipping Address Card */}
+            <div className="bg-white p-6 rounded-3xl border border-black/5 shadow-sm space-y-4">
+              <h3 className="text-xs font-black uppercase tracking-widest text-slate-800 flex items-center gap-2 pb-3 border-b border-black/5">
+                <User className="w-4 h-4 text-slate-600" /> Customer & Shipping Info
+              </h3>
+
+              <div className="space-y-3.5">
+                <div className="flex items-start gap-3">
+                  <div className="w-8 h-8 rounded-xl bg-slate-100 flex items-center justify-center shrink-0 text-slate-600">
+                    <User className="w-4 h-4" />
+                  </div>
+                  <div>
+                    <p className="text-[10px] font-black uppercase text-slate-400">Customer Name</p>
+                    <p className="text-xs font-bold text-slate-900">{selectedOrder.customername}</p>
+                  </div>
+                </div>
+
+                <div className="flex items-start gap-3">
+                  <div className="w-8 h-8 rounded-xl bg-slate-100 flex items-center justify-center shrink-0 text-slate-600">
+                    <Phone className="w-4 h-4" />
+                  </div>
+                  <div className="flex-1">
+                    <p className="text-[10px] font-black uppercase text-slate-400">Contact Number</p>
+                    <div className="flex items-center gap-2 mt-0.5">
+                      <a href={`tel:${selectedOrder.customerphone}`} className="text-xs font-bold text-slate-900 hover:text-orange-600 transition-colors">
+                        {selectedOrder.customerphone}
+                      </a>
+                      <button 
+                        onClick={() => handleCopy(selectedOrder.customerphone, 'phone-detail')}
+                        className="p-1 text-slate-400 hover:text-slate-700 rounded transition-all"
+                        title="Copy Phone Number"
+                      >
+                        {copiedId === 'phone-detail' ? <Check className="w-3.5 h-3.5 text-emerald-600" /> : <Copy className="w-3.5 h-3.5" />}
+                      </button>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="flex items-start gap-3">
+                  <div className="w-8 h-8 rounded-xl bg-slate-100 flex items-center justify-center shrink-0 text-slate-600">
+                    <MapPin className="w-4 h-4" />
+                  </div>
+                  <div>
+                    <p className="text-[10px] font-black uppercase text-slate-400">Shipping Address</p>
+                    <p className="text-xs font-medium leading-relaxed text-slate-800 mt-0.5">{selectedOrder.customeraddress}</p>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Payment Info */}
+            <div className="bg-white p-6 rounded-3xl border border-black/5 shadow-sm space-y-4">
+              <h3 className="text-xs font-black uppercase tracking-widest text-slate-800 flex items-center gap-2 pb-3 border-b border-black/5">
+                <CreditCard className="w-4 h-4 text-slate-600" /> Payment Logistics
+              </h3>
+
+              <div className="space-y-3.5">
+                <div className="flex items-center justify-between">
+                  <span className="text-xs text-slate-500 font-bold">Payment Method:</span>
+                  {getPaymentBadge(selectedOrder.paymentmethod)}
+                </div>
+
+                {selectedOrder.transactionid && (
+                  <div className="p-3 bg-slate-50 border border-slate-200 rounded-xl space-y-1">
+                    <span className="text-[9px] font-black uppercase tracking-wider text-slate-400">Transaction ID (TrxID)</span>
+                    <div className="flex justify-between items-center">
+                      <code className="text-xs font-mono font-bold text-slate-900">{selectedOrder.transactionid}</code>
+                      <button 
+                        onClick={() => handleCopy(selectedOrder.transactionid!, 'trx-detail')}
+                        className="p-1 hover:bg-slate-200 rounded text-slate-600"
+                      >
+                        {copiedId === 'trx-detail' ? <Check className="w-3.5 h-3.5 text-emerald-600" /> : <Copy className="w-3.5 h-3.5" />}
+                      </button>
+                    </div>
+                  </div>
+                )}
+
+                <div className="flex items-center justify-between text-xs text-slate-500">
+                  <span>Order Time:</span>
+                  <span className="font-bold text-slate-800">{new Date(selectedOrder.createdat).toLocaleString()}</span>
+                </div>
+              </div>
+            </div>
+
+            {/* Quick Status Control */}
+            <div className="bg-white p-6 rounded-3xl border border-black/5 shadow-sm space-y-3">
+              <h3 className="text-xs font-black uppercase tracking-widest text-slate-800 flex items-center gap-2">
+                <Sparkles className="w-4 h-4 text-orange-500" /> Change Order Status
+              </h3>
+              <p className="text-[10px] text-slate-400">Select new status to immediately notify seller center pipeline.</p>
+              
+              <div className="grid grid-cols-1 gap-2 pt-1">
+                {(['Pending', 'Processing', 'Shipped', 'Delivered', 'Cancelled'] as Order['status'][]).map(st => (
+                  <button
+                    key={st}
+                    onClick={() => {
+                      updateOrderStatus(selectedOrder.id, st);
+                      setSelectedOrder({ ...selectedOrder, status: st });
+                      setSuccessMessage(`Order status changed to ${st}`);
+                    }}
+                    className={`px-4 py-2.5 rounded-xl text-xs font-black uppercase tracking-wider transition-all flex items-center justify-between ${
+                      selectedOrder.status === st 
+                        ? 'bg-slate-900 text-white shadow-md' 
+                        : 'bg-slate-50 hover:bg-slate-100 text-slate-700 border border-slate-200'
+                    }`}
+                  >
+                    <span>{st}</span>
+                    {selectedOrder.status === st && <Check className="w-4 h-4 text-emerald-400" />}
+                  </button>
+                ))}
+              </div>
+            </div>
+          </div>
+        </div>
+      </motion.div>
+    );
+  }
+
+  return (
+    <div className="space-y-6 max-w-7xl mx-auto">
+      {/* 1. Header & Summary Metric Cards (Daraz Seller Dashboard) */}
+      <div className="bg-slate-900 text-white p-6 rounded-3xl shadow-xl space-y-6">
+        <div className="flex flex-wrap items-center justify-between gap-4 border-b border-white/10 pb-5">
+          <div className="flex items-center gap-3">
+            <div className="w-12 h-12 rounded-2xl bg-orange-500 text-white flex items-center justify-center font-black shadow-lg shadow-orange-500/30">
+              <ShoppingBag className="w-6 h-6" />
+            </div>
+            <div>
+              <div className="flex items-center gap-2">
+                <span className="px-2 py-0.5 rounded bg-orange-500 text-white text-[9px] font-black uppercase tracking-widest">
+                  Daraz Seller Center
+                </span>
+                <span className="text-xs text-white/50 font-bold">• Orders Portal</span>
+              </div>
+              <h1 className="text-xl sm:text-2xl font-bold tracking-tight text-white mt-0.5">
+                Orders Management (অর্ডার ব্যবস্থাপনা)
+              </h1>
+            </div>
+          </div>
+
+          <div className="flex items-center gap-3">
+            <button
+              onClick={handleExportCSV}
+              className="px-4 py-2.5 bg-white/10 hover:bg-white/20 text-white rounded-xl font-bold text-xs transition-all flex items-center gap-2 border border-white/10"
+            >
+              <FileSpreadsheet className="w-4 h-4 text-emerald-400" />
+              <span>Export CSV</span>
+            </button>
+            <button
+              onClick={() => window.print()}
+              className="px-4 py-2.5 bg-orange-500 hover:bg-orange-600 text-white rounded-xl font-bold text-xs transition-all flex items-center gap-2 shadow-lg shadow-orange-500/20"
+            >
+              <Printer className="w-4 h-4" />
+              <span>Print Page</span>
+            </button>
+          </div>
+        </div>
+
+        {/* Quick Metrics Bar */}
+        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
+          <div className="p-3.5 bg-white/5 border border-white/10 rounded-2xl">
+            <p className="text-[10px] font-black uppercase tracking-widest text-white/50">Total Orders</p>
+            <p className="text-2xl font-black mt-1 text-white">{counts.All}</p>
+          </div>
+          <div className="p-3.5 bg-amber-500/10 border border-amber-500/20 rounded-2xl">
+            <p className="text-[10px] font-black uppercase tracking-widest text-amber-300">Pending</p>
+            <p className="text-2xl font-black mt-1 text-amber-400">{counts.Pending}</p>
+          </div>
+          <div className="p-3.5 bg-sky-500/10 border border-sky-500/20 rounded-2xl">
+            <p className="text-[10px] font-black uppercase tracking-widest text-sky-300">Processing</p>
+            <p className="text-2xl font-black mt-1 text-sky-400">{counts.Processing}</p>
+          </div>
+          <div className="p-3.5 bg-indigo-500/10 border border-indigo-500/20 rounded-2xl">
+            <p className="text-[10px] font-black uppercase tracking-widest text-indigo-300">In Transit</p>
+            <p className="text-2xl font-black mt-1 text-indigo-400">{counts.Shipped}</p>
+          </div>
+          <div className="p-3.5 bg-emerald-500/10 border border-emerald-500/20 rounded-2xl">
+            <p className="text-[10px] font-black uppercase tracking-widest text-emerald-300">Delivered</p>
+            <p className="text-2xl font-black mt-1 text-emerald-400">{counts.Delivered}</p>
+          </div>
+          <div className="p-3.5 bg-white/10 border border-white/15 rounded-2xl">
+            <p className="text-[10px] font-black uppercase tracking-widest text-white/50">Total Revenue</p>
+            <p className="text-2xl font-black mt-1 text-amber-300">৳{totalRevenue.toLocaleString()}</p>
+          </div>
+        </div>
+      </div>
+
+      {/* 2. Status Navigation Tabs (Daraz Style Horizontal Bar) */}
+      <div className="bg-white p-2 rounded-2xl border border-black/5 shadow-sm overflow-x-auto custom-scrollbar">
+        <div className="flex items-center gap-1 min-w-max">
+          {[
+            { id: 'All', label: 'All Orders (সকল)', count: counts.All, color: 'hover:text-slate-900' },
+            { id: 'Pending', label: 'Pending (পেন্ডিং)', count: counts.Pending, color: 'text-amber-600' },
+            { id: 'Processing', label: 'Ready to Ship (প্রসেসিং)', count: counts.Processing, color: 'text-sky-600' },
+            { id: 'Shipped', label: 'In Transit (শিপড)', count: counts.Shipped, color: 'text-indigo-600' },
+            { id: 'Delivered', label: 'Delivered (সম্পন্ন)', count: counts.Delivered, color: 'text-emerald-600' },
+            { id: 'Cancelled', label: 'Cancelled (বাতিল)', count: counts.Cancelled, color: 'text-rose-600' },
+          ].map((tab) => {
+            const isActive = activeTab === tab.id;
+            return (
+              <button
+                key={tab.id}
+                onClick={() => setActiveTab(tab.id as any)}
+                className={`px-4 py-2.5 rounded-xl text-xs font-bold transition-all flex items-center gap-2 cursor-pointer ${
+                  isActive
+                    ? 'bg-slate-900 text-white shadow-md font-black'
+                    : 'text-slate-600 hover:bg-slate-100'
+                }`}
+              >
+                <span>{tab.label}</span>
+                <span className={`px-2 py-0.5 rounded-full text-[10px] font-black ${
+                  isActive ? 'bg-orange-500 text-white' : 'bg-slate-200 text-slate-700'
+                }`}>
+                  {tab.count}
+                </span>
+              </button>
+            );
+          })}
+        </div>
+      </div>
+
+      {/* 3. Search and Filters Bar */}
+      <div className="bg-white p-4 rounded-2xl border border-black/5 shadow-sm grid grid-cols-1 md:grid-cols-12 gap-3 items-center">
+        {/* Search Input */}
+        <div className="md:col-span-6 relative">
+          <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+          <input 
+            type="text"
+            placeholder="Search Order ID, Customer Name, Phone, TrxID..."
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+            className="w-full pl-11 pr-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-bold focus:outline-none focus:ring-2 focus:ring-slate-900 transition-all"
+          />
+          {searchTerm && (
+            <button 
+              onClick={() => setSearchTerm('')} 
+              className="absolute right-3 top-1/2 -translate-y-1/2 text-xs font-bold text-slate-400 hover:text-slate-700"
+            >
+              Clear
+            </button>
+          )}
+        </div>
+
+        {/* Payment Method Filter */}
+        <div className="md:col-span-3 relative">
+          <select
+            value={paymentFilter}
+            onChange={(e) => setPaymentFilter(e.target.value)}
+            className="w-full px-3 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-bold focus:outline-none focus:ring-2 focus:ring-slate-900 appearance-none cursor-pointer"
+          >
+            <option value="All">All Payment Methods</option>
+            <option value="Cash on Delivery">Cash on Delivery (COD)</option>
+            <option value="bKash">bKash Personal / Merchant</option>
+            <option value="Nagad">Nagad Wallet</option>
+            <option value="Rocket">Rocket Mobile Banking</option>
+          </select>
+          <SlidersHorizontal className="absolute right-3.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-slate-400 pointer-events-none" />
+        </div>
+
+        {/* Sort By */}
+        <div className="md:col-span-3 relative">
+          <select
+            value={sortBy}
+            onChange={(e) => setSortBy(e.target.value as any)}
+            className="w-full px-3 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-bold focus:outline-none focus:ring-2 focus:ring-slate-900 appearance-none cursor-pointer"
+          >
+            <option value="newest">Sort: Newest First</option>
+            <option value="oldest">Sort: Oldest First</option>
+            <option value="amount-high">Amount: High to Low</option>
+            <option value="amount-low">Amount: Low to High</option>
+          </select>
+          <ArrowUpDown className="absolute right-3.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-slate-400 pointer-events-none" />
+        </div>
+      </div>
+
+      {/* 4. Order List (Daraz Seller Center Cards View) */}
+      <div className="space-y-4">
+        {filteredOrders.length === 0 ? (
+          <div className="bg-white rounded-3xl p-12 text-center border border-black/5 shadow-sm space-y-3">
+            <div className="w-16 h-16 bg-slate-100 text-slate-400 rounded-2xl flex items-center justify-center mx-auto">
+              <ShoppingBag className="w-8 h-8" />
+            </div>
+            <h3 className="text-lg font-bold text-slate-800">No Orders Found (কোন অর্ডার পাওয়া যায়নি)</h3>
+            <p className="text-xs text-slate-500 max-w-md mx-auto">
+              There are no orders matching your selected status filter or search parameters.
+            </p>
+          </div>
+        ) : (
+          filteredOrders.map((order) => (
+            <motion.div
+              key={order.id}
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              className="bg-white rounded-2xl border border-black/10 shadow-sm overflow-hidden hover:shadow-md transition-shadow"
+            >
+              {/* Order Card Header Strip */}
+              <div className="bg-slate-900 text-white px-5 py-3.5 flex flex-wrap items-center justify-between gap-3 border-b border-white/10">
+                <div className="flex items-center gap-3">
+                  <div className="flex items-center gap-1.5">
+                    <span className="text-xs font-mono font-bold text-orange-400">#{order.id}</span>
+                    <button
+                      onClick={() => handleCopy(order.id, `id-${order.id}`)}
+                      className="p-1 hover:bg-white/10 rounded transition-all text-white/60 hover:text-white"
+                      title="Copy Order ID"
+                    >
+                      {copiedId === `id-${order.id}` ? (
+                        <Check className="w-3.5 h-3.5 text-emerald-400" />
+                      ) : (
+                        <Copy className="w-3.5 h-3.5" />
+                      )}
+                    </button>
+                  </div>
+
+                  <span className="text-white/30">•</span>
+                  <div className="flex items-center gap-1 text-[11px] text-white/70">
+                    <Calendar className="w-3.5 h-3.5 text-white/40" />
+                    <span>{new Date(order.createdat).toLocaleString()}</span>
+                  </div>
+
+                  <span className="text-white/30">•</span>
+                  {getPaymentBadge(order.paymentmethod)}
+
+                  {order.transactionid && (
+                    <span className="text-[10px] font-mono bg-white/10 px-2 py-0.5 rounded text-amber-300 font-bold border border-white/10">
+                      TrxID: {order.transactionid}
+                    </span>
+                  )}
+                </div>
+
+                <div className="flex items-center gap-3">
+                  {getStatusBadge(order.status)}
+                </div>
+              </div>
+
+              {/* Order Card Body */}
+              <div className="p-5 grid grid-cols-1 md:grid-cols-12 gap-5 items-center">
+                {/* Customer Info (Left) */}
+                <div className="md:col-span-4 space-y-2 border-b md:border-b-0 md:border-r border-slate-100 pb-4 md:pb-0 md:pr-4">
+                  <div className="flex items-center gap-2">
+                    <User className="w-4 h-4 text-slate-500 shrink-0" />
+                    <span className="text-xs font-black text-slate-900 truncate">{order.customername}</span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <Phone className="w-3.5 h-3.5 text-slate-400 shrink-0" />
+                    <a href={`tel:${order.customerphone}`} className="text-xs font-bold text-slate-700 hover:text-orange-600 transition-colors">
+                      {order.customerphone}
+                    </a>
+                  </div>
+                  <div className="flex items-start gap-2">
+                    <MapPin className="w-3.5 h-3.5 text-slate-400 shrink-0 mt-0.5" />
+                    <p className="text-[11px] text-slate-600 font-medium leading-tight line-clamp-2">
+                      {order.customeraddress}
+                    </p>
+                  </div>
+                </div>
+
+                {/* Purchased Items List (Middle) */}
+                <div className="md:col-span-5 space-y-2.5">
+                  <div className="text-[10px] font-black uppercase tracking-widest text-slate-400">
+                    Items ({order.items.length})
+                  </div>
+                  <div className="space-y-2 max-h-36 overflow-y-auto custom-scrollbar pr-1">
+                    {order.items.map((item, idx) => (
+                      <div key={idx} className="flex items-center gap-3 bg-slate-50 p-2 rounded-xl border border-slate-100">
+                        <div className="w-10 h-10 rounded-lg overflow-hidden bg-white border border-slate-200 shrink-0">
+                          <img src={item.image} alt={item.name} className="w-full h-full object-cover" />
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <p className="text-xs font-bold text-slate-800 truncate">{item.name}</p>
+                          <p className="text-[10px] text-slate-500">
+                            Qty: <strong className="text-slate-900">{item.quantity}</strong>
+                            {item.selectedAttr ? ` | ${item.selectedAttr}` : ''}
+                          </p>
+                        </div>
+                        <span className="text-xs font-black text-slate-900">
+                          ৳{(item.price * item.quantity).toLocaleString()}
+                        </span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Total Price & Quick Action (Right) */}
+                <div className="md:col-span-3 flex flex-col items-end justify-between space-y-3 pt-3 md:pt-0 border-t md:border-t-0 border-slate-100">
+                  <div className="text-right">
+                    <span className="text-[10px] font-black uppercase tracking-widest text-slate-400">Total Payable</span>
+                    <p className="text-xl font-black text-slate-900 mt-0.5">৳{order.total.toLocaleString()}</p>
+                  </div>
+
+                  {/* Quick Actions Bar */}
+                  <div className="flex flex-wrap items-center justify-end gap-2 w-full">
+                    {/* Quick Status Select */}
+                    <select
+                      value={order.status}
+                      onChange={(e) => {
+                        updateOrderStatus(order.id, e.target.value as Order['status']);
+                        setSuccessMessage(`Order #${order.id} status updated to ${e.target.value}`);
+                      }}
+                      className="px-2.5 py-1.5 bg-slate-100 hover:bg-slate-200 rounded-xl text-[10px] font-black uppercase tracking-wider text-slate-800 border border-slate-300 focus:outline-none cursor-pointer"
+                    >
+                      <option value="Pending">Pending</option>
+                      <option value="Processing">Processing</option>
+                      <option value="Shipped">Shipped</option>
+                      <option value="Delivered">Delivered</option>
+                      <option value="Cancelled">Cancelled</option>
+                    </select>
+
+                    <button
+                      onClick={() => setPrintInvoiceOrder(order)}
+                      className="p-2 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl transition-all"
+                      title="Print Shipping Label / Slip"
+                    >
+                      <Printer className="w-4 h-4" />
+                    </button>
+
+                    <button
+                      onClick={() => setSelectedOrder(order)}
+                      className="px-3 py-1.5 bg-slate-900 text-white hover:bg-orange-600 rounded-xl text-[10px] font-black uppercase tracking-wider transition-all flex items-center gap-1 shadow-sm"
+                    >
+                      <span>Details</span>
+                      <ChevronRight className="w-3.5 h-3.5" />
+                    </button>
+
+                    <button
+                      onClick={() => {
+                        if (window.confirm(`Are you sure you want to delete order #${order.id}?`)) {
+                          onDeleteOrder(order.id);
+                          setSuccessMessage(`Order #${order.id} deleted.`);
+                        }
+                      }}
+                      className="p-2 bg-rose-50 text-rose-500 hover:bg-rose-500 hover:text-white rounded-xl transition-all"
+                      title="Delete Order"
+                    >
+                      <Trash2 className="w-4 h-4" />
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </motion.div>
+          ))
+        )}
+      </div>
+
+      {/* 5. Daraz Seller Shipping Label / Invoice Printable Modal */}
+      <AnimatePresence>
+        {printInvoiceOrder && (
+          <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
+            <motion.div 
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              onClick={() => setPrintInvoiceOrder(null)}
+              className="absolute inset-0 bg-black/70 backdrop-blur-sm"
+            />
+            <motion.div 
+              initial={{ opacity: 0, scale: 0.95 }}
+              animate={{ opacity: 1, scale: 1 }}
+              exit={{ opacity: 0, scale: 0.95 }}
+              className="relative w-full max-w-2xl bg-white rounded-3xl shadow-2xl overflow-hidden flex flex-col max-h-[90vh] border border-black/10"
+            >
+              {/* Modal Control Header */}
+              <div className="p-4 bg-slate-900 text-white flex justify-between items-center shrink-0">
+                <div className="flex items-center gap-2">
+                  <Printer className="w-4 h-4 text-orange-400" />
+                  <span className="text-xs font-bold uppercase tracking-wider">Daraz Fulfillment Shipping Label</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <button
+                    onClick={() => window.print()}
+                    className="px-3 py-1.5 bg-orange-500 text-white rounded-lg text-xs font-bold hover:bg-orange-600 transition-colors flex items-center gap-1"
+                  >
+                    <Printer className="w-3.5 h-3.5" /> Print Invoice
+                  </button>
+                  <button 
+                    onClick={() => setPrintInvoiceOrder(null)}
+                    className="p-1.5 hover:bg-white/10 rounded-full text-white/70 hover:text-white"
+                  >
+                    <XCircle className="w-5 h-5" />
+                  </button>
+                </div>
+              </div>
+
+              {/* Printable Content Area */}
+              <div className="p-8 space-y-6 overflow-y-auto custom-scrollbar font-sans text-slate-900">
+                {/* Store & Daraz Slip Header */}
+                <div className="flex justify-between items-start border-b-2 border-slate-900 pb-4">
+                  <div>
+                    <span className="px-2 py-0.5 bg-slate-900 text-white text-[9px] font-black uppercase tracking-widest rounded">
+                      SELLER FULFILLMENT SLIP
+                    </span>
+                    <h2 className="text-2xl font-black mt-1 text-slate-900">{settings.brandName || 'AL-Hurumah'}</h2>
+                    <p className="text-xs text-slate-500 font-medium">Official E-Commerce Merchant Store</p>
+                  </div>
+                  <div className="text-right">
+                    <p className="text-xs font-black uppercase text-slate-400">Order Reference</p>
+                    <p className="text-lg font-black font-mono text-orange-600">#{printInvoiceOrder.id}</p>
+                    <p className="text-[10px] text-slate-400">{new Date(printInvoiceOrder.createdat).toLocaleString()}</p>
+                  </div>
+                </div>
+
+                {/* Simulated Barcode */}
+                <div className="bg-slate-100 p-3 rounded-xl border border-slate-200 text-center space-y-1">
+                  <div className="font-mono text-xl tracking-[0.4em] font-black text-slate-800 select-none">
+                    ||||| ||||||| |||| |||||||| ||||||||||
+                  </div>
+                  <p className="text-[10px] font-mono text-slate-500">PACKAGE TRACKING BARCODE #{printInvoiceOrder.id}</p>
+                </div>
+
+                {/* Address Grid */}
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="p-4 bg-slate-50 border border-slate-200 rounded-2xl space-y-1">
+                    <p className="text-[9px] font-black uppercase tracking-widest text-slate-400">Recipient (Customer Address)</p>
+                    <p className="text-sm font-bold">{printInvoiceOrder.customername}</p>
+                    <p className="text-xs font-bold text-slate-700">{printInvoiceOrder.customerphone}</p>
+                    <p className="text-xs text-slate-600 mt-1 leading-relaxed">{printInvoiceOrder.customeraddress}</p>
+                  </div>
+
+                  <div className="p-4 bg-slate-50 border border-slate-200 rounded-2xl space-y-1">
+                    <p className="text-[9px] font-black uppercase tracking-widest text-slate-400">Sender (Store Merchant)</p>
+                    <p className="text-sm font-bold">{settings.brandName || 'AL-Hurumah Store'}</p>
+                    <p className="text-xs text-slate-600">{settings.contactPhone || '+8801700000000'}</p>
+                    <p className="text-xs text-slate-600">{settings.contactAddress || 'Dhaka, Bangladesh'}</p>
+                  </div>
+                </div>
+
+                {/* Package Items Table */}
+                <div className="border border-slate-200 rounded-2xl overflow-hidden">
+                  <table className="w-full text-left text-xs border-collapse">
+                    <thead>
+                      <tr className="bg-slate-100 text-slate-700 font-black uppercase text-[10px] tracking-wider">
+                        <th className="p-3">Product Name</th>
+                        <th className="p-3 text-center">Qty</th>
+                        <th className="p-3 text-right">Unit Price</th>
+                        <th className="p-3 text-right">Total</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-slate-200 font-medium">
+                      {printInvoiceOrder.items.map((item, idx) => (
+                        <tr key={idx}>
+                          <td className="p-3">
+                            <span className="font-bold text-slate-900">{item.name}</span>
+                            {item.selectedAttr && (
+                              <span className="block text-[10px] text-slate-500">Variant: {item.selectedAttr}</span>
+                            )}
+                          </td>
+                          <td className="p-3 text-center font-bold">{item.quantity}</td>
+                          <td className="p-3 text-right">৳{item.price.toLocaleString()}</td>
+                          <td className="p-3 text-right font-bold">৳{(item.price * item.quantity).toLocaleString()}</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+
+                {/* Amount to collect banner */}
+                <div className="p-4 bg-orange-50 border-2 border-orange-200 rounded-2xl flex items-center justify-between">
+                  <div>
+                    <p className="text-xs font-black uppercase text-orange-800">Payment Status ({printInvoiceOrder.paymentmethod})</p>
+                    <p className="text-[11px] text-orange-700">
+                      {printInvoiceOrder.paymentmethod === 'Cash on Delivery' 
+                        ? 'Collect cash from customer upon delivery' 
+                        : `Prepaid via ${printInvoiceOrder.paymentmethod} (${printInvoiceOrder.transactionid || 'Verified'})`}
+                    </p>
+                  </div>
+                  <div className="text-right">
+                    <span className="text-[10px] font-black uppercase text-orange-600">Total Amount</span>
+                    <p className="text-xl font-black text-orange-900">৳{printInvoiceOrder.total.toLocaleString()}</p>
+                  </div>
+                </div>
+              </div>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
+    </div>
+  );
+}
