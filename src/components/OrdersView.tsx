@@ -1014,9 +1014,8 @@ export default function OrdersView({
                 </div>
 
                 {/* Footer Tear Line */}
-                <div className="pt-4 border-t border-dashed border-slate-300 flex justify-between items-center text-[10px] text-slate-400 font-semibold">
+                <div className="pt-4 border-t border-dashed border-slate-300 flex justify-center items-center text-[10px] text-slate-400 font-semibold text-center">
                   <span>Thank you for shopping with {settings.brandName || 'SABBIR'}!</span>
-                  <span>Authorized Merchant Signature</span>
                 </div>
               </div>
             </motion.div>
