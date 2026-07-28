@@ -509,7 +509,13 @@ export default function OrdersView({
   return (
     <div className="space-y-6 max-w-7xl mx-auto w-full overflow-hidden">
       {/* 1. Header & Summary Metric Cards */}
-      <div className="bg-slate-900 text-white p-4 sm:p-6 rounded-3xl shadow-xl space-y-5 sm:space-y-6">
+      <motion.div 
+        initial={{ opacity: 0, y: 20 }}
+        whileInView={{ opacity: 1, y: 0 }}
+        viewport={{ once: true }}
+        transition={{ duration: 0.45 }}
+        className="bg-slate-900 text-white p-4 sm:p-6 rounded-3xl shadow-xl space-y-5 sm:space-y-6"
+      >
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-white/10 pb-5">
           <div className="flex items-center gap-3">
             <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-2xl bg-amber-500 text-black flex items-center justify-center font-black shadow-lg shadow-amber-500/20 shrink-0">
@@ -548,35 +554,41 @@ export default function OrdersView({
 
         {/* Quick Metrics Bar */}
         <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
-          <div className="p-3.5 bg-white/5 border border-white/10 rounded-2xl">
+          <motion.div initial={{ opacity: 0, y: 15 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} transition={{ duration: 0.35, delay: 0.05 }} className="p-3.5 bg-white/5 border border-white/10 rounded-2xl">
             <p className="text-[10px] font-black uppercase tracking-widest text-white/50">Total Orders</p>
             <p className="text-2xl font-black mt-1 text-white">{counts.All}</p>
-          </div>
-          <div className="p-3.5 bg-amber-500/10 border border-amber-500/20 rounded-2xl">
+          </motion.div>
+          <motion.div initial={{ opacity: 0, y: 15 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} transition={{ duration: 0.35, delay: 0.1 }} className="p-3.5 bg-amber-500/10 border border-amber-500/20 rounded-2xl">
             <p className="text-[10px] font-black uppercase tracking-widest text-amber-300">Pending</p>
             <p className="text-2xl font-black mt-1 text-amber-400">{counts.Pending}</p>
-          </div>
-          <div className="p-3.5 bg-sky-500/10 border border-sky-500/20 rounded-2xl">
+          </motion.div>
+          <motion.div initial={{ opacity: 0, y: 15 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} transition={{ duration: 0.35, delay: 0.15 }} className="p-3.5 bg-sky-500/10 border border-sky-500/20 rounded-2xl">
             <p className="text-[10px] font-black uppercase tracking-widest text-sky-300">Processing</p>
             <p className="text-2xl font-black mt-1 text-sky-400">{counts.Processing}</p>
-          </div>
-          <div className="p-3.5 bg-indigo-500/10 border border-indigo-500/20 rounded-2xl">
+          </motion.div>
+          <motion.div initial={{ opacity: 0, y: 15 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} transition={{ duration: 0.35, delay: 0.2 }} className="p-3.5 bg-indigo-500/10 border border-indigo-500/20 rounded-2xl">
             <p className="text-[10px] font-black uppercase tracking-widest text-indigo-300">In Transit</p>
             <p className="text-2xl font-black mt-1 text-indigo-400">{counts.Shipped}</p>
-          </div>
-          <div className="p-3.5 bg-emerald-500/10 border border-emerald-500/20 rounded-2xl">
+          </motion.div>
+          <motion.div initial={{ opacity: 0, y: 15 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} transition={{ duration: 0.35, delay: 0.25 }} className="p-3.5 bg-emerald-500/10 border border-emerald-500/20 rounded-2xl">
             <p className="text-[10px] font-black uppercase tracking-widest text-emerald-300">Delivered</p>
             <p className="text-2xl font-black mt-1 text-emerald-400">{counts.Delivered}</p>
-          </div>
-          <div className="p-3.5 bg-white/10 border border-white/15 rounded-2xl">
+          </motion.div>
+          <motion.div initial={{ opacity: 0, y: 15 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} transition={{ duration: 0.35, delay: 0.3 }} className="p-3.5 bg-white/10 border border-white/15 rounded-2xl">
             <p className="text-[10px] font-black uppercase tracking-widest text-white/50">Total Revenue</p>
             <p className="text-2xl font-black mt-1 text-amber-300">৳{totalRevenue.toLocaleString()}</p>
-          </div>
+          </motion.div>
         </div>
-      </div>
+      </motion.div>
 
       {/* 2. Status Navigation Tabs (Desktop) */}
-      <div className="hidden md:block bg-white p-2 rounded-2xl border border-black/5 shadow-sm overflow-x-auto custom-scrollbar">
+      <motion.div 
+        initial={{ opacity: 0, y: 15 }}
+        whileInView={{ opacity: 1, y: 0 }}
+        viewport={{ once: true }}
+        transition={{ duration: 0.4, delay: 0.1 }}
+        className="hidden md:block bg-white p-2 rounded-2xl border border-black/5 shadow-sm overflow-x-auto custom-scrollbar"
+      >
         <div className="flex items-center gap-1 min-w-max">
           {[
             { id: 'All', label: 'All Orders', count: counts.All },
@@ -607,10 +619,16 @@ export default function OrdersView({
             );
           })}
         </div>
-      </div>
+      </motion.div>
 
       {/* 3. Search and Filters Bar */}
-      <div className="bg-white p-4 rounded-2xl border border-black/5 shadow-sm grid grid-cols-1 md:grid-cols-12 gap-3 items-center">
+      <motion.div 
+        initial={{ opacity: 0, y: 15 }}
+        whileInView={{ opacity: 1, y: 0 }}
+        viewport={{ once: true }}
+        transition={{ duration: 0.4, delay: 0.15 }}
+        className="bg-white p-4 rounded-2xl border border-black/5 shadow-sm grid grid-cols-1 md:grid-cols-12 gap-3 items-center"
+      >
         {/* Search Input */}
         <div className="md:col-span-7 relative">
           <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
@@ -663,12 +681,17 @@ export default function OrdersView({
           </select>
           <SlidersHorizontal className="absolute right-3.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-slate-400 pointer-events-none" />
         </div>
-      </div>
+      </motion.div>
 
       {/* 4. Order List */}
       <div className="space-y-4">
         {filteredOrders.length === 0 ? (
-          <div className="bg-white rounded-3xl p-12 text-center border border-black/5 shadow-sm space-y-3">
+          <motion.div 
+            initial={{ opacity: 0, scale: 0.95 }}
+            whileInView={{ opacity: 1, scale: 1 }}
+            viewport={{ once: true }}
+            className="bg-white rounded-3xl p-12 text-center border border-black/5 shadow-sm space-y-3"
+          >
             <div className="w-16 h-16 bg-slate-100 text-slate-400 rounded-2xl flex items-center justify-center mx-auto">
               <ShoppingBag className="w-8 h-8" />
             </div>
@@ -676,13 +699,15 @@ export default function OrdersView({
             <p className="text-xs text-slate-500 max-w-md mx-auto">
               There are no orders matching your selected status filter or search parameters.
             </p>
-          </div>
+          </motion.div>
         ) : (
-          filteredOrders.map((order) => (
+          filteredOrders.map((order, idx) => (
             <motion.div
               key={order.id}
-              initial={{ opacity: 0, y: 10 }}
-              animate={{ opacity: 1, y: 0 }}
+              initial={{ opacity: 0, y: 25, scale: 0.98 }}
+              whileInView={{ opacity: 1, y: 0, scale: 1 }}
+              viewport={{ once: true, margin: "-40px" }}
+              transition={{ duration: 0.4, delay: Math.min(idx * 0.05, 0.3), ease: "easeOut" }}
               className="bg-white rounded-2xl border border-black/10 shadow-sm overflow-hidden hover:shadow-md transition-shadow"
             >
               {/* Order Card Header Strip */}
