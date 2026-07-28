@@ -1,5 +1,6 @@
-import React, { useState } from 'react';
+import React, { useState, useRef } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
+import { toPng } from 'html-to-image';
 import { 
   Search, 
   ShoppingBag, 
@@ -22,7 +23,9 @@ import {
   ChevronRight,
   Sparkles,
   SlidersHorizontal,
-  ArrowUpDown
+  ArrowUpDown,
+  Download,
+  Loader2
 } from 'lucide-react';
 import { Order, AppSettings } from '../types';
 
@@ -49,6 +52,29 @@ export default function OrdersView({
   const [selectedOrder, setSelectedOrder] = useState<Order | null>(null);
   const [printInvoiceOrder, setPrintInvoiceOrder] = useState<Order | null>(null);
   const [copiedId, setCopiedId] = useState<string | null>(null);
+  const [isDownloading, setIsDownloading] = useState(false);
+  const invoiceRef = useRef<HTMLDivElement>(null);
+
+  const handleDownloadInvoice = async () => {
+    if (!invoiceRef.current || !printInvoiceOrder) return;
+    try {
+      setIsDownloading(true);
+      const dataUrl = await toPng(invoiceRef.current, {
+        quality: 0.95,
+        pixelRatio: 2,
+        backgroundColor: '#ffffff',
+      });
+      const link = document.createElement('a');
+      link.download = `Invoice-${printInvoiceOrder.id.slice(0, 8)}.png`;
+      link.href = dataUrl;
+      link.click();
+      setSuccessMessage('Invoice downloaded successfully as image!');
+    } catch (err) {
+      console.error('Failed to download invoice image:', err);
+    } finally {
+      setIsDownloading(false);
+    }
+  };
 
   // Copy to clipboard helper
   const handleCopy = (text: string, id: string) => {
@@ -876,10 +902,19 @@ export default function OrdersView({
                 </div>
                 <div className="flex items-center gap-2">
                   <button
-                    onClick={() => window.print()}
-                    className="px-3 py-1.5 bg-amber-500 text-black font-bold rounded-lg text-xs hover:bg-amber-400 transition-colors flex items-center gap-1"
+                    onClick={handleDownloadInvoice}
+                    disabled={isDownloading}
+                    className="px-3 py-1.5 bg-amber-500 text-black font-bold rounded-lg text-xs hover:bg-amber-400 transition-colors flex items-center gap-1.5 disabled:opacity-50 cursor-pointer"
                   >
-                    <Printer className="w-3.5 h-3.5" /> Print Invoice
+                    {isDownloading ? (
+                      <>
+                        <Loader2 className="w-3.5 h-3.5 animate-spin" /> Downloading...
+                      </>
+                    ) : (
+                      <>
+                        <Download className="w-3.5 h-3.5" /> Print Invoice
+                      </>
+                    )}
                   </button>
                   <button 
                     onClick={() => setPrintInvoiceOrder(null)}
@@ -891,7 +926,7 @@ export default function OrdersView({
               </div>
 
               {/* Printable Content Area */}
-              <div className="p-6 sm:p-8 space-y-6 overflow-y-auto custom-scrollbar font-sans text-slate-900 print:p-0 print:overflow-visible">
+              <div ref={invoiceRef} className="p-6 sm:p-8 space-y-6 overflow-y-auto custom-scrollbar font-sans text-slate-900 bg-white print:p-0 print:overflow-visible">
                 {/* Store Slip Header */}
                 <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 border-b-2 border-slate-900 pb-5">
                   <div className="space-y-1">
