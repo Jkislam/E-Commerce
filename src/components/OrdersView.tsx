@@ -537,17 +537,10 @@ export default function OrdersView({
           <div className="flex items-center gap-3">
             <button
               onClick={handleExportCSV}
-              className="flex-1 sm:flex-none px-4 py-2.5 bg-white/10 hover:bg-white/20 text-white rounded-xl font-bold text-xs transition-all flex items-center justify-center gap-2 border border-white/10"
+              className="px-4 py-2.5 bg-white/10 hover:bg-white/20 text-white rounded-xl font-bold text-xs transition-all flex items-center justify-center gap-2 border border-white/10"
             >
               <FileSpreadsheet className="w-4 h-4 text-emerald-400" />
               <span>Export CSV</span>
-            </button>
-            <button
-              onClick={() => window.print()}
-              className="flex-1 sm:flex-none px-4 py-2.5 bg-amber-500 hover:bg-amber-600 text-black rounded-xl font-black text-xs transition-all flex items-center justify-center gap-2 shadow-lg shadow-amber-500/20"
-            >
-              <Printer className="w-4 h-4" />
-              <span>Print Page</span>
             </button>
           </div>
         </div>
