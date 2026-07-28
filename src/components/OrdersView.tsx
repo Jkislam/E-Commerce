@@ -507,13 +507,13 @@ export default function OrdersView({
   }
 
   return (
-    <div className="space-y-6 max-w-7xl mx-auto">
+    <div className="space-y-6 max-w-7xl mx-auto w-full overflow-hidden">
       {/* 1. Header & Summary Metric Cards */}
-      <div className="bg-slate-900 text-white p-6 rounded-3xl shadow-xl space-y-6">
-        <div className="flex flex-wrap items-center justify-between gap-4 border-b border-white/10 pb-5">
+      <div className="bg-slate-900 text-white p-4 sm:p-6 rounded-3xl shadow-xl space-y-5 sm:space-y-6">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-white/10 pb-5">
           <div className="flex items-center gap-3">
-            <div className="w-12 h-12 rounded-2xl bg-amber-500 text-black flex items-center justify-center font-black shadow-lg shadow-amber-500/20">
-              <ShoppingBag className="w-6 h-6" />
+            <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-2xl bg-amber-500 text-black flex items-center justify-center font-black shadow-lg shadow-amber-500/20 shrink-0">
+              <ShoppingBag className="w-5 h-5 sm:w-6 sm:h-6" />
             </div>
             <div>
               <div className="flex items-center gap-2">
@@ -531,14 +531,14 @@ export default function OrdersView({
           <div className="flex items-center gap-3">
             <button
               onClick={handleExportCSV}
-              className="px-4 py-2.5 bg-white/10 hover:bg-white/20 text-white rounded-xl font-bold text-xs transition-all flex items-center gap-2 border border-white/10"
+              className="flex-1 sm:flex-none px-4 py-2.5 bg-white/10 hover:bg-white/20 text-white rounded-xl font-bold text-xs transition-all flex items-center justify-center gap-2 border border-white/10"
             >
               <FileSpreadsheet className="w-4 h-4 text-emerald-400" />
               <span>Export CSV</span>
             </button>
             <button
               onClick={() => window.print()}
-              className="px-4 py-2.5 bg-amber-500 hover:bg-amber-600 text-black rounded-xl font-black text-xs transition-all flex items-center gap-2 shadow-lg shadow-amber-500/20"
+              className="flex-1 sm:flex-none px-4 py-2.5 bg-amber-500 hover:bg-amber-600 text-black rounded-xl font-black text-xs transition-all flex items-center justify-center gap-2 shadow-lg shadow-amber-500/20"
             >
               <Printer className="w-4 h-4" />
               <span>Print Page</span>
@@ -575,8 +575,8 @@ export default function OrdersView({
         </div>
       </div>
 
-      {/* 2. Status Navigation Tabs */}
-      <div className="bg-white p-2 rounded-2xl border border-black/5 shadow-sm overflow-x-auto custom-scrollbar">
+      {/* 2. Status Navigation Tabs (Desktop) */}
+      <div className="hidden md:block bg-white p-2 rounded-2xl border border-black/5 shadow-sm overflow-x-auto custom-scrollbar">
         <div className="flex items-center gap-1 min-w-max">
           {[
             { id: 'All', label: 'All Orders', count: counts.All },
@@ -612,7 +612,7 @@ export default function OrdersView({
       {/* 3. Search and Filters Bar */}
       <div className="bg-white p-4 rounded-2xl border border-black/5 shadow-sm grid grid-cols-1 md:grid-cols-12 gap-3 items-center">
         {/* Search Input */}
-        <div className="md:col-span-6 relative">
+        <div className="md:col-span-7 relative">
           <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
           <input 
             type="text"
@@ -632,7 +632,7 @@ export default function OrdersView({
         </div>
 
         {/* Payment Method Filter */}
-        <div className="md:col-span-3 relative">
+        <div className="md:col-span-5 relative">
           <select
             value={paymentFilter}
             onChange={(e) => setPaymentFilter(e.target.value)}
@@ -647,19 +647,21 @@ export default function OrdersView({
           <SlidersHorizontal className="absolute right-3.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-slate-400 pointer-events-none" />
         </div>
 
-        {/* Sort By */}
-        <div className="md:col-span-3 relative">
+        {/* Mobile Status Filter (Shown only on Mobile) */}
+        <div className="block md:hidden relative">
           <select
-            value={sortBy}
-            onChange={(e) => setSortBy(e.target.value as any)}
+            value={activeTab}
+            onChange={(e) => setActiveTab(e.target.value as any)}
             className="w-full px-3 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-bold focus:outline-none focus:ring-2 focus:ring-slate-900 appearance-none cursor-pointer"
           >
-            <option value="newest">Sort: Newest First</option>
-            <option value="oldest">Sort: Oldest First</option>
-            <option value="amount-high">Amount: High to Low</option>
-            <option value="amount-low">Amount: Low to High</option>
+            <option value="All">All Orders</option>
+            <option value="Pending">Pending</option>
+            <option value="Processing">Processing</option>
+            <option value="Shipped">In Transit</option>
+            <option value="Delivered">Delivered</option>
+            <option value="Cancelled">Cancelled</option>
           </select>
-          <ArrowUpDown className="absolute right-3.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-slate-400 pointer-events-none" />
+          <SlidersHorizontal className="absolute right-3.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-slate-400 pointer-events-none" />
         </div>
       </div>
 
@@ -684,13 +686,13 @@ export default function OrdersView({
               className="bg-white rounded-2xl border border-black/10 shadow-sm overflow-hidden hover:shadow-md transition-shadow"
             >
               {/* Order Card Header Strip */}
-              <div className="bg-slate-900 text-white px-5 py-3.5 flex flex-wrap items-center justify-between gap-3 border-b border-white/10">
-                <div className="flex items-center gap-3">
-                  <div className="flex items-center gap-1.5">
-                    <span className="text-xs font-mono font-bold text-amber-400">#{order.id}</span>
+              <div className="bg-slate-900 text-white px-3.5 py-3 sm:px-5 sm:py-3.5 flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 sm:gap-3 border-b border-white/10 max-w-full overflow-hidden">
+                <div className="flex flex-wrap items-center gap-2 sm:gap-3 min-w-0">
+                  <div className="flex items-center gap-1.5 shrink-0 max-w-full">
+                    <span className="text-xs font-mono font-bold text-amber-400 truncate max-w-[150px] sm:max-w-xs" title={`#${order.id}`}>#{order.id}</span>
                     <button
                       onClick={() => handleCopy(order.id, `id-${order.id}`)}
-                      className="p-1 hover:bg-white/10 rounded transition-all text-white/60 hover:text-white"
+                      className="p-1 hover:bg-white/10 rounded transition-all text-white/60 hover:text-white shrink-0"
                       title="Copy Order ID"
                     >
                       {copiedId === `id-${order.id}` ? (
@@ -701,68 +703,68 @@ export default function OrdersView({
                     </button>
                   </div>
 
-                  <span className="text-white/30">•</span>
-                  <div className="flex items-center gap-1 text-[11px] text-white/70">
-                    <Calendar className="w-3.5 h-3.5 text-white/40" />
+                  <span className="text-white/30 hidden sm:inline">•</span>
+                  <div className="flex items-center gap-1 text-[11px] text-white/70 shrink-0">
+                    <Calendar className="w-3.5 h-3.5 text-white/40 shrink-0" />
                     <span>{new Date(order.createdat).toLocaleString()}</span>
                   </div>
 
-                  <span className="text-white/30">•</span>
-                  {getPaymentBadge(order.paymentmethod)}
+                  <span className="text-white/30 hidden sm:inline">•</span>
+                  <div className="shrink-0">{getPaymentBadge(order.paymentmethod)}</div>
 
                   {order.transactionid && (
-                    <span className="text-[10px] font-mono bg-white/10 px-2 py-0.5 rounded text-amber-300 font-bold border border-white/10">
+                    <span className="text-[10px] font-mono bg-white/10 px-2 py-0.5 rounded text-amber-300 font-bold border border-white/10 shrink-0 truncate max-w-[140px]">
                       TrxID: {order.transactionid}
                     </span>
                   )}
                 </div>
 
-                <div className="flex items-center gap-3">
+                <div className="flex items-center gap-3 shrink-0 self-start sm:self-center">
                   {getStatusBadge(order.status)}
                 </div>
               </div>
 
               {/* Order Card Body */}
-              <div className="p-5 grid grid-cols-1 md:grid-cols-12 gap-5 items-center">
+              <div className="p-4 sm:p-5 grid grid-cols-1 md:grid-cols-12 gap-4 sm:gap-5 items-start md:items-center">
                 {/* Customer Info (Left) */}
-                <div className="md:col-span-4 space-y-2 border-b md:border-b-0 md:border-r border-slate-100 pb-4 md:pb-0 md:pr-4">
-                  <div className="flex items-center gap-2">
+                <div className="md:col-span-4 space-y-2 border-b md:border-b-0 md:border-r border-slate-100 pb-4 md:pb-0 md:pr-4 min-w-0">
+                  <div className="flex items-center gap-2 min-w-0">
                     <User className="w-4 h-4 text-slate-500 shrink-0" />
                     <span className="text-xs font-black text-slate-900 truncate">{order.customername}</span>
                   </div>
-                  <div className="flex items-center gap-2">
+                  <div className="flex items-center gap-2 min-w-0">
                     <Phone className="w-3.5 h-3.5 text-slate-400 shrink-0" />
-                    <a href={`tel:${order.customerphone}`} className="text-xs font-bold text-slate-700 hover:text-amber-600 transition-colors">
+                    <a href={`tel:${order.customerphone}`} className="text-xs font-bold text-slate-700 hover:text-amber-600 transition-colors truncate">
                       {order.customerphone}
                     </a>
                   </div>
-                  <div className="flex items-start gap-2">
+                  <div className="flex items-start gap-2 min-w-0">
                     <MapPin className="w-3.5 h-3.5 text-slate-400 shrink-0 mt-0.5" />
-                    <p className="text-[11px] text-slate-600 font-medium leading-tight line-clamp-2">
+                    <p className="text-[11px] text-slate-600 font-medium leading-tight line-clamp-2 break-words">
                       {order.customeraddress}
                     </p>
                   </div>
                 </div>
 
                 {/* Purchased Items List (Middle) */}
-                <div className="md:col-span-5 space-y-2.5">
+                <div className="md:col-span-5 space-y-2.5 min-w-0">
                   <div className="text-[10px] font-black uppercase tracking-widest text-slate-400">
                     Items ({order.items.length})
                   </div>
                   <div className="space-y-2 max-h-36 overflow-y-auto custom-scrollbar pr-1">
                     {order.items.map((item, idx) => (
-                      <div key={idx} className="flex items-center gap-3 bg-slate-50 p-2 rounded-xl border border-slate-100">
+                      <div key={idx} className="flex items-center gap-3 bg-slate-50 p-2 rounded-xl border border-slate-100 min-w-0">
                         <div className="w-10 h-10 rounded-lg overflow-hidden bg-white border border-slate-200 shrink-0">
                           <img src={item.image} alt={item.name} className="w-full h-full object-cover" />
                         </div>
                         <div className="flex-1 min-w-0">
                           <p className="text-xs font-bold text-slate-800 truncate">{item.name}</p>
-                          <p className="text-[10px] text-slate-500">
+                          <p className="text-[10px] text-slate-500 truncate">
                             Qty: <strong className="text-slate-900">{item.quantity}</strong>
                             {item.selectedAttr ? ` | ${item.selectedAttr}` : ''}
                           </p>
                         </div>
-                        <span className="text-xs font-black text-slate-900">
+                        <span className="text-xs font-black text-slate-900 shrink-0">
                           ৳{(item.price * item.quantity).toLocaleString()}
                         </span>
                       </div>
@@ -771,8 +773,8 @@ export default function OrdersView({
                 </div>
 
                 {/* Total Price & Quick Action (Right) */}
-                <div className="md:col-span-3 flex flex-col items-end justify-between space-y-3 pt-3 md:pt-0 border-t md:border-t-0 border-slate-100">
-                  <div className="text-right">
+                <div className="md:col-span-3 flex flex-col items-start md:items-end justify-between space-y-3 pt-3 md:pt-0 border-t md:border-t-0 border-slate-100 min-w-0">
+                  <div className="text-left md:text-right">
                     <span className="text-[10px] font-black uppercase tracking-widest text-slate-400">Total Payable</span>
                     <p className="text-xl font-black text-slate-900 mt-0.5">৳{order.total.toLocaleString()}</p>
                   </div>
