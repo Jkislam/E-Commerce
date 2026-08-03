@@ -63,6 +63,8 @@ export default function OrdersView({
         quality: 0.95,
         pixelRatio: 2,
         backgroundColor: '#ffffff',
+        skipFonts: true,
+        fontEmbedCSS: '',
       });
       const link = document.createElement('a');
       link.download = `Invoice-${printInvoiceOrder.id.slice(0, 8)}.png`;
