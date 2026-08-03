@@ -59,12 +59,20 @@ export default function OrdersView({
     if (!invoiceRef.current || !printInvoiceOrder) return;
     try {
       setIsDownloading(true);
-      const dataUrl = await toPng(invoiceRef.current, {
-        quality: 0.95,
+      const element = invoiceRef.current;
+      const dataUrl = await toPng(element, {
+        quality: 0.98,
         pixelRatio: 2,
         backgroundColor: '#ffffff',
         skipFonts: true,
         fontEmbedCSS: '',
+        height: element.scrollHeight,
+        width: element.scrollWidth,
+        style: {
+          maxHeight: 'none',
+          overflow: 'visible',
+          height: `${element.scrollHeight}px`,
+        }
       });
       const link = document.createElement('a');
       link.download = `Invoice-${printInvoiceOrder.id.slice(0, 8)}.png`;
@@ -927,9 +935,11 @@ export default function OrdersView({
                 </div>
               </div>
 
-              {/* Printable Content Area */}
-              <div ref={invoiceRef} className="p-6 sm:p-8 space-y-6 overflow-y-auto custom-scrollbar font-sans text-slate-900 bg-white print:p-0 print:overflow-visible">
-                {/* Store Slip Header */}
+              {/* Printable Content Scrollable Wrapper */}
+              <div className="flex-1 overflow-y-auto custom-scrollbar p-4 sm:p-6 bg-slate-100/60">
+                {/* The actual full-height printable card */}
+                <div ref={invoiceRef} className="p-6 sm:p-8 space-y-6 font-sans text-slate-900 bg-white rounded-2xl border border-slate-200/80 shadow-sm print:p-0 print:border-0 print:shadow-none">
+                  {/* Store Slip Header */}
                 <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 border-b-2 border-slate-900 pb-5">
                   <div className="space-y-1">
                     <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 bg-slate-900 text-amber-400 text-[9px] font-black uppercase tracking-widest rounded-md shadow-sm">
@@ -1055,7 +1065,8 @@ export default function OrdersView({
                   <span>Thank you for shopping with {settings.brandName || 'SABBIR'}!</span>
                 </div>
               </div>
-            </motion.div>
+            </div>
+          </motion.div>
           </div>
         )}
       </AnimatePresence>
