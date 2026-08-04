@@ -3109,13 +3109,15 @@ export default function Admin({
                 Delete ({selectedIds.length})
               </button>
             )}
-            <button 
-              onClick={() => setIsAddingNew(true)}
-              className="hidden sm:flex items-center gap-2 px-5 py-2.5 bg-black text-white rounded-xl font-bold text-sm hover:bg-black/90 transition-all shadow-lg"
-            >
-              <Plus className="w-4 h-4" />
-              Add Product
-            </button>
+            {currentView === 'inventory' && (
+              <button 
+                onClick={() => setIsAddingNew(true)}
+                className="hidden sm:flex items-center gap-2 px-5 py-2.5 bg-black text-white rounded-xl font-bold text-sm hover:bg-black/90 transition-all shadow-lg"
+              >
+                <Plus className="w-4 h-4" />
+                Add Product
+              </button>
+            )}
             <button 
               onClick={handleLogout}
               className="p-2.5 bg-red-50 text-red-600 rounded-xl hover:bg-red-100 transition-colors"
@@ -3808,13 +3810,16 @@ export default function Admin({
         )}
       </AnimatePresence>
 
-      {/* Mobile Add Button */}
-      <button 
-        onClick={() => setIsAddingNew(true)}
-        className="sm:hidden fixed bottom-8 right-8 w-16 h-16 bg-black text-white rounded-full shadow-2xl flex items-center justify-center z-40 active:scale-95 transition-transform"
-      >
-        <Plus className="w-8 h-8" />
-      </button>
+      {/* Mobile Add Button - Only show on Inventory View */}
+      {currentView === 'inventory' && (
+        <button 
+          onClick={() => setIsAddingNew(true)}
+          className="sm:hidden fixed bottom-8 right-8 w-16 h-16 bg-black text-white rounded-full shadow-2xl flex items-center justify-center z-40 active:scale-95 transition-transform"
+          title="Add Product"
+        >
+          <Plus className="w-8 h-8" />
+        </button>
+      )}
     </div>
   );
 }
