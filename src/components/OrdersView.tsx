@@ -950,104 +950,104 @@ export default function OrdersView({
               </div>
 
               {/* Printable Content Scrollable Wrapper */}
-              <div className="flex-1 overflow-y-auto custom-scrollbar p-2.5 sm:p-6 bg-slate-100/60">
-                {/* The actual full-height printable card */}
-                <div ref={invoiceRef} className="max-w-2xl w-full mx-auto p-4 sm:p-8 space-y-4 sm:space-y-6 font-sans text-slate-900 bg-white rounded-xl sm:rounded-2xl border border-slate-200/80 shadow-sm print:p-0 print:border-0 print:shadow-none">
+              <div className="flex-1 overflow-auto custom-scrollbar p-3 sm:p-6 bg-slate-100/60 flex justify-start sm:justify-center items-start">
+                {/* The actual full-height printable card (fixed desktop width for crisp rendering across all devices) */}
+                <div ref={invoiceRef} className="w-[640px] shrink-0 mx-auto p-8 space-y-6 font-sans text-slate-900 bg-white rounded-2xl border border-slate-200/80 shadow-sm print:p-0 print:border-0 print:shadow-none">
                   {/* Store Slip Header */}
-                  <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 sm:gap-4 border-b-2 border-slate-900 pb-4 sm:pb-5">
+                  <div className="flex justify-between items-center gap-4 border-b-2 border-slate-900 pb-5">
                     <div className="space-y-1 min-w-0">
-                      <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 bg-slate-900 text-amber-400 text-[8px] sm:text-[9px] font-black uppercase tracking-widest rounded-md shadow-sm">
-                        <Sparkles className="w-2.5 h-2.5 sm:w-3 sm:h-3" /> SELLER FULFILLMENT SLIP
+                      <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 bg-slate-900 text-amber-400 text-[9px] font-black uppercase tracking-widest rounded-md shadow-sm">
+                        <Sparkles className="w-3 h-3" /> SELLER FULFILLMENT SLIP
                       </span>
-                      <h2 className="text-xl sm:text-2xl font-black text-slate-900 tracking-tight break-words">
+                      <h2 className="text-2xl font-black text-slate-900 tracking-tight break-words">
                         {settings.brandName || 'SABBIR'}
                       </h2>
-                      <p className="text-[11px] sm:text-xs text-slate-500 font-semibold">Official Verified E-Commerce Merchant</p>
+                      <p className="text-xs text-slate-500 font-semibold">Official Verified E-Commerce Merchant</p>
                     </div>
-                    <div className="text-left sm:text-right bg-slate-50 sm:bg-transparent p-2.5 sm:p-0 rounded-xl w-full sm:w-auto shrink-0 border sm:border-0 border-slate-200">
-                      <p className="text-[9px] sm:text-[10px] font-black uppercase tracking-wider text-slate-400">Order Reference</p>
-                      <p className="text-base sm:text-lg font-black font-mono text-amber-600 break-all">#{printInvoiceOrder.id}</p>
-                      <p className="text-[10px] sm:text-[11px] font-bold text-slate-500 mt-0.5">{new Date(printInvoiceOrder.createdat).toLocaleString()}</p>
+                    <div className="text-right shrink-0">
+                      <p className="text-[10px] font-black uppercase tracking-wider text-slate-400">Order Reference</p>
+                      <p className="text-lg font-black font-mono text-amber-600">#{printInvoiceOrder.id}</p>
+                      <p className="text-[11px] font-bold text-slate-500 mt-0.5">{new Date(printInvoiceOrder.createdat).toLocaleString()}</p>
                     </div>
                   </div>
 
                   {/* Simulated Realistic Barcode */}
-                  <div className="bg-slate-50/80 p-3 sm:p-4 rounded-xl sm:rounded-2xl border border-slate-200/80 text-center space-y-1.5">
-                    <div className="flex items-center justify-center gap-[2px] sm:gap-[3px] h-9 sm:h-11 bg-white px-3 sm:px-6 py-2 rounded-lg sm:rounded-xl border border-slate-200 shadow-inner max-w-md mx-auto overflow-hidden">
+                  <div className="bg-slate-50/80 p-4 rounded-2xl border border-slate-200/80 text-center space-y-1.5">
+                    <div className="flex items-center justify-center gap-[3px] h-11 bg-white px-6 py-2 rounded-xl border border-slate-200 shadow-inner max-w-md mx-auto overflow-hidden">
                       {[3,1,2,1,4,1,2,3,1,2,1,3,2,1,4,1,2,1,3,1,2,3,1,2,1,4,1,2,1,3,2,1,2,3,1,2,4,1,2].map((w, i) => (
                         <div 
                           key={i} 
                           className={`h-full ${i % 2 === 1 ? 'bg-transparent' : 'bg-slate-900'}`} 
-                          style={{ width: `${Math.max(1, w * 1.5)}px` }} 
+                          style={{ width: `${w * 2}px` }} 
                         />
                       ))}
                     </div>
-                    <p className="text-[9px] sm:text-[10px] font-mono font-bold tracking-wider sm:tracking-widest text-slate-500 break-all">
+                    <p className="text-[10px] font-mono font-bold tracking-widest text-slate-500">
                       PACKAGE TRACKING BARCODE: #{printInvoiceOrder.id}
                     </p>
                   </div>
 
                   {/* Address Grid */}
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
+                  <div className="grid grid-cols-2 gap-4">
                     {/* Recipient Card */}
-                    <div className="p-3.5 sm:p-4 bg-slate-50/90 border border-slate-200 rounded-xl sm:rounded-2xl space-y-2 min-w-0">
-                      <div className="flex items-center gap-1.5 text-slate-400 text-[9px] sm:text-[10px] font-black uppercase tracking-widest">
+                    <div className="p-4 bg-slate-50/90 border border-slate-200 rounded-2xl space-y-2 min-w-0">
+                      <div className="flex items-center gap-1.5 text-slate-400 text-[10px] font-black uppercase tracking-widest">
                         <User className="w-3.5 h-3.5 text-slate-600 shrink-0" />
-                        <span className="truncate">Recipient</span>
+                        <span>Recipient</span>
                       </div>
                       <div className="min-w-0">
-                        <p className="text-xs sm:text-sm font-black text-slate-900 break-words">{printInvoiceOrder.customername}</p>
-                        <p className="text-[11px] sm:text-xs font-bold text-slate-700 flex items-center gap-1 mt-0.5 break-all">
+                        <p className="text-sm font-black text-slate-900 break-words">{printInvoiceOrder.customername}</p>
+                        <p className="text-xs font-bold text-slate-700 flex items-center gap-1 mt-0.5">
                           <Phone className="w-3 h-3 text-slate-400 shrink-0" /> {printInvoiceOrder.customerphone}
                         </p>
-                        <p className="text-[11px] sm:text-xs text-slate-600 mt-1.5 leading-relaxed font-medium bg-white p-2 sm:p-2.5 rounded-xl border border-slate-200/60 break-words">
+                        <p className="text-xs text-slate-600 mt-1.5 leading-relaxed font-medium bg-white p-2.5 rounded-xl border border-slate-200/60 break-words">
                           {printInvoiceOrder.customeraddress}
                         </p>
                       </div>
                     </div>
 
                     {/* Sender Card (Company Name Only) */}
-                    <div className="p-3.5 sm:p-4 bg-slate-50/90 border border-slate-200 rounded-xl sm:rounded-2xl space-y-2 flex flex-col justify-between min-w-0">
+                    <div className="p-4 bg-slate-50/90 border border-slate-200 rounded-2xl space-y-2 flex flex-col justify-between min-w-0">
                       <div>
-                        <div className="flex items-center gap-1.5 text-slate-400 text-[9px] sm:text-[10px] font-black uppercase tracking-widest">
+                        <div className="flex items-center gap-1.5 text-slate-400 text-[10px] font-black uppercase tracking-widest">
                           <ShoppingBag className="w-3.5 h-3.5 text-amber-500 shrink-0" />
                           <span>Sender</span>
                         </div>
                         <div className="mt-2 min-w-0">
-                          <p className="text-base sm:text-lg font-black text-slate-900 break-words">{settings.brandName || 'SABBIR'}</p>
+                          <p className="text-lg font-black text-slate-900 break-words">{settings.brandName || 'SABBIR'}</p>
                         </div>
                       </div>
                       <div className="pt-2 border-t border-slate-200/60">
-                        <span className="text-[9px] sm:text-[10px] font-bold text-slate-400 uppercase tracking-wider">Store Merchant</span>
+                        <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Store Merchant</span>
                       </div>
                     </div>
                   </div>
 
                   {/* Package Items Table */}
-                  <div className="border border-slate-200 rounded-xl sm:rounded-2xl overflow-x-auto custom-scrollbar shadow-sm">
-                    <table className="w-full min-w-[320px] text-left text-xs border-collapse">
+                  <div className="border border-slate-200 rounded-2xl overflow-hidden shadow-sm">
+                    <table className="w-full text-left text-xs border-collapse">
                       <thead>
-                        <tr className="bg-slate-900 text-white font-black uppercase text-[9px] sm:text-[10px] tracking-wider whitespace-nowrap">
-                          <th className="p-2.5 sm:p-3.5">Product Item</th>
-                          <th className="p-2.5 sm:p-3.5 text-center">Qty</th>
-                          <th className="p-2.5 sm:p-3.5 text-right">Unit Price</th>
-                          <th className="p-2.5 sm:p-3.5 text-right">Total</th>
+                        <tr className="bg-slate-900 text-white font-black uppercase text-[10px] tracking-wider">
+                          <th className="p-3.5">Product Item</th>
+                          <th className="p-3.5 text-center">Qty</th>
+                          <th className="p-3.5 text-right">Unit Price</th>
+                          <th className="p-3.5 text-right">Total</th>
                         </tr>
                       </thead>
                       <tbody className="divide-y divide-slate-200/80 font-medium bg-white">
                         {printInvoiceOrder.items.map((item, idx) => (
                           <tr key={idx} className={idx % 2 === 1 ? 'bg-slate-50/50' : ''}>
-                            <td className="p-2.5 sm:p-3.5">
+                            <td className="p-3.5">
                               <span className="font-black text-slate-900 block text-xs break-words">{item.name}</span>
                               {item.selectedAttr && (
-                                <span className="inline-block mt-0.5 text-[9px] sm:text-[10px] font-bold bg-slate-100 text-slate-600 px-2 py-0.5 rounded">
+                                <span className="inline-block mt-0.5 text-[10px] font-bold bg-slate-100 text-slate-600 px-2 py-0.5 rounded">
                                   {item.selectedAttr}
                                 </span>
                               )}
                             </td>
-                            <td className="p-2.5 sm:p-3.5 text-center font-bold text-slate-900 whitespace-nowrap">{item.quantity}</td>
-                            <td className="p-2.5 sm:p-3.5 text-right text-slate-600 font-semibold whitespace-nowrap">৳{item.price.toLocaleString()}</td>
-                            <td className="p-2.5 sm:p-3.5 text-right font-black text-slate-900 whitespace-nowrap">৳{(item.price * item.quantity).toLocaleString()}</td>
+                            <td className="p-3.5 text-center font-bold text-slate-900">{item.quantity}</td>
+                            <td className="p-3.5 text-right text-slate-600 font-semibold">৳{item.price.toLocaleString()}</td>
+                            <td className="p-3.5 text-right font-black text-slate-900">৳{(item.price * item.quantity).toLocaleString()}</td>
                           </tr>
                         ))}
                       </tbody>
@@ -1055,27 +1055,27 @@ export default function OrdersView({
                   </div>
 
                   {/* Amount to collect banner */}
-                  <div className="p-3.5 sm:p-5 bg-gradient-to-r from-slate-900 to-slate-800 text-white rounded-xl sm:rounded-2xl flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 shadow-lg">
-                    <div className="space-y-1 min-w-0 w-full sm:w-auto">
+                  <div className="p-5 bg-gradient-to-r from-slate-900 to-slate-800 text-white rounded-2xl flex items-center justify-between gap-3 shadow-lg">
+                    <div className="space-y-1 min-w-0">
                       <div className="flex items-center gap-2">
-                        <span className="px-2.5 py-0.5 bg-amber-500 text-black text-[9px] sm:text-[10px] font-black uppercase rounded-md">
+                        <span className="px-2.5 py-0.5 bg-amber-500 text-black text-[10px] font-black uppercase rounded-md">
                           {printInvoiceOrder.paymentmethod}
                         </span>
                       </div>
-                      <p className="text-[11px] sm:text-xs text-slate-300 font-medium leading-relaxed break-words">
+                      <p className="text-xs text-slate-300 font-medium leading-relaxed">
                         {printInvoiceOrder.paymentmethod === 'Cash on Delivery' 
                           ? 'Collect cash payment from recipient upon delivery.' 
                           : `Prepaid Order via ${printInvoiceOrder.paymentmethod} (${printInvoiceOrder.transactionid || 'Verified'})`}
                       </p>
                     </div>
-                    <div className="text-left sm:text-right shrink-0 w-full sm:w-auto border-t sm:border-t-0 border-white/10 pt-2.5 sm:pt-0 flex sm:block justify-between items-center">
-                      <span className="text-[9px] sm:text-[10px] font-black uppercase text-amber-400 tracking-wider block">Total Payable</span>
-                      <p className="text-lg sm:text-2xl font-black text-amber-400">৳{printInvoiceOrder.total.toLocaleString()}</p>
+                    <div className="text-right shrink-0">
+                      <span className="text-[10px] font-black uppercase text-amber-400 tracking-wider block">Total Payable</span>
+                      <p className="text-2xl font-black text-amber-400">৳{printInvoiceOrder.total.toLocaleString()}</p>
                     </div>
                   </div>
 
-                  {/* Footer Tear Line */}
-                  <div className="pt-3 sm:pt-4 border-t border-dashed border-slate-300 flex justify-center items-center text-[9px] sm:text-[10px] text-slate-400 font-semibold text-center">
+                  {/* Footer message */}
+                  <div className="pt-4 border-t border-dashed border-slate-300 flex justify-center items-center text-[10px] text-slate-400 font-semibold text-center">
                     <span>Thank you for shopping with {settings.brandName || 'SABBIR'}!</span>
                   </div>
                 </div>
