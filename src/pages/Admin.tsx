@@ -871,6 +871,7 @@ function AnalyticsView({ orders, products = [], setCurrentView }: { orders: Orde
   const [stats, setStats] = useState({
     totalSales: 0,
     totalOrders: 0,
+    cancelledOrders: 0,
     totalUsers: 0,
     avgOrderValue: 0
   });
@@ -972,13 +973,16 @@ function AnalyticsView({ orders, products = [], setCurrentView }: { orders: Orde
           });
         }
 
-        const totalSales = filteredOrders.reduce((sum, order) => sum + (Number(order.total) || 0), 0);
+        const validOrders = filteredOrders.filter(o => o.status !== 'Cancelled');
+        const cancelledOrders = filteredOrders.filter(o => o.status === 'Cancelled').length;
+        const totalSales = validOrders.reduce((sum, order) => sum + (Number(order.total) || 0), 0);
         const totalOrders = filteredOrders.length;
-        const avgOrderValue = totalOrders > 0 ? Math.round(totalSales / totalOrders) : 0;
+        const avgOrderValue = validOrders.length > 0 ? Math.round(totalSales / validOrders.length) : 0;
 
         setStats({
           totalSales,
           totalOrders,
+          cancelledOrders,
           totalUsers: count || 0,
           avgOrderValue
         });
@@ -993,7 +997,7 @@ function AnalyticsView({ orders, products = [], setCurrentView }: { orders: Orde
             dailyData[slot] = 0;
           });
 
-          filteredOrders.forEach(order => {
+          validOrders.forEach(order => {
             if (!order.createdat) return;
             const parsedDate = new Date(order.createdat);
             if (isNaN(parsedDate.getTime())) return;
@@ -1020,7 +1024,7 @@ function AnalyticsView({ orders, products = [], setCurrentView }: { orders: Orde
             dailyData[key] = 0;
           }
 
-          filteredOrders.forEach(order => {
+          validOrders.forEach(order => {
             if (!order.createdat) return;
             const parsedDate = new Date(order.createdat);
             if (isNaN(parsedDate.getTime())) return;
@@ -1048,7 +1052,7 @@ function AnalyticsView({ orders, products = [], setCurrentView }: { orders: Orde
             dailyData[months[i]] = 0;
           }
 
-          filteredOrders.forEach(order => {
+          validOrders.forEach(order => {
             if (!order.createdat) return;
             const parsedDate = new Date(order.createdat);
             if (isNaN(parsedDate.getTime())) return;
@@ -1079,7 +1083,7 @@ function AnalyticsView({ orders, products = [], setCurrentView }: { orders: Orde
             dailyData[y.toString()] = 0;
           });
 
-          filteredOrders.forEach(order => {
+          validOrders.forEach(order => {
             if (!order.createdat) return;
             const parsedDate = new Date(order.createdat);
             if (isNaN(parsedDate.getTime())) return;
@@ -1127,6 +1131,7 @@ function AnalyticsView({ orders, products = [], setCurrentView }: { orders: Orde
     .filter(order => order.status !== 'Cancelled')
     .reduce((sum, order) => sum + (Number(order.total) || 0), 0);
 
+  const todayCancelledCount = todayOrders.filter(order => order.status === 'Cancelled').length;
   const todayPendingCount = todayOrders.filter(order => order.status === 'Pending').length;
   const todayProcessingCount = todayOrders.filter(order => ['Processing', 'Shipped', 'Delivered'].includes(order.status)).length;
   const todayProgressPercent = todayOrders.length > 0 ? Math.round((todayProcessingCount / todayOrders.length) * 100) : 100;
@@ -1141,6 +1146,7 @@ function AnalyticsView({ orders, products = [], setCurrentView }: { orders: Orde
   const statCards = [
     { title: 'Total Sales', value: `৳${stats.totalSales.toLocaleString()}`, icon: DollarSign, color: 'bg-green-500', action: () => setCurrentView('orders') },
     { title: 'Total Orders', value: stats.totalOrders.toString(), icon: ShoppingBag, color: 'bg-blue-500', action: () => setCurrentView('orders') },
+    { title: 'Cancelled / Deleted', value: stats.cancelledOrders.toString(), icon: XCircle, color: 'bg-rose-500', action: () => setCurrentView('orders') },
     { title: 'Total Users', value: stats.totalUsers.toString(), icon: Users, color: 'bg-amber-500', action: () => setCurrentView('users') },
     { title: 'Average Sales', value: `৳${stats.avgOrderValue.toLocaleString()}`, icon: BarChart3, color: 'bg-purple-500' },
   ];
@@ -1155,7 +1161,7 @@ function AnalyticsView({ orders, products = [], setCurrentView }: { orders: Orde
   return (
     <div className="space-y-8">
       {/* Stats Grid */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-6">
         {statCards.map((stat, idx) => (
           <motion.div
             key={idx}
@@ -1202,7 +1208,7 @@ function AnalyticsView({ orders, products = [], setCurrentView }: { orders: Orde
               </div>
             </div>
 
-            <div className="grid grid-cols-3 gap-4">
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
               <div className="bg-black/[0.02] p-5 rounded-2xl border border-black/5">
                 <p className="text-[10px] font-black text-black/40 uppercase tracking-widest mb-1">Today's Sales</p>
                 <h4 className="text-xl font-black text-green-600">৳{todaySales.toLocaleString()}</h4>
@@ -1214,6 +1220,10 @@ function AnalyticsView({ orders, products = [], setCurrentView }: { orders: Orde
               <div className="bg-black/[0.02] p-5 rounded-2xl border border-black/5">
                 <p className="text-[10px] font-black text-black/40 uppercase tracking-widest mb-1">Pending Today</p>
                 <h4 className="text-xl font-black text-amber-600">{todayPendingCount}</h4>
+              </div>
+              <div className="bg-black/[0.02] p-5 rounded-2xl border border-black/5">
+                <p className="text-[10px] font-black text-black/40 uppercase tracking-widest mb-1">Cancelled Today</p>
+                <h4 className="text-xl font-black text-rose-600">{todayCancelledCount}</h4>
               </div>
             </div>
           </div>
