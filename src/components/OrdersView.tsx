@@ -100,6 +100,14 @@ export default function OrdersView({
     .filter(o => o.status !== 'Cancelled')
     .reduce((sum, o) => sum + o.total, 0);
 
+  // Helper to extract timestamp from order createdat safely
+  const getOrderTimestamp = (order: Order): number => {
+    const rawDate = order.createdat || (order as any).created_at || (order as any).createdAt;
+    if (!rawDate) return 0;
+    const time = new Date(rawDate).getTime();
+    return isNaN(time) ? 0 : time;
+  };
+
   // Filter and Sort logic
   const filteredOrders = orders.filter(order => {
     // Status filter
@@ -126,10 +134,20 @@ export default function OrdersView({
     return true;
   }).sort((a, b) => {
     if (sortBy === 'newest') {
-      return new Date(b.createdat).getTime() - new Date(a.createdat).getTime();
+      const timeA = getOrderTimestamp(a);
+      const timeB = getOrderTimestamp(b);
+      if (timeA !== timeB) {
+        return timeB - timeA;
+      }
+      return String(b.id).localeCompare(String(a.id), undefined, { numeric: true, sensitivity: 'base' });
     }
     if (sortBy === 'oldest') {
-      return new Date(a.createdat).getTime() - new Date(b.createdat).getTime();
+      const timeA = getOrderTimestamp(a);
+      const timeB = getOrderTimestamp(b);
+      if (timeA !== timeB) {
+        return timeA - timeB;
+      }
+      return String(a.id).localeCompare(String(b.id), undefined, { numeric: true, sensitivity: 'base' });
     }
     if (sortBy === 'amount-high') {
       return b.total - a.total;
