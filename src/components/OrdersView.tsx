@@ -309,13 +309,13 @@ export default function OrdersView({
             </button>
             <button 
               onClick={() => {
-                if (window.confirm('Are you sure you want to delete this order?')) {
+                if (window.confirm(`আপনি কি নিশ্চিত যে আপনি অর্ডার #${selectedOrder.id} ডিলিট করতে চান?`)) {
                   onDeleteOrder(selectedOrder.id);
                   setSelectedOrder(null);
-                  setSuccessMessage('Order deleted successfully.');
+                  setSuccessMessage('অর্ডার সফলভাবে ডিলিট করা হয়েছে।');
                 }
               }}
-              className="p-2.5 bg-rose-500/20 text-rose-300 hover:bg-rose-500 hover:text-white rounded-xl transition-all"
+              className="p-2.5 bg-rose-500/20 text-rose-300 hover:bg-rose-500 hover:text-white rounded-xl transition-all cursor-pointer"
               title="Delete Order"
             >
               <Trash2 className="w-4 h-4" />
@@ -880,12 +880,12 @@ export default function OrdersView({
 
                     <button
                       onClick={() => {
-                        if (window.confirm(`Are you sure you want to delete order #${order.id}?`)) {
+                        if (window.confirm(`আপনি কি নিশ্চিত যে আপনি অর্ডার #${order.id} ডিলিট করতে চান?`)) {
                           onDeleteOrder(order.id);
-                          setSuccessMessage(`Order #${order.id} deleted.`);
+                          setSuccessMessage(`অর্ডার #${order.id} সফলভাবে ডিলিট করা হয়েছে।`);
                         }
                       }}
-                      className="p-2 bg-rose-50 text-rose-500 hover:bg-rose-500 hover:text-white rounded-xl transition-all"
+                      className="p-2 bg-rose-50 text-rose-500 hover:bg-rose-500 hover:text-white rounded-xl transition-all cursor-pointer border border-rose-200/60"
                       title="Delete Order"
                     >
                       <Trash2 className="w-4 h-4" />

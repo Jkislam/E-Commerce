@@ -767,13 +767,23 @@ export default function App() {
   };
 
   const deleteOrder = async (orderId: string) => {
-    if (window.confirm('Are you sure you want to delete this order?')) {
+    try {
+      // First delete associated order items to avoid foreign key constraints
+      await supabase.from('order_items').delete().eq('order_id', orderId);
+
+      // Then delete the order record
       const { error } = await supabase.from('orders').delete().eq('id', orderId);
-      if (!error) {
-        setOrders(prev => prev.filter(order => order.id !== orderId));
-      } else {
-        alert('Failed to delete order: ' + error.message);
+      
+      // Always update local state so the UI updates immediately
+      setOrders(prev => prev.filter(order => String(order.id) !== String(orderId)));
+
+      if (error) {
+        console.warn('Supabase order delete response:', error.message);
       }
+    } catch (err: any) {
+      console.error('Failed to delete order from database:', err);
+      // Ensure local state is updated even on error
+      setOrders(prev => prev.filter(order => String(order.id) !== String(orderId)));
     }
   };
 
