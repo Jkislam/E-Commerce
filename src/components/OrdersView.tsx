@@ -955,16 +955,16 @@ export default function OrdersView({
         )}
       </div>
 
-      {/* 5. Pagination Bar (Exact design with blue square boxes and Next button) */}
+      {/* 5. Pagination Bar (Styled to match website's dark slate & amber theme) */}
       {filteredOrders.length > 0 && (
         <motion.div 
           initial={{ opacity: 0, y: 15 }}
           animate={{ opacity: 1, y: 0 }}
-          className="bg-[#020570] text-white p-4 sm:p-5 rounded-2xl border border-blue-900/80 shadow-xl flex flex-col sm:flex-row items-center justify-between gap-4 overflow-hidden"
+          className="bg-slate-900 text-white p-4 sm:p-5 rounded-2xl border border-slate-800 shadow-xl flex flex-col sm:flex-row items-center justify-between gap-4 overflow-hidden"
         >
-          <div className="text-xs font-semibold text-blue-200">
+          <div className="text-xs font-medium text-slate-300">
             মোট <span className="font-bold text-white">{filteredOrders.length}</span> টি অর্ডারের মধ্যে{' '}
-            <span className="font-bold text-amber-300">
+            <span className="font-bold text-amber-400">
               {startIndex + 1} - {Math.min(startIndex + ITEMS_PER_PAGE, filteredOrders.length)}
             </span>{' '}
             দেখানো হচ্ছে (পৃষ্ঠা <span className="font-bold text-white">{safeCurrentPage}</span> / {totalPages})
@@ -975,7 +975,7 @@ export default function OrdersView({
             <button
               onClick={() => handlePageChange(safeCurrentPage - 1)}
               disabled={safeCurrentPage <= 1}
-              className="px-3 py-1.5 border border-blue-500/80 rounded-sm text-xs font-bold bg-blue-900/60 text-white hover:bg-blue-600 disabled:opacity-30 disabled:pointer-events-none transition-all cursor-pointer shrink-0"
+              className="px-3 py-1.5 border border-slate-700 rounded-lg text-xs font-bold bg-slate-800/80 text-slate-200 hover:bg-slate-700 hover:text-white disabled:opacity-30 disabled:pointer-events-none transition-all cursor-pointer shrink-0"
               title="Previous Page"
             >
               Prev
@@ -985,7 +985,7 @@ export default function OrdersView({
             {getPageNumbers().map((p, i) => {
               if (p === '...') {
                 return (
-                  <span key={`ellipsis-${i}`} className="px-2 py-1 text-xs font-bold text-blue-300 shrink-0 select-none">
+                  <span key={`ellipsis-${i}`} className="px-2 py-1 text-xs font-bold text-slate-500 shrink-0 select-none">
                     ...
                   </span>
                 );
@@ -996,10 +996,10 @@ export default function OrdersView({
                 <button
                   key={`page-${pageNum}`}
                   onClick={() => handlePageChange(pageNum)}
-                  className={`min-w-[32px] h-8 px-2 border text-xs font-bold rounded-sm flex items-center justify-center transition-all cursor-pointer shrink-0 ${
+                  className={`min-w-[34px] h-8 px-2 border text-xs font-bold rounded-lg flex items-center justify-center transition-all cursor-pointer shrink-0 ${
                     isActive
-                      ? 'bg-blue-600 border-blue-400 text-white shadow-md font-black ring-2 ring-blue-300'
-                      : 'border-blue-500/80 bg-blue-950/60 text-white hover:bg-blue-700/80'
+                      ? 'bg-amber-500 border-amber-400 text-slate-950 font-black shadow-md ring-2 ring-amber-400/30'
+                      : 'border-slate-700 bg-slate-800/60 text-slate-300 hover:bg-slate-700 hover:text-white hover:border-slate-600'
                   }`}
                 >
                   {pageNum}
@@ -1011,7 +1011,7 @@ export default function OrdersView({
             <button
               onClick={() => handlePageChange(safeCurrentPage + 1)}
               disabled={safeCurrentPage >= totalPages}
-              className="px-3 py-1.5 border border-blue-400/80 rounded-sm text-xs font-bold bg-blue-600 text-white hover:bg-blue-500 disabled:opacity-30 disabled:pointer-events-none transition-all cursor-pointer shrink-0 shadow-sm"
+              className="px-3.5 py-1.5 border border-amber-500/80 rounded-lg text-xs font-bold bg-amber-500 text-slate-950 hover:bg-amber-400 disabled:opacity-30 disabled:pointer-events-none transition-all cursor-pointer shrink-0 shadow-sm"
               title="Next Page"
             >
               Next
