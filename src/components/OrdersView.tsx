@@ -48,6 +48,8 @@ export default function OrdersView({
   const [activeTab, setActiveTab] = useState<'All' | 'Pending' | 'Processing' | 'Shipped' | 'Delivered' | 'Cancelled'>('All');
   const [paymentFilter, setPaymentFilter] = useState<string>('All');
   const [sortBy, setSortBy] = useState<'newest' | 'oldest' | 'amount-high' | 'amount-low'>('newest');
+  const [currentPage, setCurrentPage] = useState<number>(1);
+  const ITEMS_PER_PAGE = 20;
   
   const [selectedOrder, setSelectedOrder] = useState<Order | null>(null);
   const [printInvoiceOrder, setPrintInvoiceOrder] = useState<Order | null>(null);
@@ -157,6 +159,46 @@ export default function OrdersView({
     }
     return 0;
   });
+
+  // Pagination Calculations
+  const totalPages = Math.ceil(filteredOrders.length / ITEMS_PER_PAGE) || 1;
+  const safeCurrentPage = Math.min(Math.max(currentPage, 1), totalPages);
+  const startIndex = (safeCurrentPage - 1) * ITEMS_PER_PAGE;
+  const paginatedOrders = filteredOrders.slice(startIndex, startIndex + ITEMS_PER_PAGE);
+
+  const getPageNumbers = () => {
+    const pages: (number | string)[] = [];
+    if (totalPages <= 7) {
+      for (let i = 1; i <= totalPages; i++) pages.push(i);
+    } else {
+      pages.push(1);
+
+      if (safeCurrentPage > 4) {
+        pages.push('...');
+      }
+
+      const start = Math.max(2, safeCurrentPage - 1);
+      const end = Math.min(totalPages - 1, safeCurrentPage + 1);
+
+      for (let i = start; i <= end; i++) {
+        if (!pages.includes(i)) pages.push(i);
+      }
+
+      if (safeCurrentPage < totalPages - 3) {
+        pages.push('...');
+      }
+
+      if (!pages.includes(totalPages)) {
+        pages.push(totalPages);
+      }
+    }
+    return pages;
+  };
+
+  const handlePageChange = (page: number) => {
+    setCurrentPage(page);
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
 
   // Export CSV function
   const handleExportCSV = () => {
@@ -642,7 +684,10 @@ export default function OrdersView({
             return (
               <button
                 key={tab.id}
-                onClick={() => setActiveTab(tab.id as any)}
+                onClick={() => {
+                  setActiveTab(tab.id as any);
+                  setCurrentPage(1);
+                }}
                 className={`px-4 py-2.5 rounded-xl text-xs font-bold transition-all flex items-center gap-2 cursor-pointer ${
                   isActive
                     ? 'bg-slate-900 text-white shadow-md font-black'
@@ -676,12 +721,18 @@ export default function OrdersView({
             type="text"
             placeholder="Search Order ID, Customer Name, Phone, TrxID..."
             value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
+            onChange={(e) => {
+              setSearchTerm(e.target.value);
+              setCurrentPage(1);
+            }}
             className="w-full pl-11 pr-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-bold focus:outline-none focus:ring-2 focus:ring-slate-900 transition-all"
           />
           {searchTerm && (
             <button 
-              onClick={() => setSearchTerm('')} 
+              onClick={() => {
+                setSearchTerm('');
+                setCurrentPage(1);
+              }} 
               className="absolute right-3 top-1/2 -translate-y-1/2 text-xs font-bold text-slate-400 hover:text-slate-700"
             >
               Clear
@@ -693,7 +744,10 @@ export default function OrdersView({
         <div className="md:col-span-5 relative">
           <select
             value={paymentFilter}
-            onChange={(e) => setPaymentFilter(e.target.value)}
+            onChange={(e) => {
+              setPaymentFilter(e.target.value);
+              setCurrentPage(1);
+            }}
             className="w-full px-3 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-bold focus:outline-none focus:ring-2 focus:ring-slate-900 appearance-none cursor-pointer"
           >
             <option value="All">All Payment Methods</option>
@@ -709,7 +763,10 @@ export default function OrdersView({
         <div className="block md:hidden relative">
           <select
             value={activeTab}
-            onChange={(e) => setActiveTab(e.target.value as any)}
+            onChange={(e) => {
+              setActiveTab(e.target.value as any);
+              setCurrentPage(1);
+            }}
             className="w-full px-3 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-bold focus:outline-none focus:ring-2 focus:ring-slate-900 appearance-none cursor-pointer"
           >
             <option value="All">All Orders</option>
@@ -741,7 +798,7 @@ export default function OrdersView({
             </p>
           </motion.div>
         ) : (
-          filteredOrders.map((order, idx) => (
+          paginatedOrders.map((order, idx) => (
             <motion.div
               key={order.id}
               initial={{ opacity: 0, y: 25, scale: 0.98 }}
@@ -898,7 +955,72 @@ export default function OrdersView({
         )}
       </div>
 
-      {/* 5. Shipping Label / Invoice Printable Modal */}
+      {/* 5. Pagination Bar (Exact design with blue square boxes and Next button) */}
+      {filteredOrders.length > 0 && (
+        <motion.div 
+          initial={{ opacity: 0, y: 15 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="bg-[#020570] text-white p-4 sm:p-5 rounded-2xl border border-blue-900/80 shadow-xl flex flex-col sm:flex-row items-center justify-between gap-4 overflow-hidden"
+        >
+          <div className="text-xs font-semibold text-blue-200">
+            মোট <span className="font-bold text-white">{filteredOrders.length}</span> টি অর্ডারের মধ্যে{' '}
+            <span className="font-bold text-amber-300">
+              {startIndex + 1} - {Math.min(startIndex + ITEMS_PER_PAGE, filteredOrders.length)}
+            </span>{' '}
+            দেখানো হচ্ছে (পৃষ্ঠা <span className="font-bold text-white">{safeCurrentPage}</span> / {totalPages})
+          </div>
+
+          <div className="flex items-center gap-1.5 overflow-x-auto max-w-full custom-scrollbar py-1">
+            {/* Previous Button */}
+            <button
+              onClick={() => handlePageChange(safeCurrentPage - 1)}
+              disabled={safeCurrentPage <= 1}
+              className="px-3 py-1.5 border border-blue-500/80 rounded-sm text-xs font-bold bg-blue-900/60 text-white hover:bg-blue-600 disabled:opacity-30 disabled:pointer-events-none transition-all cursor-pointer shrink-0"
+              title="Previous Page"
+            >
+              Prev
+            </button>
+
+            {/* Page Number Boxes */}
+            {getPageNumbers().map((p, i) => {
+              if (p === '...') {
+                return (
+                  <span key={`ellipsis-${i}`} className="px-2 py-1 text-xs font-bold text-blue-300 shrink-0 select-none">
+                    ...
+                  </span>
+                );
+              }
+              const pageNum = p as number;
+              const isActive = pageNum === safeCurrentPage;
+              return (
+                <button
+                  key={`page-${pageNum}`}
+                  onClick={() => handlePageChange(pageNum)}
+                  className={`min-w-[32px] h-8 px-2 border text-xs font-bold rounded-sm flex items-center justify-center transition-all cursor-pointer shrink-0 ${
+                    isActive
+                      ? 'bg-blue-600 border-blue-400 text-white shadow-md font-black ring-2 ring-blue-300'
+                      : 'border-blue-500/80 bg-blue-950/60 text-white hover:bg-blue-700/80'
+                  }`}
+                >
+                  {pageNum}
+                </button>
+              );
+            })}
+
+            {/* Next Button */}
+            <button
+              onClick={() => handlePageChange(safeCurrentPage + 1)}
+              disabled={safeCurrentPage >= totalPages}
+              className="px-3 py-1.5 border border-blue-400/80 rounded-sm text-xs font-bold bg-blue-600 text-white hover:bg-blue-500 disabled:opacity-30 disabled:pointer-events-none transition-all cursor-pointer shrink-0 shadow-sm"
+              title="Next Page"
+            >
+              Next
+            </button>
+          </div>
+        </motion.div>
+      )}
+
+      {/* 6. Shipping Label / Invoice Printable Modal */}
       <AnimatePresence>
         {printInvoiceOrder && (
           <div className="fixed inset-0 z-[100] flex items-center justify-center p-2 sm:p-4 overflow-hidden">
