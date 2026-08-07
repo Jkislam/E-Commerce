@@ -66,23 +66,46 @@ export default function OrdersView({
     try {
       setIsDownloading(true);
       const element = refToUse.current;
+
+      // Ensure full unclipped scroll dimensions are captured
+      const width = Math.max(element.scrollWidth, element.offsetWidth, 640);
+      const height = Math.max(element.scrollHeight, element.offsetHeight, 700);
+
       const dataUrl = await toPng(element, {
-        quality: 0.98,
+        width,
+        height,
+        canvasWidth: width * 2,
+        canvasHeight: height * 2,
+        quality: 1,
         backgroundColor: '#ffffff',
         cacheBust: true,
         skipFonts: true,
         fontEmbedCSS: '',
+        style: {
+          transform: 'none',
+          margin: '0',
+          maxHeight: 'none',
+          maxWidth: 'none',
+          width: `${width}px`,
+          height: `${height}px`,
+          overflow: 'visible',
+          position: 'static',
+        },
       });
       const link = document.createElement('a');
-      link.download = `Invoice-${orderToPrint.id.slice(0, 8)}.png`;
+      link.download = `Shipping-Label-${orderToPrint.id.slice(0, 8)}.png`;
       link.href = dataUrl;
       link.click();
-      setSuccessMessage('Invoice downloaded successfully as image!');
+      setSuccessMessage('Shipping label downloaded successfully as full image!');
     } catch (err) {
       console.error('Failed to download invoice image:', err);
     } finally {
       setIsDownloading(false);
     }
+  };
+
+  const handlePrintDirect = () => {
+    window.print();
   };
 
   const renderShippingLabelContent = (orderToPrint: Order, refToUse: React.RefObject<HTMLDivElement | null>) => (
@@ -519,9 +542,16 @@ export default function OrdersView({
                 </div>
                 <div className="flex items-center gap-2">
                   <button
+                    onClick={handlePrintDirect}
+                    className="px-3 py-1.5 bg-slate-800 text-white font-bold rounded-lg text-xs hover:bg-slate-700 border border-slate-700 transition-colors flex items-center gap-1.5 cursor-pointer"
+                    title="Print via Printer"
+                  >
+                    <Printer className="w-3.5 h-3.5 text-amber-400" /> Print
+                  </button>
+                  <button
                     onClick={() => handleDownloadInvoice(selectedOrder, detailsInvoiceRef)}
                     disabled={isDownloading}
-                    className="px-3 py-1.5 bg-amber-500 text-black font-bold rounded-lg text-xs hover:bg-amber-400 transition-colors flex items-center gap-1.5 cursor-pointer"
+                    className="px-3 py-1.5 bg-amber-500 text-black font-bold rounded-lg text-xs hover:bg-amber-400 transition-colors flex items-center gap-1.5 cursor-pointer disabled:opacity-50"
                   >
                     {isDownloading ? (
                       <>
@@ -530,7 +560,7 @@ export default function OrdersView({
                       </>
                     ) : (
                       <>
-                        <Download className="w-3.5 h-3.5" /> Print Invoice
+                        <Download className="w-3.5 h-3.5" /> Download PNG
                       </>
                     )}
                   </button>
@@ -1222,6 +1252,13 @@ export default function OrdersView({
                 </div>
                 <div className="flex items-center gap-1.5 sm:gap-2 shrink-0">
                   <button
+                    onClick={handlePrintDirect}
+                    className="px-2.5 sm:px-3 py-1.5 bg-slate-800 text-white font-bold rounded-lg text-[11px] sm:text-xs hover:bg-slate-700 border border-slate-700 transition-colors flex items-center gap-1 sm:gap-1.5 cursor-pointer"
+                    title="Print via Printer"
+                  >
+                    <Printer className="w-3.5 h-3.5 text-amber-400" /> Print
+                  </button>
+                  <button
                     onClick={() => handleDownloadInvoice(printInvoiceOrder, invoiceRef)}
                     disabled={isDownloading}
                     className="px-2.5 sm:px-3 py-1.5 bg-amber-500 text-black font-bold rounded-lg text-[11px] sm:text-xs hover:bg-amber-400 transition-colors flex items-center gap-1 sm:gap-1.5 disabled:opacity-50 cursor-pointer whitespace-nowrap"
@@ -1234,7 +1271,7 @@ export default function OrdersView({
                       </>
                     ) : (
                       <>
-                        <Download className="w-3.5 h-3.5" /> Print Invoice
+                        <Download className="w-3.5 h-3.5" /> Download PNG
                       </>
                     )}
                   </button>
