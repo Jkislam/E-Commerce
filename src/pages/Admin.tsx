@@ -2278,10 +2278,7 @@ function UsersView({ setSuccessMessage }: { setSuccessMessage: (msg: string) => 
   const [users, setUsers] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
-  const [updatingId, setUpdatingId] = useState<string | null>(null);
   const [currentPage, setCurrentPage] = useState<number>(1);
-  const [showRlsModal, setShowRlsModal] = useState(false);
-  const [copiedSql, setCopiedSql] = useState(false);
   const ITEMS_PER_PAGE = 20;
 
   useEffect(() => {
@@ -2296,15 +2293,7 @@ function UsersView({ setSuccessMessage }: { setSuccessMessage: (msg: string) => 
         .order('created_at', { ascending: false });
       
       if (error) throw error;
-
-      // Merge with local storage role overrides for seamless persistence
-      const localRoles = JSON.parse(localStorage.getItem('local_user_roles') || '{}');
-      const merged = (data || []).map((u: any) => {
-        const localRole = localRoles[u.id] || (u.email && localRoles[u.email]);
-        return localRole ? { ...u, role: localRole } : u;
-      });
-
-      setUsers(merged);
+      setUsers(data || []);
     } catch (err: any) {
       const msg = err?.message || String(err);
       if (msg.includes('Failed to fetch') || msg.includes('network')) {
@@ -2314,91 +2303,6 @@ function UsersView({ setSuccessMessage }: { setSuccessMessage: (msg: string) => 
       }
     } finally {
       setLoading(false);
-    }
-  };
-
-  const handleRoleChange = async (userObj: any, newRole: string) => {
-    const userId = typeof userObj === 'string' ? userObj : userObj?.id;
-    const userEmail = typeof userObj === 'object' ? userObj?.email : users.find(u => u.id === userId)?.email;
-    
-    const targetKey = userId || userEmail;
-    if (!targetKey) return;
-
-    setUpdatingId(targetKey);
-
-    // 1. Save in local storage immediately
-    try {
-      const localRoles = JSON.parse(localStorage.getItem('local_user_roles') || '{}');
-      if (userId) localRoles[userId] = newRole;
-      if (userEmail) localRoles[userEmail] = newRole;
-      localStorage.setItem('local_user_roles', JSON.stringify(localRoles));
-    } catch (e) {}
-
-    // 2. Update local state immediately for smooth UI transition
-    setUsers(prev => prev.map(u => (u.id === userId || (userEmail && u.email === userEmail)) ? { ...u, role: newRole } : u));
-
-    try {
-      let rowsUpdated = false;
-      let lastError: any = null;
-
-      // 1. First attempt: Update by ID in profiles table
-      if (userId) {
-        const { data, error } = await supabase
-          .from('profiles')
-          .update({ role: newRole })
-          .eq('id', userId)
-          .select();
-        
-        if (error) lastError = error;
-        if (!error && data && data.length > 0) {
-          rowsUpdated = true;
-        }
-      }
-
-      // 2. Second attempt: Update by Email in profiles table if ID update didn't affect any rows
-      if (!rowsUpdated && userEmail) {
-        const { data, error } = await supabase
-          .from('profiles')
-          .update({ role: newRole })
-          .eq('email', userEmail)
-          .select();
-
-        if (error) lastError = error;
-        if (!error && data && data.length > 0) {
-          rowsUpdated = true;
-        }
-      }
-
-      // 3. Third attempt: Upsert if record was missing in profiles table
-      if (!rowsUpdated) {
-        const payload: any = { role: newRole };
-        if (userId) payload.id = userId;
-        if (userEmail) payload.email = userEmail;
-
-        const { error: upsertErr } = await supabase
-          .from('profiles')
-          .upsert(payload, { onConflict: userId ? 'id' : 'email' });
-
-        if (upsertErr) {
-          lastError = upsertErr;
-        } else {
-          rowsUpdated = true;
-        }
-      }
-
-      if (lastError && (lastError.code === '42501' || String(lastError.message).includes('row-level security'))) {
-        console.warn('Supabase RLS restriction detected on profiles table:', lastError.message);
-        setShowRlsModal(true);
-        setSuccessMessage(`ইউজার রোল "${newRole === 'admin' ? 'Admin' : 'User'}" আপডেট করা হয়েছে।`);
-      } else {
-        setSuccessMessage(`ইউজার রোল সফল ভাবে "${newRole === 'admin' ? 'Admin' : 'User'}" হিসেবে আপডেট করা হয়েছে।`);
-      }
-    } catch (err: any) {
-      console.error('Error updating role in Supabase:', err);
-      setShowRlsModal(true);
-      setSuccessMessage(`ইউজার রোল "${newRole === 'admin' ? 'Admin' : 'User'}" আপডেট করা হয়েছে।`);
-    } finally {
-      setUpdatingId(null);
     }
   };
 
@@ -2480,7 +2384,6 @@ function UsersView({ setSuccessMessage }: { setSuccessMessage: (msg: string) => 
                 <th className="px-6 py-4 text-[10px] font-black uppercase tracking-widest text-black/40">User</th>
                 <th className="px-6 py-4 text-[10px] font-black uppercase tracking-widest text-black/40">Email</th>
                 <th className="px-6 py-4 text-[10px] font-black uppercase tracking-widest text-black/40">Role</th>
-                <th className="px-6 py-4 text-[10px] font-black uppercase tracking-widest text-black/40 text-right">Actions</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-black/5">
@@ -2508,24 +2411,6 @@ function UsersView({ setSuccessMessage }: { setSuccessMessage: (msg: string) => 
                     <span className={`px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-widest ${user.role === 'admin' ? 'bg-black text-white' : 'bg-black/5 text-black/40'}`}>
                       {user.role || 'customer'}
                     </span>
-                  </td>
-                  <td className="px-6 py-4 text-right">
-                    <div className="inline-flex items-center bg-black/5 p-1 rounded-xl">
-                      <button 
-                        disabled={updatingId === user.id || updatingId === user.email}
-                        onClick={() => handleRoleChange(user, 'customer')}
-                        className={`px-3 py-1.5 rounded-lg text-[10px] font-black uppercase tracking-widest transition-all cursor-pointer ${user.role !== 'admin' ? 'bg-white text-black shadow-sm' : 'text-black/40 hover:text-black'}`}
-                      >
-                        User
-                      </button>
-                      <button 
-                        disabled={updatingId === user.id || updatingId === user.email}
-                        onClick={() => handleRoleChange(user, 'admin')}
-                        className={`px-3 py-1.5 rounded-lg text-[10px] font-black uppercase tracking-widest transition-all cursor-pointer ${user.role === 'admin' ? 'bg-white text-black shadow-sm' : 'text-black/40 hover:text-black'}`}
-                      >
-                        Admin
-                      </button>
-                    </div>
                   </td>
                 </tr>
               ))}
@@ -2564,26 +2449,10 @@ function UsersView({ setSuccessMessage }: { setSuccessMessage: (msg: string) => 
               </div>
             </div>
             
-            <div className="flex items-center justify-between pt-4 border-t border-black/5 gap-3">
+            <div className="pt-4 border-t border-black/5">
               <p className="text-[9px] font-black uppercase tracking-[0.15em] text-black/20">
                 Member since {new Date(user.created_at).toLocaleDateString()}
               </p>
-              <div className="flex items-center bg-black/5 p-1 rounded-xl">
-                <button 
-                  disabled={updatingId === user.id || updatingId === user.email}
-                  onClick={() => handleRoleChange(user, 'customer')}
-                  className={`px-3 py-1.5 rounded-lg text-[9px] font-black uppercase tracking-widest transition-all cursor-pointer ${user.role !== 'admin' ? 'bg-white text-black shadow-sm' : 'text-black/40'}`}
-                >
-                  User
-                </button>
-                <button 
-                  disabled={updatingId === user.id || updatingId === user.email}
-                  onClick={() => handleRoleChange(user, 'admin')}
-                  className={`px-3 py-1.5 rounded-lg text-[9px] font-black uppercase tracking-widest transition-all cursor-pointer ${user.role === 'admin' ? 'bg-white text-black shadow-sm' : 'text-black/40'}`}
-                >
-                  Admin
-                </button>
-              </div>
             </div>
           </motion.div>
         ))}
@@ -2644,68 +2513,6 @@ function UsersView({ setSuccessMessage }: { setSuccessMessage: (msg: string) => 
             </button>
           </div>
         </motion.div>
-      )}
-
-      {/* Supabase RLS Fix Modal */}
-      {showRlsModal && (
-        <div className="fixed inset-0 z-[200] flex items-center justify-center p-4 bg-black/60 backdrop-blur-xs">
-          <motion.div 
-            initial={{ opacity: 0, scale: 0.95 }}
-            animate={{ opacity: 1, scale: 1 }}
-            className="bg-white rounded-3xl p-6 sm:p-8 max-w-lg w-full shadow-2xl border border-slate-200"
-          >
-            <div className="flex items-center justify-between mb-4">
-              <div className="flex items-center gap-3 text-amber-600">
-                <AlertTriangle className="w-7 h-7 shrink-0" />
-                <h3 className="text-lg font-black text-slate-900">Supabase RLS Policy নোটিশ</h3>
-              </div>
-              <button 
-                onClick={() => setShowRlsModal(false)}
-                className="text-slate-400 hover:text-slate-700 font-bold text-lg cursor-pointer"
-              >
-                ✕
-              </button>
-            </div>
-
-            <p className="text-xs text-slate-600 leading-relaxed mb-4">
-              ইউজার রোল লোকালি <strong>সফলভাবে আপডেট করা হয়েছে</strong>। কিন্তু আপনার Supabase ডাটাবেজের <code className="bg-slate-100 px-1.5 py-0.5 rounded text-slate-900 font-mono">profiles</code> টেবিলে <strong>Row-Level Security (RLS)</strong> সক্রিয় থাকায় সরাসরি অনলাইন ডাটাবেজে পারমিশন রাইট ব্লক হচ্ছে।
-            </p>
-
-            <div className="bg-slate-900 text-slate-100 p-4 rounded-2xl mb-4 text-xs font-mono relative overflow-hidden group">
-              <p className="text-amber-400 text-[10px] uppercase font-sans font-bold tracking-wider mb-1.5">
-                Supabase SQL Editor এ এই ১ টি লাইন কমান্ড রান করুন:
-              </p>
-              <code className="block select-all text-emerald-400 font-bold whitespace-pre-wrap">
-                ALTER TABLE public.profiles DISABLE ROW LEVEL SECURITY;
-              </code>
-              
-              <button
-                onClick={() => {
-                  navigator.clipboard.writeText('ALTER TABLE public.profiles DISABLE ROW LEVEL SECURITY;');
-                  setCopiedSql(true);
-                  setTimeout(() => setCopiedSql(false), 2000);
-                }}
-                className="mt-3 px-3 py-1.5 bg-amber-500 hover:bg-amber-400 text-slate-950 font-sans font-bold rounded-xl text-xs flex items-center gap-1.5 cursor-pointer transition-all"
-              >
-                {copiedSql ? <Check className="w-3.5 h-3.5" /> : <Copy className="w-3.5 h-3.5" />}
-                {copiedSql ? 'কপি হয়েছে!' : 'SQL কোড কপি করুন'}
-              </button>
-            </div>
-
-            <p className="text-[11px] text-slate-500 mb-5">
-              💡 এটি রান করলে Supabase থেকে সরাসরি যেকোনো ইউজারের Admin / User রোল পরিবর্তন কাজ করবে।
-            </p>
-
-            <div className="flex justify-end">
-              <button
-                onClick={() => setShowRlsModal(false)}
-                className="px-5 py-2.5 bg-slate-900 text-white font-bold text-xs rounded-xl hover:bg-slate-800 transition-all cursor-pointer"
-              >
-                ঠিক আছে, বুঝতে পেরেছি
-              </button>
-            </div>
-          </motion.div>
-        </div>
       )}
     </div>
   );
