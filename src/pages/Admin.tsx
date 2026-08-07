@@ -2278,6 +2278,8 @@ function UsersView({ setSuccessMessage }: { setSuccessMessage: (msg: string) => 
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
   const [updatingId, setUpdatingId] = useState<string | null>(null);
+  const [currentPage, setCurrentPage] = useState<number>(1);
+  const ITEMS_PER_PAGE = 20;
 
   useEffect(() => {
     fetchUsers();
@@ -2330,6 +2332,46 @@ function UsersView({ setSuccessMessage }: { setSuccessMessage: (msg: string) => 
     (u.email || '').toLowerCase().includes(searchTerm.toLowerCase())
   );
 
+  // Pagination Calculations
+  const totalPages = Math.ceil(filteredUsers.length / ITEMS_PER_PAGE) || 1;
+  const safeCurrentPage = Math.min(Math.max(currentPage, 1), totalPages);
+  const startIndex = (safeCurrentPage - 1) * ITEMS_PER_PAGE;
+  const paginatedUsers = filteredUsers.slice(startIndex, startIndex + ITEMS_PER_PAGE);
+
+  const getPageNumbers = () => {
+    const pages: (number | string)[] = [];
+    if (totalPages <= 7) {
+      for (let i = 1; i <= totalPages; i++) pages.push(i);
+    } else {
+      pages.push(1);
+
+      if (safeCurrentPage > 4) {
+        pages.push('...');
+      }
+
+      const start = Math.max(2, safeCurrentPage - 1);
+      const end = Math.min(totalPages - 1, safeCurrentPage + 1);
+
+      for (let i = start; i <= end; i++) {
+        if (!pages.includes(i)) pages.push(i);
+      }
+
+      if (safeCurrentPage < totalPages - 3) {
+        pages.push('...');
+      }
+
+      if (!pages.includes(totalPages)) {
+        pages.push(totalPages);
+      }
+    }
+    return pages;
+  };
+
+  const handlePageChange = (page: number) => {
+    setCurrentPage(page);
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
+
   if (loading) {
     return (
       <div className="flex items-center justify-center h-64">
@@ -2346,7 +2388,10 @@ function UsersView({ setSuccessMessage }: { setSuccessMessage: (msg: string) => 
           type="text"
           placeholder="Search by name or email..."
           value={searchTerm}
-          onChange={(e) => setSearchTerm(e.target.value)}
+          onChange={(e) => {
+            setSearchTerm(e.target.value);
+            setCurrentPage(1);
+          }}
           className="w-full min-h-[70px] pl-14 pr-6 bg-white border border-black/5 rounded-3xl focus:outline-none focus:ring-2 focus:ring-black/5 shadow-sm font-bold"
         />
       </div>
@@ -2364,7 +2409,7 @@ function UsersView({ setSuccessMessage }: { setSuccessMessage: (msg: string) => 
               </tr>
             </thead>
             <tbody className="divide-y divide-black/5">
-              {filteredUsers.map(user => (
+              {paginatedUsers.map(user => (
                 <tr key={user.id} className="hover:bg-black/[0.02] transition-colors">
                   <td className="px-6 py-4">
                     <div className="flex items-center gap-4">
@@ -2416,7 +2461,7 @@ function UsersView({ setSuccessMessage }: { setSuccessMessage: (msg: string) => 
 
       {/* Mobile View Cards */}
       <div className="md:hidden space-y-4">
-        {filteredUsers.map(user => (
+        {paginatedUsers.map(user => (
           <motion.div 
             key={user.id}
             initial={{ opacity: 0, y: 10 }}
@@ -2468,6 +2513,63 @@ function UsersView({ setSuccessMessage }: { setSuccessMessage: (msg: string) => 
           </motion.div>
         ))}
       </div>
+
+      {/* Pagination Bar (Clean white background, centered) */}
+      {filteredUsers.length > 0 && (
+        <motion.div 
+          initial={{ opacity: 0, y: 15 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="bg-white text-slate-900 p-4 sm:p-5 rounded-2xl border border-slate-200/80 shadow-sm flex items-center justify-center overflow-hidden"
+        >
+          <div className="flex items-center gap-2 overflow-x-auto max-w-full custom-scrollbar py-1">
+            {/* Previous Button */}
+            <button
+              onClick={() => handlePageChange(safeCurrentPage - 1)}
+              disabled={safeCurrentPage <= 1}
+              className="px-3.5 py-1.5 border border-slate-300 rounded-lg text-xs font-bold bg-white text-slate-800 hover:bg-slate-900 hover:text-white hover:border-slate-900 disabled:opacity-30 disabled:pointer-events-none transition-all cursor-pointer shrink-0 shadow-sm"
+              title="Previous Page"
+            >
+              Prev
+            </button>
+
+            {/* Page Number Boxes */}
+            {getPageNumbers().map((p, i) => {
+              if (p === '...') {
+                return (
+                  <span key={`ellipsis-${i}`} className="px-2 py-1 text-xs font-bold text-slate-400 shrink-0 select-none">
+                    ...
+                  </span>
+                );
+              }
+              const pageNum = p as number;
+              const isActive = pageNum === safeCurrentPage;
+              return (
+                <button
+                  key={`page-${pageNum}`}
+                  onClick={() => handlePageChange(pageNum)}
+                  className={`min-w-[34px] h-8 px-2 border text-xs font-bold rounded-lg flex items-center justify-center transition-all cursor-pointer shrink-0 ${
+                    isActive
+                      ? 'bg-slate-900 border-slate-900 text-white font-black shadow-md'
+                      : 'border-slate-300 bg-white text-slate-800 hover:bg-slate-100 hover:text-slate-950 hover:border-slate-400'
+                  }`}
+                >
+                  {pageNum}
+                </button>
+              );
+            })}
+
+            {/* Next Button */}
+            <button
+              onClick={() => handlePageChange(safeCurrentPage + 1)}
+              disabled={safeCurrentPage >= totalPages}
+              className="px-3.5 py-1.5 border border-slate-300 rounded-lg text-xs font-bold bg-white text-slate-800 hover:bg-slate-900 hover:text-white hover:border-slate-900 disabled:opacity-30 disabled:pointer-events-none transition-all cursor-pointer shrink-0 shadow-sm"
+              title="Next Page"
+            >
+              Next
+            </button>
+          </div>
+        </motion.div>
+      )}
     </div>
   );
 }
