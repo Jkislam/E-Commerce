@@ -439,26 +439,37 @@ export default function App() {
         }
         
         if (isSubscribed && ordersData) {
-          setOrders(ordersData.map(o => ({
-            id: o.id,
-            customername: o.customer_name,
-            customeremail: o.customer_email,
-            customerphone: o.customer_phone,
-            customeraddress: o.customer_address,
-            total: Number(o.total || 0),
-            status: o.status,
-            paymentmethod: o.payment_method || 'Cash on Delivery',
-            transactionid: o.transaction_id,
-            createdat: o.created_at,
-            items: o.order_items?.map((item: any) => ({
-              id: item.product_id,
-              name: item.product_name,
-              quantity: item.quantity,
-              price: Number(item.price || 0),
-              selectedAttr: item.selected_attr,
-              image: item.image_url || ''
-            })) || []
-          } as Order)));
+          let deletedIds: string[] = [];
+          try {
+            deletedIds = JSON.parse(localStorage.getItem('al_hurumah_deleted_order_ids') || '[]');
+          } catch (e) {
+            console.error('Error reading deleted_order_ids:', e);
+          }
+
+          const activeOrders = ordersData
+            .filter(o => !deletedIds.includes(String(o.id)))
+            .map(o => ({
+              id: o.id,
+              customername: o.customer_name,
+              customeremail: o.customer_email,
+              customerphone: o.customer_phone,
+              customeraddress: o.customer_address,
+              total: Number(o.total || 0),
+              status: o.status,
+              paymentmethod: o.payment_method || 'Cash on Delivery',
+              transactionid: o.transaction_id,
+              createdat: o.created_at,
+              items: o.order_items?.map((item: any) => ({
+                id: item.product_id,
+                name: item.product_name,
+                quantity: item.quantity,
+                price: Number(item.price || 0),
+                selectedAttr: item.selected_attr,
+                image: item.image_url || ''
+              })) || []
+            } as Order));
+
+          setOrders(activeOrders);
         }
       } catch (ordersErr) {
         console.warn('Gracefully handled order loading fallback:', ordersErr);
@@ -767,23 +778,39 @@ export default function App() {
   };
 
   const deleteOrder = async (orderId: string) => {
+    const strId = String(orderId);
+
+    // 1. Immediately save ID to local persistent blacklisted deleted list
     try {
-      // First delete associated order items to avoid foreign key constraints
+      const deletedIds = new Set<string>(JSON.parse(localStorage.getItem('al_hurumah_deleted_order_ids') || '[]'));
+      deletedIds.add(strId);
+      localStorage.setItem('al_hurumah_deleted_order_ids', JSON.stringify(Array.from(deletedIds)));
+    } catch (e) {
+      console.warn('Failed to save deleted order id to localStorage:', e);
+    }
+
+    // 2. Immediately update local state
+    setOrders(prev => prev.filter(order => String(order.id) !== strId));
+
+    // 3. Perform database deletion in Supabase
+    try {
+      // First delete associated order items
       await supabase.from('order_items').delete().eq('order_id', orderId);
+      if (!isNaN(Number(orderId))) {
+        await supabase.from('order_items').delete().eq('order_id', Number(orderId));
+      }
 
       // Then delete the order record
       const { error } = await supabase.from('orders').delete().eq('id', orderId);
+      if (error && !isNaN(Number(orderId))) {
+        await supabase.from('orders').delete().eq('id', Number(orderId));
+      }
       
-      // Always update local state so the UI updates immediately
-      setOrders(prev => prev.filter(order => String(order.id) !== String(orderId)));
-
       if (error) {
         console.warn('Supabase order delete response:', error.message);
       }
     } catch (err: any) {
       console.error('Failed to delete order from database:', err);
-      // Ensure local state is updated even on error
-      setOrders(prev => prev.filter(order => String(order.id) !== String(orderId)));
     }
   };
 

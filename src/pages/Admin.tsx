@@ -2604,10 +2604,13 @@ export default function Admin({
           </div>
           <button 
             onClick={() => {
-              onDeleteOrder(order.id);
-              setSelectedOrder(null);
+              if (window.confirm(`আপনি কি নিশ্চিত যে আপনি অর্ডার #${order.id} ডিলিট করতে চান?`)) {
+                onDeleteOrder(order.id);
+                setSelectedOrder(null);
+                setSuccessMessage(`অর্ডার #${order.id} সফলভাবে ডিলিট করা হয়েছে।`);
+              }
             }}
-            className="flex items-center gap-2 px-4 py-2 bg-red-50 text-red-600 rounded-xl font-bold text-xs hover:bg-red-100 transition-colors"
+            className="flex items-center gap-2 px-4 py-2 bg-rose-50 text-rose-600 rounded-xl font-bold text-xs hover:bg-rose-100 transition-colors cursor-pointer"
           >
             <Trash2 className="w-4 h-4" />
             Delete Order
