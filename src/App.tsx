@@ -43,10 +43,10 @@ import About from './pages/About';
 import Contact from './pages/Contact';
 
 function ScrollToTop() {
-  const { pathname } = useLocation();
+  const location = useLocation();
   useEffect(() => {
-    window.scrollTo(0, 0);
-  }, [pathname]);
+    window.scrollTo({ top: 0, left: 0, behavior: 'smooth' });
+  }, [location]);
   return null;
 }
 
@@ -915,7 +915,14 @@ export default function App() {
             <div className="bg-white/20 backdrop-blur-xl border border-black/5 rounded-2xl px-6 h-16 flex justify-between items-center shadow-sm">
               {/* Logo */}
               <div className="flex-shrink-0 flex items-center">
-                <Link to="/" onClick={() => setIsMenuOpen(false)} className="flex items-center gap-2 group cursor-pointer">
+                <Link 
+                  to="/" 
+                  onClick={() => {
+                    setIsMenuOpen(false);
+                    window.scrollTo({ top: 0, left: 0, behavior: 'smooth' });
+                  }} 
+                  className="flex items-center gap-2 group cursor-pointer"
+                >
                   {settings.logo && (
                     <img src={settings.logo} alt={settings.brandName || 'Logo'} className="h-10 w-auto object-contain transition-transform group-hover:scale-105" />
                   )}
@@ -929,6 +936,7 @@ export default function App() {
                   <Link 
                     key={link.name}
                     to={link.href} 
+                    onClick={() => window.scrollTo({ top: 0, left: 0, behavior: 'smooth' })}
                     className="text-[11px] uppercase tracking-[0.2em] font-bold text-black/60 hover:text-black transition-colors nav-link-ltr"
                   >
                     {link.name}
@@ -951,6 +959,7 @@ export default function App() {
                 <div className="h-4 w-[1px] bg-black/10 mx-2" />
                 <Link 
                   to={currentUser ? "/profile" : "/login"} 
+                  onClick={() => window.scrollTo({ top: 0, left: 0, behavior: 'smooth' })}
                   className="p-2 hover:bg-black/5 rounded-full transition-all active:scale-95 group relative flex items-center justify-center"
                   title={currentUser ? "Profile" : "Login"}
                 >
@@ -1049,12 +1058,30 @@ export default function App() {
                         {currentUser ? (
                           <>
                             <p className="font-bold text-sm">{currentUser.name}</p>
-                            <Link to="/profile" onClick={() => setIsMenuOpen(false)} className="text-[10px] font-bold text-black/40 uppercase tracking-widest hover:text-black transition-colors">View Profile</Link>
+                            <Link 
+                              to="/profile" 
+                              onClick={() => {
+                                setIsMenuOpen(false);
+                                window.scrollTo({ top: 0, left: 0, behavior: 'smooth' });
+                              }} 
+                              className="text-[10px] font-bold text-black/40 uppercase tracking-widest hover:text-black transition-colors"
+                            >
+                              View Profile
+                            </Link>
                           </>
                         ) : (
                           <>
                             <p className="font-bold text-sm">Welcome Guest</p>
-                            <Link to="/login" onClick={() => setIsMenuOpen(false)} className="text-[10px] font-bold text-black/40 uppercase tracking-widest hover:text-black transition-colors">Login / Sign Up</Link>
+                            <Link 
+                              to="/login" 
+                              onClick={() => {
+                                setIsMenuOpen(false);
+                                window.scrollTo({ top: 0, left: 0, behavior: 'smooth' });
+                              }} 
+                              className="text-[10px] font-bold text-black/40 uppercase tracking-widest hover:text-black transition-colors"
+                            >
+                              Login / Sign Up
+                            </Link>
                           </>
                         )}
                       </div>
@@ -1070,7 +1097,10 @@ export default function App() {
                         >
                           <Link
                             to={item.href}
-                            onClick={() => setIsMenuOpen(false)}
+                            onClick={() => {
+                              setIsMenuOpen(false);
+                              window.scrollTo({ top: 0, left: 0, behavior: 'smooth' });
+                            }}
                             className="block text-2xl font-bold hover:text-black/60 transition-colors"
                           >
                             {item.name}
