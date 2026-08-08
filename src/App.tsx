@@ -87,7 +87,6 @@ export default function App() {
       brandName: 'AL-Hurumah',
       footerDescription: 'Your destination for premium traditional wear and authentic fragrances. We bring you the finest Panjabis and Attars from around the world.',
       metaPixelId: '',
-      seoKeywords: 'AL-Hurumah, Panjabi, Attar, Traditional Wear, Fragrances, Premium Panjabi, Authentic Attar',
       aboutText1: 'Founded in 2024, AL-Hurumah began with a simple yet profound vision: to bridge the gap between traditional craftsmanship and contemporary style. Our journey started in the heart of the artisan community, where we discovered the timeless beauty of hand-stitched Panjabis and the mystical allure of organic Attars.',
       aboutText2: 'We believe that clothing and fragrance are more than just products; they are reflections of identity and culture. That\'s why we source only the finest materials—from premium Egyptian cotton to the rarest essential oils—ensuring that every piece carries the legacy of quality.',
       aboutMission: 'To preserve and promote traditional artistry by crafting premium attire and fragrances that inspire confidence and celebrate authenticity in a modern world.',
@@ -127,13 +126,7 @@ export default function App() {
     if (metaDescription) {
       metaDescription.setAttribute('content', settings.footerDescription || 'Your destination for premium traditional wear and authentic fragrances. We bring you the finest Panjabis and Attars from around the world.');
     }
-
-    // Update Meta Keywords
-    let metaKeywords = document.querySelector('meta[name="keywords"]');
-    if (metaKeywords) {
-      metaKeywords.setAttribute('content', settings.seoKeywords || 'AL-Hurumah, Panjabi, Attar, Traditional Wear, Fragrances, Premium Panjabi, Authentic Attar');
-    }
-  }, [settings.brandName, settings.footerDescription, settings.seoKeywords]);
+  }, [settings.brandName, settings.footerDescription]);
 
   // Inject Meta Pixel
   useEffect(() => {
@@ -240,7 +233,6 @@ export default function App() {
                 },
                 footerDescription: settingsData.footer_description,
                 metaPixelId: settingsData.meta_pixel_id,
-                seoKeywords: settingsData.seo_keywords,
                 aboutText1: settingsData.about_text_1,
                 aboutText2: settingsData.about_text_2,
                 aboutMission: settingsData.about_mission,
@@ -527,7 +519,6 @@ export default function App() {
             hero_description: settings.hero?.description,
             footer_description: settings.footerDescription,
             meta_pixel_id: settings.metaPixelId,
-            seo_keywords: settings.seoKeywords,
             about_text_1: settings.aboutText1,
             about_text_2: settings.aboutText2,
             about_mission: settings.aboutMission,

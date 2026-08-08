@@ -146,7 +146,6 @@ CREATE TABLE site_settings (
   hero_description TEXT DEFAULT 'Discover our exclusive collection of premium Panjabis and authentic Attars. Crafted for elegance, designed for you.',
   footer_description TEXT DEFAULT 'Your destination for premium traditional wear and authentic fragrances. We bring you the finest Panjabis and Attars from around the world.',
   meta_pixel_id TEXT DEFAULT '',
-  seo_keywords TEXT DEFAULT 'AL-Hurumah, Panjabi, Attar, Traditional Wear, Fragrances, Premium Panjabi, Authentic Attar',
   about_text_1 TEXT DEFAULT 'Founded in 2024, AL-Hurumah began with a simple yet profound vision: to bridge the gap between traditional craftsmanship and contemporary style. Our journey started in the heart of the artisan community, where we discovered the timeless beauty of hand-stitched Panjabis and the mystical allure of organic Attars.',
   about_text_2 TEXT DEFAULT 'We believe that clothing and fragrance are more than just products; they are reflections of identity and culture. That''s why we source only the finest materials—from premium Egyptian cotton to the rarest essential oils—ensuring that every piece carries the legacy of quality.',
   about_mission TEXT DEFAULT 'To preserve and promote traditional artistry by crafting premium attire and fragrances that inspire confidence and celebrate authenticity in a modern world.',
@@ -174,7 +173,7 @@ CREATE POLICY "Admins can insert or update site settings." ON site_settings FOR 
 INSERT INTO site_settings (
   id, brand_name, categories, bkash_number, nagad_number, rocket_number, 
   hero_image, hero_title_line_1, hero_title_line_2, hero_description, 
-  footer_description, meta_pixel_id, seo_keywords, 
+  footer_description, meta_pixel_id, 
   about_text_1, about_text_2, about_mission, about_vision, 
   contact_email, contact_phone, contact_address, contact_hours, 
   contact_image_top, contact_image_bottom, social_links
@@ -192,7 +191,6 @@ VALUES (
   'Discover our exclusive collection of premium Panjabis and authentic Attars. Crafted for elegance, designed for you.',
   'Your destination for premium traditional wear and authentic fragrances. We bring you the finest Panjabis and Attars from around the world.', 
   '', 
-  'AL-Hurumah, Panjabi, Attar, Traditional Wear, Fragrances, Premium Panjabi, Authentic Attar',
   'Founded in 2024, AL-Hurumah began with a simple yet profound vision: to bridge the gap between traditional craftsmanship and contemporary style. Our journey started in the heart of the artisan community, where we discovered the timeless beauty of hand-stitched Panjabis and the mystical allure of organic Attars.',
   'We believe that clothing and fragrance are more than just products; they are reflections of identity and culture. That''s why we source only the finest materials—from premium Egyptian cotton to the rarest essential oils—ensuring that every piece carries the legacy of quality.',
   'To preserve and promote traditional artistry by crafting premium attire and fragrances that inspire confidence and celebrate authenticity in a modern world.',

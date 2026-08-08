@@ -82,7 +82,6 @@ export interface AppSettings {
   logo?: string;
   footerDescription?: string;
   metaPixelId?: string;
-  seoKeywords?: string;
   aboutText1?: string;
   aboutText2?: string;
   aboutMission?: string;
