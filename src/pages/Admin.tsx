@@ -222,7 +222,7 @@ function SettingsView({ settings, setSettings, setSuccessMessage }: SettingsView
   const [newUrl, setNewUrl] = useState('');
 
   useEffect(() => {
-    if (settings.socialLinks && settings.socialLinks.length > 0) {
+    if (settings.socialLinks) {
       setSocialLinks(settings.socialLinks);
     }
   }, [settings.socialLinks]);
@@ -240,23 +240,34 @@ function SettingsView({ settings, setSettings, setSuccessMessage }: SettingsView
     const updatedLinks = [...socialLinks, { platform: newPlatform, url: newUrl.trim() }];
     setSocialLinks(updatedLinks);
     setNewUrl('');
+    setSettings(prev => {
+      const updated = { ...prev, socialLinks: updatedLinks };
+      localStorage.setItem('al_hurumah_settings', JSON.stringify(updated));
+      return updated;
+    });
   };
 
   const handleDeleteSocialLink = (platformToDelete: SocialLink['platform']) => {
     const updatedLinks = socialLinks.filter(link => link.platform !== platformToDelete);
     setSocialLinks(updatedLinks);
+    setSettings(prev => {
+      const updated = { ...prev, socialLinks: updatedLinks };
+      localStorage.setItem('al_hurumah_settings', JSON.stringify(updated));
+      return updated;
+    });
   };
 
   const handleSaveSocialLinks = async () => {
-    setSettings(prev => ({
-      ...prev,
-      socialLinks: socialLinks
-    }));
+    setSettings(prev => {
+      const updated = { ...prev, socialLinks: socialLinks };
+      localStorage.setItem('al_hurumah_settings', JSON.stringify(updated));
+      return updated;
+    });
 
     try {
       await supabase
         .from('site_settings')
-        .update({ social_links: socialLinks })
+        .update({ social_links: socialLinks, updated_at: new Date().toISOString() })
         .eq('id', 'global_settings');
     } catch (e) {
       console.warn('Failed to save social links to database:', e);

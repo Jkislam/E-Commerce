@@ -243,15 +243,15 @@ export default function App() {
                 contactHours: settingsData.contact_hours,
                 contactImageTop: settingsData.contact_image_top,
                 contactImageBottom: settingsData.contact_image_bottom,
-                socialLinks: (() => {
+                ...(() => {
                   let links = settingsData.social_links;
                   if (typeof links === 'string') {
                     try { links = JSON.parse(links); } catch(e) { links = null; }
                   }
-                  if (Array.isArray(links) && links.length > 0) {
-                    return links;
+                  if (Array.isArray(links)) {
+                    return { socialLinks: links };
                   }
-                  return undefined;
+                  return {};
                 })(),
               };
             }
@@ -1338,8 +1338,8 @@ export default function App() {
 
               <div>
                 <h4 className="font-bold text-sm uppercase tracking-widest mb-6">Follow Us</h4>
-                <div className="flex space-x-4">
-                  {((settings.socialLinks && settings.socialLinks.length > 0) ? settings.socialLinks : [
+                <div className="flex flex-wrap gap-3 max-w-[135px]">
+                  {(settings.socialLinks !== undefined ? settings.socialLinks : [
                     { platform: 'Facebook', url: 'https://facebook.com' },
                     { platform: 'Twitter', url: 'https://twitter.com' },
                     { platform: 'Instagram', url: 'https://instagram.com' }
