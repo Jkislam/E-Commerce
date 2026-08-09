@@ -1111,10 +1111,37 @@ export default function App() {
 
                     <div className="pt-8 border-t border-black/5">
                       <p className="text-[10px] uppercase tracking-widest text-black/40 font-bold mb-4">Follow Us</p>
-                      <div className="flex space-x-4">
-                        <a href="#" className="p-3 bg-black/5 rounded-full hover:bg-black hover:text-white transition-all"><Facebook className="w-4 h-4" /></a>
-                        <a href="#" className="p-3 bg-black/5 rounded-full hover:bg-black hover:text-white transition-all"><Twitter className="w-4 h-4" /></a>
-                        <a href="#" className="p-3 bg-black/5 rounded-full hover:bg-black hover:text-white transition-all"><Instagram className="w-4 h-4" /></a>
+                      <div className="flex flex-wrap gap-3 max-w-[135px]">
+                        {(settings.socialLinks !== undefined ? settings.socialLinks : [
+                          { platform: 'Facebook', url: 'https://facebook.com' },
+                          { platform: 'Twitter', url: 'https://twitter.com' },
+                          { platform: 'Instagram', url: 'https://instagram.com' }
+                        ]).map((link, index) => {
+                          const platform = link.platform;
+                          const IconComponent = (() => {
+                            switch (platform) {
+                              case 'Facebook': return Facebook;
+                              case 'Twitter': return Twitter;
+                              case 'Instagram': return Instagram;
+                              case 'YouTube': return Youtube;
+                              case 'LinkedIn': return Linkedin;
+                              case 'GitHub': return Github;
+                              default: return Globe;
+                            }
+                          })();
+                          return (
+                            <a 
+                              key={index} 
+                              href={link.url.startsWith('http') ? link.url : `https://${link.url}`} 
+                              target="_blank" 
+                              rel="noopener noreferrer" 
+                              className="p-2 bg-black/5 rounded-full hover:bg-black hover:text-white transition-all"
+                              title={platform}
+                            >
+                              <IconComponent className="w-4 h-4" />
+                            </a>
+                          );
+                        })}
                       </div>
                     </div>
                   </div>

@@ -326,3 +326,7 @@ BEGIN
   );
 END;
 $$;
+
+-- Ensure social_links column exists on existing site_settings table
+ALTER TABLE site_settings ADD COLUMN IF NOT EXISTS social_links JSONB DEFAULT '[]'::jsonb;
+
