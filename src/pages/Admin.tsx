@@ -209,16 +209,20 @@ function SettingsView({ settings, setSettings, setSuccessMessage }: SettingsView
     setSuccessMessage('Contact এর তর্থ্য সফল ভাবে আপডেট হয়েছে।');
   };
 
-  const [socialLinks, setSocialLinks] = useState<SocialLink[]>(settings.socialLinks || [
+  const defaultSocialLinks: SocialLink[] = [
     { platform: 'Facebook', url: 'https://facebook.com' },
     { platform: 'Twitter', url: 'https://twitter.com' },
     { platform: 'Instagram', url: 'https://instagram.com' }
-  ]);
+  ];
+
+  const [socialLinks, setSocialLinks] = useState<SocialLink[]>(
+    (settings.socialLinks && settings.socialLinks.length > 0) ? settings.socialLinks : defaultSocialLinks
+  );
   const [newPlatform, setNewPlatform] = useState<SocialLink['platform']>('Facebook');
   const [newUrl, setNewUrl] = useState('');
 
   useEffect(() => {
-    if (settings.socialLinks) {
+    if (settings.socialLinks && settings.socialLinks.length > 0) {
       setSocialLinks(settings.socialLinks);
     }
   }, [settings.socialLinks]);
@@ -248,6 +252,16 @@ function SettingsView({ settings, setSettings, setSuccessMessage }: SettingsView
       ...prev,
       socialLinks: socialLinks
     }));
+
+    try {
+      await supabase
+        .from('site_settings')
+        .update({ social_links: socialLinks })
+        .eq('id', 'global_settings');
+    } catch (e) {
+      console.warn('Failed to save social links to database:', e);
+    }
+
     setSuccessMessage('Social media links updated successfully.');
   };
 
