@@ -248,7 +248,7 @@ function SettingsView({ settings, setSettings, setSuccessMessage }: SettingsView
       ...prev,
       socialLinks: socialLinks
     }));
-    setSuccessMessage('সোসাল মিডিয়ার লিংকগুলো সফল ভাবে আপডেট হয়েছে।');
+    setSuccessMessage('Social media links updated successfully.');
   };
 
   return (
@@ -762,8 +762,8 @@ function SettingsView({ settings, setSettings, setSuccessMessage }: SettingsView
       <div className="bg-white p-8 rounded-[2.5rem] border border-black/5 shadow-sm animate-fade-in">
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-8 pb-4 border-b border-black/5">
           <div>
-            <h3 className="text-xl font-black text-black tracking-tight">Social Media Links (সোসাল মিডিয়া লিংক)</h3>
-            <p className="text-sm font-bold text-black/40 mt-1">ফুটারে প্রদর্শনের জন্য সোসাল মিডিয়া প্ল্যাটফর্ম ও লিংক যোগ অথবা বাদ করুন।</p>
+            <h3 className="text-xl font-black text-black tracking-tight">Social Media Links</h3>
+            <p className="text-sm font-bold text-black/40 mt-1">Add or remove social media platforms and links for display in the footer.</p>
           </div>
         </div>
         
@@ -771,7 +771,7 @@ function SettingsView({ settings, setSettings, setSuccessMessage }: SettingsView
           {/* Add Form */}
           <form onSubmit={handleAddSocialLink} className="flex flex-col md:flex-row gap-4 items-end bg-black/5 p-6 rounded-2xl">
             <div className="w-full md:w-1/3 space-y-2">
-              <label className="text-[10px] font-black uppercase tracking-widest text-black/40 ml-1">Platform (প্ল্যাটফর্ম)</label>
+              <label className="text-[10px] font-black uppercase tracking-widest text-black/40 ml-1">Platform</label>
               <select
                 value={newPlatform}
                 onChange={(e) => setNewPlatform(e.target.value as SocialLink['platform'])}
@@ -791,7 +791,7 @@ function SettingsView({ settings, setSettings, setSuccessMessage }: SettingsView
             </div>
             
             <div className="w-full md:flex-1 space-y-2">
-              <label className="text-[10px] font-black uppercase tracking-widest text-black/40 ml-1">URL (লিংক)</label>
+              <label className="text-[10px] font-black uppercase tracking-widest text-black/40 ml-1">URL</label>
               <input
                 type="text"
                 value={newUrl}
@@ -811,9 +811,9 @@ function SettingsView({ settings, setSettings, setSuccessMessage }: SettingsView
 
           {/* Social Links List */}
           <div className="space-y-3">
-            <h4 className="text-[10px] font-black uppercase tracking-widest text-black/40 ml-1">Active Links (সক্রিয় লিংকসমূহ)</h4>
+            <h4 className="text-[10px] font-black uppercase tracking-widest text-black/40 ml-1">Active Links</h4>
             {socialLinks.length === 0 ? (
-              <p className="text-sm font-bold text-black/30 p-6 bg-black/5 rounded-2xl text-center">কোন লিংক যোগ করা হয়নি।</p>
+              <p className="text-sm font-bold text-black/30 p-6 bg-black/5 rounded-2xl text-center">No links added.</p>
             ) : (
               <div className="grid gap-3 sm:grid-cols-2">
                 {socialLinks.map((link) => (
