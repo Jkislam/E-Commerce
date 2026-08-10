@@ -65,15 +65,37 @@ ALTER TABLE products ENABLE ROW LEVEL SECURITY;
 CREATE POLICY "Allow public read access" ON products
   FOR SELECT USING (true);
 
--- শুধুমাত্র লগইন করা বা অথেনটিকেটেড ইউজারদের জন্য প্রোডাক্ট তৈরি, এডিট ও ডিলিট করার অনুমতি
-CREATE POLICY "Allow authenticated users to insert" ON products
-  FOR INSERT WITH CHECK (auth.role() = 'authenticated');
+-- শুধুমাত্র অ্যাডমিন (Admin) ইউজারদের জন্য প্রোডাক্ট তৈরি, এডিট ও ডিলিট করার অনুমতি (Database Level Security)
+DROP POLICY IF EXISTS "Allow authenticated users to insert" ON products;
+DROP POLICY IF EXISTS "Allow authenticated users to update" ON products;
+DROP POLICY IF EXISTS "Allow authenticated users to delete" ON products;
 
-CREATE POLICY "Allow authenticated users to update" ON products
-  FOR UPDATE USING (auth.role() = 'authenticated');
+CREATE POLICY "Allow admins to insert products" ON products
+  FOR INSERT WITH CHECK (
+    EXISTS (
+      SELECT 1 FROM profiles 
+      WHERE profiles.id = auth.uid() 
+      AND profiles.role = 'admin'
+    )
+  );
 
-CREATE POLICY "Allow authenticated users to delete" ON products
-  FOR DELETE USING (auth.role() = 'authenticated');
+CREATE POLICY "Allow admins to update products" ON products
+  FOR UPDATE USING (
+    EXISTS (
+      SELECT 1 FROM profiles 
+      WHERE profiles.id = auth.uid() 
+      AND profiles.role = 'admin'
+    )
+  );
+
+CREATE POLICY "Allow admins to delete products" ON products
+  FOR DELETE USING (
+    EXISTS (
+      SELECT 1 FROM profiles 
+      WHERE profiles.id = auth.uid() 
+      AND profiles.role = 'admin'
+    )
+  );
 
 
 -- 3. Orders Table

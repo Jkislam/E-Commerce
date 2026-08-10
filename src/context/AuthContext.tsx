@@ -38,7 +38,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         phone: profile?.phone || metadata?.phone || '',
         address: profile?.address || metadata?.address || '',
         photourl: profile?.photourl || metadata?.photourl || '',
-        role: profile?.role || 'customer',
+        role: profile?.role === 'admin' ? 'admin' : 'customer',
         password: '',
       } as AppUser;
     } catch (error) {
