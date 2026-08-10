@@ -128,12 +128,14 @@ export default function App() {
     }
   }, [settings.brandName, settings.footerDescription]);
 
-  // Inject Meta Pixel
+  // Inject Meta Pixel safely with input sanitization against XSS/HTML injection
   useEffect(() => {
     if (!settings.metaPixelId) return;
 
     try {
-      const pixelId = settings.metaPixelId;
+      // Strictly restrict pixelId to digits 0-9 to prevent any XSS/code injection vulnerability
+      const pixelId = String(settings.metaPixelId).trim().replace(/[^0-9]/g, '');
+      if (!pixelId) return;
 
       // @ts-ignore
       !function(f,b,e,v,n,t,s)

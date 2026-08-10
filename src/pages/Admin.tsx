@@ -163,12 +163,16 @@ function SettingsView({ settings, setSettings, setSuccessMessage }: SettingsView
   };
 
   const handleUpdateGeneralSettings = async () => {
+    // Sanitize metaPixelId to ensure only digits 0-9 are stored (XSS Protection)
+    const sanitizedPixelId = metaPixelId.trim().replace(/[^0-9]/g, '');
+    setMetaPixelId(sanitizedPixelId);
+
     // Update local state (which syncs to localStorage in App.tsx)
     setSettings(prev => ({
       ...prev,
       brandName,
       footerDescription,
-      metaPixelId
+      metaPixelId: sanitizedPixelId
     }));
     setSuccessMessage('সফল ভাবে আপডেট হয়েছে।');
   };
@@ -447,7 +451,7 @@ function SettingsView({ settings, setSettings, setSuccessMessage }: SettingsView
               <input 
                 type="text"
                 value={metaPixelId}
-                onChange={(e) => setMetaPixelId(e.target.value)}
+                onChange={(e) => setMetaPixelId(e.target.value.replace(/[^0-9]/g, ''))}
                 className="w-full px-6 py-4 bg-black/5 rounded-2xl focus:outline-none focus:ring-2 focus:ring-black/10 transition-all text-sm font-bold"
                 placeholder="e.g. 123456789012345"
               />
