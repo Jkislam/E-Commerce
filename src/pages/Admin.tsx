@@ -56,6 +56,7 @@ import { Product, Order, AppSettings, SocialLink } from '../types';
 import OrdersView from '../components/OrdersView';
 import { useAuth } from '../context/AuthContext';
 import { supabase } from '../lib/supabase';
+import { validateAndCompressImage } from '../utils/imageUtils';
 import { useSearchParams } from 'react-router-dom';
 import { 
   BarChart, 
@@ -495,16 +496,19 @@ function SettingsView({ settings, setSettings, setSuccessMessage }: SettingsView
                   <span className="sm:hidden text-sm font-bold text-black/60">Upload Image</span>
                   <input 
                     type="file" 
-                    accept="image/*" 
+                    accept="image/jpeg,image/png,image/webp" 
                     className="hidden" 
-                    onChange={(e) => {
+                    onChange={async (e) => {
                       const file = e.target.files?.[0];
                       if (file) {
-                        const reader = new FileReader();
-                        reader.onloadend = () => {
-                          setHeroSettings(prev => ({ ...prev, image: reader.result as string }));
-                        };
-                        reader.readAsDataURL(file);
+                        try {
+                          const compressed = await validateAndCompressImage(file, { maxWidth: 1200, maxHeight: 1200 });
+                          setHeroSettings(prev => ({ ...prev, image: compressed }));
+                        } catch (err) {
+                          console.error(err);
+                        } finally {
+                          e.target.value = '';
+                        }
                       }
                     }}
                   />
@@ -540,16 +544,19 @@ function SettingsView({ settings, setSettings, setSuccessMessage }: SettingsView
                       Upload Logo
                       <input 
                         type="file" 
-                        accept="image/*" 
+                        accept="image/jpeg,image/png,image/webp" 
                         className="hidden" 
-                        onChange={(e) => {
+                        onChange={async (e) => {
                           const file = e.target.files?.[0];
                           if (file) {
-                            const reader = new FileReader();
-                            reader.onloadend = () => {
-                              setLogo(reader.result as string);
-                            };
-                            reader.readAsDataURL(file);
+                            try {
+                              const compressed = await validateAndCompressImage(file, { maxWidth: 500, maxHeight: 500 });
+                              setLogo(compressed);
+                            } catch (err) {
+                              console.error(err);
+                            } finally {
+                              e.target.value = '';
+                            }
                           }
                         }}
                       />
@@ -725,16 +732,19 @@ function SettingsView({ settings, setSettings, setSuccessMessage }: SettingsView
                   <span className="sm:hidden text-sm font-bold text-black/60">Upload Image</span>
                   <input 
                     type="file" 
-                    accept="image/*" 
+                    accept="image/jpeg,image/png,image/webp" 
                     className="hidden" 
-                    onChange={(e) => {
+                    onChange={async (e) => {
                       const file = e.target.files?.[0];
                       if (file) {
-                        const reader = new FileReader();
-                        reader.onloadend = () => {
-                          setContactImageTop(reader.result as string);
-                        };
-                        reader.readAsDataURL(file);
+                        try {
+                          const compressed = await validateAndCompressImage(file, { maxWidth: 1200, maxHeight: 1200 });
+                          setContactImageTop(compressed);
+                        } catch (err) {
+                          console.error(err);
+                        } finally {
+                          e.target.value = '';
+                        }
                       }
                     }}
                   />
@@ -756,16 +766,19 @@ function SettingsView({ settings, setSettings, setSuccessMessage }: SettingsView
                   <span className="sm:hidden text-sm font-bold text-black/60">Upload Image</span>
                   <input 
                     type="file" 
-                    accept="image/*" 
+                    accept="image/jpeg,image/png,image/webp" 
                     className="hidden" 
-                    onChange={(e) => {
+                    onChange={async (e) => {
                       const file = e.target.files?.[0];
                       if (file) {
-                        const reader = new FileReader();
-                        reader.onloadend = () => {
-                          setContactImageBottom(reader.result as string);
-                        };
-                        reader.readAsDataURL(file);
+                        try {
+                          const compressed = await validateAndCompressImage(file, { maxWidth: 1200, maxHeight: 1200 });
+                          setContactImageBottom(compressed);
+                        } catch (err) {
+                          console.error(err);
+                        } finally {
+                          e.target.value = '';
+                        }
                       }
                     }}
                   />
@@ -2967,39 +2980,51 @@ export default function Admin({
     }
   };
 
-  const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>, isEdit: boolean) => {
+  const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>, isEdit: boolean) => {
     const file = e.target.files?.[0];
     if (file) {
-      const reader = new FileReader();
-      reader.onloadend = () => {
-        const base64String = reader.result as string;
+      try {
+        const compressedBase64 = await validateAndCompressImage(file, {
+          maxWidth: 1000,
+          maxHeight: 1000,
+          quality: 0.8
+        });
         if (isEdit && editingProduct) {
-          setEditingProduct({ ...editingProduct, image: base64String });
+          setEditingProduct({ ...editingProduct, image: compressedBase64 });
         } else {
-          setNewProduct({ ...newProduct, image: base64String });
+          setNewProduct({ ...newProduct, image: compressedBase64 });
         }
-      };
-      reader.readAsDataURL(file);
+      } catch (err) {
+        console.error(err);
+      } finally {
+        e.target.value = '';
+      }
     }
   };
 
-  const handleAdditionalImageUpload = (e: React.ChangeEvent<HTMLInputElement>, index: number, isEdit: boolean) => {
+  const handleAdditionalImageUpload = async (e: React.ChangeEvent<HTMLInputElement>, index: number, isEdit: boolean) => {
     const file = e.target.files?.[0];
     if (file) {
-      const reader = new FileReader();
-      reader.onloadend = () => {
-        const base64String = reader.result as string;
+      try {
+        const compressedBase64 = await validateAndCompressImage(file, {
+          maxWidth: 1000,
+          maxHeight: 1000,
+          quality: 0.8
+        });
         if (isEdit && editingProduct) {
           const currentImages = [...(editingProduct.images || [])];
-          currentImages[index] = base64String;
+          currentImages[index] = compressedBase64;
           setEditingProduct({ ...editingProduct, images: currentImages });
         } else {
           const currentImages = [...(newProduct.images || [])];
-          currentImages[index] = base64String;
+          currentImages[index] = compressedBase64;
           setNewProduct({ ...newProduct, images: currentImages });
         }
-      };
-      reader.readAsDataURL(file);
+      } catch (err) {
+        console.error(err);
+      } finally {
+        e.target.value = '';
+      }
     }
   };
 
@@ -3439,7 +3464,7 @@ export default function Admin({
                           <span className="text-xs font-bold text-slate-700">Upload Image File</span>
                           <input 
                             type="file"
-                            accept="image/*"
+                            accept="image/jpeg,image/png,image/webp"
                             onChange={(e) => handleImageUpload(e, !isAddingNew)}
                             className="hidden"
                           />
@@ -3510,7 +3535,7 @@ export default function Admin({
                                   <span className="text-[9px] font-bold text-slate-600">Upload</span>
                                   <input 
                                     type="file"
-                                    accept="image/*"
+                                    accept="image/jpeg,image/png,image/webp"
                                     onChange={(e) => handleAdditionalImageUpload(e, index, !isAddingNew)}
                                     className="hidden"
                                   />

@@ -24,6 +24,7 @@ import {
 } from 'lucide-react';
 import { User, Order } from '../types';
 import { supabase } from '../lib/supabase';
+import { validateAndCompressImage } from '../utils/imageUtils';
 
 interface ProfileProps {
   currentUser: User | null;
@@ -99,45 +100,39 @@ export default function Profile({ currentUser, isAuthLoading, orders, onLogout, 
     const file = e.target.files?.[0];
     if (!file || !currentUser || !currentUser.id || isSaving) return;
 
-    if (file.size > 5 * 1024 * 1024) {
-      alert("৫ মেগাবাইটের চেয়ে ছোট ছবি আপলোড করুন।");
-      return;
-    }
-
     setIsSaving(true);
     try {
-      const reader = new FileReader();
-      reader.onloadend = async () => {
-        try {
-          const compressed = await compressImage(reader.result as string);
-          setEditPhoto(compressed);
-          
-          // Update database directly
-          const { error } = await supabase.from('profiles').update({
-            photourl: compressed,
-          }).eq('id', currentUser.id);
+      // Validate, sanitize and compress image safely
+      const compressed = await validateAndCompressImage(file, {
+        maxWidth: 400,
+        maxHeight: 400,
+        maxSizeBytes: 3 * 1024 * 1024,
+        quality: 0.75
+      });
 
-          if (error) throw error;
+      setEditPhoto(compressed);
+      
+      // Update database directly
+      const { error } = await supabase.from('profiles').update({
+        photourl: compressed,
+      }).eq('id', currentUser.id);
 
-          // Update auth metadata
-          const { error: authError } = await supabase.auth.updateUser({
-            data: { photourl: compressed }
-          });
+      if (error) throw error;
 
-          if (authError) console.warn('Auth metadata sync failed:', authError.message);
+      // Update auth metadata
+      const { error: authError } = await supabase.auth.updateUser({
+        data: { photourl: compressed }
+      });
 
-          await onUpdateUser();
-        } catch (err: any) {
-          console.error('Photo save error:', err);
-          alert("ছবি পরিবর্তন করতে সমস্যা হয়েছে: " + (err.message || 'Unknown error'));
-        } finally {
-          setIsSaving(false);
-        }
-      };
-      reader.readAsDataURL(file);
-    } catch (err) {
-      console.error('Photo upload error:', err);
+      if (authError) console.warn('Auth metadata sync failed:', authError.message);
+
+      await onUpdateUser();
+    } catch (err: any) {
+      console.error('Photo save error:', err);
+    } finally {
       setIsSaving(false);
+      // Reset input value so same file can be re-selected if needed
+      e.target.value = '';
     }
   };
 
