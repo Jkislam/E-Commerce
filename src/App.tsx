@@ -34,7 +34,7 @@ import { Product, CartItem, Order, AppSettings } from './types';
 import { useAuth } from './context/AuthContext';
 import { supabase } from './lib/supabase';
 import { secureStorage } from './utils/secureStorage';
-import { showCleanAlert } from './utils/errorUtils';
+import { showCleanAlert, getSanitizedErrorMessage } from './utils/errorUtils';
 import Home from './pages/Home';
 import ProductDetails from './pages/ProductDetails';
 import Checkout from './pages/Checkout';
@@ -304,18 +304,21 @@ export default function App() {
         
         setDataLoading(false);
       } catch (err: any) {
-        const errorMessage = err.message || String(err);
-        const isNetworkError = errorMessage.includes('Failed to fetch') || errorMessage.includes('network');
+        const errorMessage = err?.message || String(err);
+        const isNetworkError = 
+          errorMessage.includes('Failed to fetch') || 
+          errorMessage.includes('network') ||
+          errorMessage.includes('NetworkError') ||
+          errorMessage.includes('fetch');
         
         if (isNetworkError) {
-          console.warn(`Public data fetch connection issue (Attempt ${retry + 1}): ${errorMessage}`);
+          console.info(`Public data connection offline or unavailable (Attempt ${retry + 1}). Using local catalog fallback.`);
         } else {
           console.error(`Public data fetch error (Attempt ${retry + 1}):`, errorMessage);
         }
         
-        // Immediately load fallback products on first failure so page is not empty during retries
+        // Immediately populate fallback products on failure so UI is complete and responsive
         if (isSubscribed && products.length === 0) {
-          console.log("Loading static products fallback immediately due to fetch failure.");
           setProducts(PRODUCTS.map(p => ({
             ...p,
             id: String(p.id),
@@ -325,23 +328,21 @@ export default function App() {
         }
 
         if (isSubscribed && retry < maxRetries - 1) {
-          console.log(`Scheduling retry ${retry + 2}...`);
           clearTimeout(timeoutId);
           await loadPublicData(retry + 1);
           return;
         }
 
         if (isSubscribed) {
-          const userFriendlyError = isNetworkError 
-            ? "Network connection issue. Showing fallback product catalog."
-            : `System error: ${errorMessage}`;
-            
-          setDataError(userFriendlyError);
+          if (!isNetworkError) {
+            const userFriendlyError = getSanitizedErrorMessage(err, "সিস্টেমে সমস্যা হয়েছে। লোকাল প্রোডাক্ট ক্যাটালগ ব্যবহার করা হচ্ছে।");
+            setDataError(userFriendlyError);
+          }
           setDataLoading(false);
         }
       } finally {
         clearTimeout(timeoutId);
-        if (isSubscribed && retry === 0) {
+        if (isSubscribed) {
           setDataLoading(false);
         }
       }
