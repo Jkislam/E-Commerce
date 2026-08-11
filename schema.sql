@@ -386,3 +386,11 @@ $$;
 -- Ensure social_links column exists on existing site_settings table
 ALTER TABLE site_settings ADD COLUMN IF NOT EXISTS social_links JSONB DEFAULT '[]'::jsonb;
 
+-- 8. CORS Security Hardening Configuration (Cross-Origin Resource Sharing)
+-- To prevent unauthorized third-party websites from making cross-origin API requests to your Supabase project:
+-- 1) In Supabase Dashboard: Go to Project Settings -> API -> Additional Allowed Origins (CORS)
+-- 2) Replace wildcard '*' with your exact domain name(s) (e.g. https://yourdomain.com, https://ais-dev-4cipbcvcfrz5sfmenaijnd-431254167686.asia-southeast1.run.app)
+-- 3) For PostgREST configuration directly in Postgres (Self-hosted or Custom PostgREST):
+-- ALTER ROLE authenticator SET pgrst.cors_allowed_origins = 'https://yourdomain.com,https://ais-dev-4cipbcvcfrz5sfmenaijnd-431254167686.asia-southeast1.run.app';
+-- NOTIFY pgrst, 'reload config';
+
