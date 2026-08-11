@@ -57,6 +57,7 @@ import OrdersView from '../components/OrdersView';
 import { useAuth } from '../context/AuthContext';
 import { supabase } from '../lib/supabase';
 import { validateAndCompressImage } from '../utils/imageUtils';
+import { secureStorage } from '../utils/secureStorage';
 import { useSearchParams } from 'react-router-dom';
 import { 
   BarChart, 
@@ -247,7 +248,7 @@ function SettingsView({ settings, setSettings, setSuccessMessage }: SettingsView
     setNewUrl('');
     setSettings(prev => {
       const updated = { ...prev, socialLinks: updatedLinks };
-      localStorage.setItem('al_hurumah_settings', JSON.stringify(updated));
+      secureStorage.setItem('al_hurumah_settings', updated);
       return updated;
     });
   };
@@ -257,7 +258,7 @@ function SettingsView({ settings, setSettings, setSuccessMessage }: SettingsView
     setSocialLinks(updatedLinks);
     setSettings(prev => {
       const updated = { ...prev, socialLinks: updatedLinks };
-      localStorage.setItem('al_hurumah_settings', JSON.stringify(updated));
+      secureStorage.setItem('al_hurumah_settings', updated);
       return updated;
     });
   };
@@ -265,7 +266,7 @@ function SettingsView({ settings, setSettings, setSuccessMessage }: SettingsView
   const handleSaveSocialLinks = async () => {
     setSettings(prev => {
       const updated = { ...prev, socialLinks: socialLinks };
-      localStorage.setItem('al_hurumah_settings', JSON.stringify(updated));
+      secureStorage.setItem('al_hurumah_settings', updated);
       return updated;
     });
 

@@ -33,6 +33,7 @@ import { PRODUCTS } from './constants';
 import { Product, CartItem, Order, AppSettings } from './types';
 import { useAuth } from './context/AuthContext';
 import { supabase } from './lib/supabase';
+import { secureStorage } from './utils/secureStorage';
 import Home from './pages/Home';
 import ProductDetails from './pages/ProductDetails';
 import Checkout from './pages/Checkout';
@@ -57,13 +58,7 @@ export default function App() {
   const [dataLoading, setDataLoading] = useState(true);
   const [dataError, setDataError] = useState<string | null>(null);
   const [cart, setCart] = useState<CartItem[]>(() => {
-    try {
-      const saved = localStorage.getItem('al_hurumah_cart');
-      return saved ? JSON.parse(saved) : [];
-    } catch (e) {
-      console.error('Failed to parse cart from localStorage:', e);
-      return [];
-    }
+    return secureStorage.getItem<CartItem[]>('al_hurumah_cart', []) || [];
   });
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [isCartOpen, setIsCartOpen] = useState(false);
@@ -104,14 +99,9 @@ export default function App() {
       ]
     };
 
-    const saved = localStorage.getItem('al_hurumah_settings');
+    const saved = secureStorage.getItem<AppSettings>('al_hurumah_settings');
     if (saved) {
-      try {
-        const parsed = JSON.parse(saved);
-        return { ...defaultSettings, ...parsed };
-      } catch (e) {
-        console.error('Failed to parse settings');
-      }
+      return { ...defaultSettings, ...saved };
     }
     return defaultSettings;
   });
@@ -444,7 +434,7 @@ export default function App() {
         if (isSubscribed && ordersData) {
           let deletedIds: string[] = [];
           try {
-            deletedIds = JSON.parse(localStorage.getItem('al_hurumah_deleted_order_ids') || '[]');
+            deletedIds = secureStorage.getItem<string[]>('al_hurumah_deleted_order_ids', []) || [];
           } catch (e) {
             console.error('Error reading deleted_order_ids:', e);
           }
@@ -512,7 +502,7 @@ export default function App() {
 
   // Sync settings to localStorage and Supabase (if user is admin)
   useEffect(() => {
-    localStorage.setItem('al_hurumah_settings', JSON.stringify(settings));
+    secureStorage.setItem('al_hurumah_settings', settings);
 
     const syncToSupabaseSettings = async () => {
       if (currentUser?.role === 'admin') {
@@ -576,7 +566,7 @@ export default function App() {
 
   // Sync cart to localStorage and Supabase (if user is logged in)
   useEffect(() => {
-    localStorage.setItem('al_hurumah_cart', JSON.stringify(cart));
+    secureStorage.setItem('al_hurumah_cart', cart);
 
     const syncCartToSupabase = async () => {
       if (currentUser?.id) {
@@ -698,7 +688,7 @@ export default function App() {
   const resetProducts = () => {
     if (window.confirm('Are you sure you want to reset all products to default? This will delete all your changes.')) {
       setProducts(PRODUCTS);
-      localStorage.removeItem('al_hurumah_products');
+      secureStorage.removeItem('al_hurumah_products');
     }
   };
 
@@ -792,9 +782,10 @@ export default function App() {
 
     // 1. Immediately save ID to local persistent blacklisted deleted list
     try {
-      const deletedIds = new Set<string>(JSON.parse(localStorage.getItem('al_hurumah_deleted_order_ids') || '[]'));
+      const existing = secureStorage.getItem<string[]>('al_hurumah_deleted_order_ids', []) || [];
+      const deletedIds = new Set<string>(existing);
       deletedIds.add(strId);
-      localStorage.setItem('al_hurumah_deleted_order_ids', JSON.stringify(Array.from(deletedIds)));
+      secureStorage.setItem('al_hurumah_deleted_order_ids', Array.from(deletedIds));
     } catch (e) {
       console.warn('Failed to save deleted order id to localStorage:', e);
     }
