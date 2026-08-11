@@ -705,6 +705,14 @@ export default function App() {
   const placeOrder = async (orderData: Omit<Order, 'id' | 'status' | 'createdat'>, shouldClearCart = true) => {
     const userId = currentUser?.id || null;
 
+    if (!orderData.items || orderData.items.length === 0) {
+      throw new Error('অর্ডারে কোনো প্রোডাক্ট নেই।');
+    }
+
+    if (orderData.items.some(item => !item.id || item.quantity <= 0 || item.price < 0)) {
+      throw new Error('প্রোডাক্টের পরিমাণ বা তথ্য সঠিক নয়।');
+    }
+
     try {
       // Prepare items for RPC - mapping fields to database column names
       const orderItems = orderData.items.map(item => ({

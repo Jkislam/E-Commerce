@@ -246,7 +246,7 @@ CREATE POLICY "Users can manage their own cart." ON user_carts FOR ALL USING (
 );
 
 
--- 7. Atomic Order Creation with Stock Validation Function (RPC)
+-- 7. Secure Atomic Order Creation with Stock Validation & Input Hardening Function (RPC)
 CREATE OR REPLACE FUNCTION public.create_order_v1(
   p_user_id UUID,
   p_customer_name TEXT,
@@ -268,23 +268,57 @@ DECLARE
   v_current_stock INTEGER;
   v_created_at TIMESTAMP WITH TIME ZONE;
 BEGIN
-  -- 1. Validate stock for each item before inserting anything
-  FOR v_item IN SELECT * FROM jsonb_to_recordset(p_order_items) AS x(p_id UUID, p_qty INTEGER, p_name TEXT) LOOP
+  -- 1. Validate customer input parameters
+  IF p_customer_name IS NULL OR TRIM(p_customer_name) = '' THEN
+    RAISE EXCEPTION 'Customer name is required';
+  END IF;
+
+  IF p_customer_phone IS NULL OR TRIM(p_customer_phone) = '' THEN
+    RAISE EXCEPTION 'Customer phone is required';
+  END IF;
+
+  IF p_total IS NULL OR p_total < 0 THEN
+    RAISE EXCEPTION 'Invalid order total';
+  END IF;
+
+  -- 2. Validate order_items array (prevent empty/fake orders)
+  IF p_order_items IS NULL OR jsonb_typeof(p_order_items) != 'array' OR jsonb_array_length(p_order_items) = 0 THEN
+    RAISE EXCEPTION 'Order items cannot be empty';
+  END IF;
+
+  -- 3. Validate stock and items before inserting anything
+  FOR v_item IN SELECT * FROM jsonb_to_recordset(p_order_items) AS x(p_id UUID, p_qty INTEGER, p_name TEXT, p_price NUMERIC) LOOP
+    -- Validate product ID
+    IF v_item.p_id IS NULL THEN
+      RAISE EXCEPTION 'Invalid product ID in order items';
+    END IF;
+
+    -- Validate quantity (Prevent negative quantities that increase stock, or zero quantities)
+    IF v_item.p_qty IS NULL OR v_item.p_qty <= 0 THEN
+      RAISE EXCEPTION 'Product quantity must be greater than zero';
+    END IF;
+
+    -- Validate price
+    IF v_item.p_price IS NULL OR v_item.p_price < 0 THEN
+      RAISE EXCEPTION 'Item price cannot be negative';
+    END IF;
+
+    -- Check if product exists in database and retrieve current stock
     SELECT COALESCE((details->>'stock')::INTEGER, 0)
     INTO v_current_stock
     FROM public.products
     WHERE id = v_item.p_id;
 
     IF NOT FOUND THEN
-      RAISE EXCEPTION 'Product % not found', v_item.p_name;
+      RAISE EXCEPTION 'Product % not found in database', COALESCE(v_item.p_name, 'Unknown');
     END IF;
 
     IF v_current_stock < v_item.p_qty THEN
-      RAISE EXCEPTION 'Insufficient stock for product %', v_item.p_name;
+      RAISE EXCEPTION 'Insufficient stock for product %', COALESCE(v_item.p_name, 'Unknown');
     END IF;
   END LOOP;
 
-  -- 2. Create the order
+  -- 4. Create the order
   INSERT INTO public.orders (
     user_id,
     customer_name,
@@ -309,7 +343,7 @@ BEGIN
   )
   RETURNING id, created_at INTO v_order_id, v_created_at;
 
-  -- 3. Create order items and update stock
+  -- 5. Create order items and update stock
   FOR v_item IN SELECT * FROM jsonb_to_recordset(p_order_items) AS x(p_id UUID, p_qty INTEGER, p_name TEXT, p_price NUMERIC, p_attr TEXT, p_image TEXT) LOOP
     -- Insert into order_items
     INSERT INTO public.order_items (
@@ -336,12 +370,12 @@ BEGIN
     SET details = jsonb_set(
       details, 
       '{stock}', 
-      to_jsonb(COALESCE((details->>'stock')::INTEGER, 0) - v_item.p_qty)
+      to_jsonb(GREATEST(0, COALESCE((details->>'stock')::INTEGER, 0) - v_item.p_qty))
     )
     WHERE id = v_item.p_id;
   END LOOP;
 
-  -- 4. Return success response
+  -- 6. Return success response
   RETURN jsonb_build_object(
     'order_id', v_order_id,
     'created_at', v_created_at
