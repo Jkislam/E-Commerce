@@ -25,6 +25,7 @@ import {
 import { User, Order } from '../types';
 import { supabase } from '../lib/supabase';
 import { validateAndCompressImage } from '../utils/imageUtils';
+import { showCleanAlert } from '../utils/errorUtils';
 
 interface ProfileProps {
   currentUser: User | null;
@@ -163,8 +164,7 @@ export default function Profile({ currentUser, isAuthLoading, orders, onLogout, 
       await onUpdateUser();
       setIsEditingProfile(false);
     } catch(err: any) {
-      console.error('Update profile error:', err);
-      alert("প্রোফাইল আপডেট করতে সমস্যা হয়েছে: " + (err.message || 'Unknown error'));
+      showCleanAlert(err, 'প্রোফাইল আপডেট করতে সমস্যা হয়েছে।');
     } finally {
       setIsSaving(false);
     }
@@ -195,8 +195,7 @@ export default function Profile({ currentUser, isAuthLoading, orders, onLogout, 
       await onUpdateUser();
       setIsEditingAddress(false);
     } catch(err: any) {
-      console.error('Update address error:', err);
-      alert("ঠিকানা আপডেট করতে সমস্যা হয়েছে: " + (err.message || 'Unknown error'));
+      showCleanAlert(err, 'ঠিকানা আপডেট করতে সমস্যা হয়েছে।');
     } finally {
       setIsSaving(false);
     }

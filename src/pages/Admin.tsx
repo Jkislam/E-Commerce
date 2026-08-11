@@ -58,6 +58,7 @@ import { useAuth } from '../context/AuthContext';
 import { supabase } from '../lib/supabase';
 import { validateAndCompressImage } from '../utils/imageUtils';
 import { secureStorage } from '../utils/secureStorage';
+import { showCleanAlert } from '../utils/errorUtils';
 import { useSearchParams } from 'react-router-dom';
 import { 
   BarChart, 
@@ -2923,7 +2924,7 @@ export default function Admin({
       setEditingProduct(null);
       setSuccessMessage('সফল ভাবে আপডেট হয়েছে।');
     } catch (err: any) {
-      alert('Error updating product: ' + err.message);
+      showCleanAlert(err, 'প্রোডাক্ট আপডেট করতে সমস্যা হয়েছে।');
     } finally {
       setIsSaving(false);
     }
@@ -2975,7 +2976,7 @@ export default function Admin({
       setNewProduct(initialProductState);
       setSuccessMessage('সফল ভাবে এড হয়েছে।');
     } catch (err: any) {
-       alert('Error adding product: ' + err.message);
+       showCleanAlert(err, 'নতুন প্রোডাক্ট যোগ করতে সমস্যা হয়েছে।');
     } finally {
       setIsSaving(false);
     }

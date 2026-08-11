@@ -34,6 +34,7 @@ import { Product, CartItem, Order, AppSettings } from './types';
 import { useAuth } from './context/AuthContext';
 import { supabase } from './lib/supabase';
 import { secureStorage } from './utils/secureStorage';
+import { showCleanAlert } from './utils/errorUtils';
 import Home from './pages/Home';
 import ProductDetails from './pages/ProductDetails';
 import Checkout from './pages/Checkout';
@@ -669,7 +670,7 @@ export default function App() {
       if (!error) {
         setProducts(prev => prev.filter(p => String(p.id) !== String(id)));
       } else {
-        alert('Failed to delete product: ' + error.message);
+        showCleanAlert(error, 'প্রোডাক্টটি মুছতে সমস্যা হয়েছে।');
       }
     }
   };
@@ -680,7 +681,7 @@ export default function App() {
       if (!error) {
         setProducts(prev => prev.filter(p => !ids.map(String).includes(String(p.id))));
       } else {
-        alert('Failed to delete products: ' + error.message);
+        showCleanAlert(error, 'প্রোডাক্টগুলো মুছতে সমস্যা হয়েছে।');
       }
     }
   };
@@ -773,7 +774,7 @@ export default function App() {
         order.id === orderId ? { ...order, status } : order
       ));
     } else {
-      alert('Failed to update order: ' + error.message);
+      showCleanAlert(error, 'অর্ডারের স্ট্যাটাস আপডেট করতে সমস্যা হয়েছে।');
     }
   };
 

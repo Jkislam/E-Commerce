@@ -3,6 +3,7 @@ import { useNavigate, useLocation } from 'react-router-dom';
 import { motion } from 'motion/react';
 import { ShoppingBag, ArrowLeft, CheckCircle2, Truck, CreditCard, Rocket } from 'lucide-react';
 import { CartItem, Order, User, AppSettings } from '../types';
+import { showCleanAlert } from '../utils/errorUtils';
 
 interface CheckoutProps {
   cart: CartItem[];
@@ -120,9 +121,7 @@ export default function Checkout({ cart, cartTotal, clearCart, placeOrder, curre
         window.scrollTo({ top: 0, behavior: 'smooth' });
       }
     } catch (error: any) {
-      console.error('Checkout error:', error);
-      // Detailed error for stock issues or general failures
-      alert(error.message || 'দুঃখিত, অর্ডারটি সফল হয়নি। অনুগ্রহ করে আবার চেষ্টা করুন বা আপনার ইন্টারনেট সংযোগ চেক করুন।');
+      showCleanAlert(error, 'দুঃখিত, অর্ডারটি সফল হয়নি। অনুগ্রহ করে আবার চেষ্টা করুন বা আপনার ইন্টারনেট সংযোগ চেক করুন।');
     } finally {
       setIsProcessing(false);
     }
