@@ -4,6 +4,14 @@ import { motion } from 'motion/react';
 import { User, Mail, Lock, ArrowRight, MapPin, Eye, EyeOff } from 'lucide-react';
 import { User as UserType } from '../types';
 import { supabase } from '../lib/supabase';
+import {
+  validateEmail,
+  validatePassword,
+  validateName,
+  validatePhone,
+  validateAddress,
+  sanitizeInput
+} from '../lib/security';
 
 export default function Login() {
   const [email, setEmail] = useState('');
@@ -25,28 +33,58 @@ export default function Login() {
     setSuccess('');
 
     try {
+      // Validate Email & Password with SQL Injection Checks
+      const emailCheck = validateEmail(email);
+      if (!emailCheck.isValid) {
+        throw new Error(emailCheck.error);
+      }
+
+      const passwordCheck = validatePassword(password);
+      if (!passwordCheck.isValid) {
+        throw new Error(passwordCheck.error);
+      }
+
+      const cleanEmail = sanitizeInput(email);
+
       if (isRegistering) {
-        // Phone Validation
-        if (!/^01\d{9}$/.test(phone)) {
-          throw new Error('সঠিক মোবাইল নম্বর দিন (যেমন: 01XXXXXXXXX)');
+        // Full Name Validation
+        const nameCheck = validateName(name);
+        if (!nameCheck.isValid) {
+          throw new Error(nameCheck.error);
         }
+
+        // Phone Validation
+        const phoneCheck = validatePhone(phone);
+        if (!phoneCheck.isValid) {
+          throw new Error(phoneCheck.error);
+        }
+
+        // Address Validation
+        const addressCheck = validateAddress(address);
+        if (!addressCheck.isValid) {
+          throw new Error(addressCheck.error);
+        }
+
+        const cleanName = sanitizeInput(name);
+        const cleanPhone = sanitizeInput(phone);
+        const cleanAddress = sanitizeInput(address);
 
         // Sign Up with Supabase
         const { data, error: signUpError } = await supabase.auth.signUp({
-          email,
+          email: cleanEmail,
           password,
           options: {
             data: {
-              name,
-              phone,
-              address
+              name: cleanName,
+              phone: cleanPhone,
+              address: cleanAddress
             }
           }
         });
 
         if (signUpError) {
           if (signUpError.message.includes('User already registered')) {
-            throw new Error('এই ইমেইল দিয়ে ইমেধ্যেই অ্যাকাউন্ট খোলা হয়েছে।');
+            throw new Error('এই ইমেইল দিয়ে ইতিমধ্যেই অ্যাকাউন্ট খোলা হয়েছে।');
           }
           throw new Error(signUpError.message);
         }
@@ -57,10 +95,10 @@ export default function Login() {
             .from('profiles')
             .upsert({
               id: data.user.id,
-              name,
-              phone,
-              address,
-              email,
+              name: cleanName,
+              phone: cleanPhone,
+              address: cleanAddress,
+              email: cleanEmail,
               role: 'customer'
             });
 
@@ -79,7 +117,7 @@ export default function Login() {
       } else {
         // Sign In with Supabase
         const { error: signInError } = await supabase.auth.signInWithPassword({
-          email,
+          email: cleanEmail,
           password,
         });
 

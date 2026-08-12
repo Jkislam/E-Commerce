@@ -26,6 +26,7 @@ import { User, Order } from '../types';
 import { supabase } from '../lib/supabase';
 import { validateAndCompressImage } from '../utils/imageUtils';
 import { showCleanAlert } from '../utils/errorUtils';
+import { validateName, validatePhone, validateAddress, sanitizeInput } from '../lib/security';
 
 interface ProfileProps {
   currentUser: User | null;
@@ -141,12 +142,28 @@ export default function Profile({ currentUser, isAuthLoading, orders, onLogout, 
     e.preventDefault();
     if (!currentUser || !currentUser.id || isSaving) return;
 
+    // Security Validation
+    const nameCheck = validateName(editName);
+    if (!nameCheck.isValid) {
+      showCleanAlert(nameCheck.error);
+      return;
+    }
+
+    const phoneCheck = validatePhone(editPhone);
+    if (!phoneCheck.isValid) {
+      showCleanAlert(phoneCheck.error);
+      return;
+    }
+
+    const cleanName = sanitizeInput(editName);
+    const cleanPhone = sanitizeInput(editPhone);
+
     setIsSaving(true);
     try {
       // Update profiles table in Supabase
       const { error } = await supabase.from('profiles').update({
-        name: editName,
-        phone: editPhone,
+        name: cleanName,
+        phone: cleanPhone,
       }).eq('id', currentUser.id);
 
       if (error) throw error;
@@ -154,8 +171,8 @@ export default function Profile({ currentUser, isAuthLoading, orders, onLogout, 
       // Update auth metadata for responsive local state sync
       const { error: authError } = await supabase.auth.updateUser({
         data: {
-          name: editName,
-          phone: editPhone
+          name: cleanName,
+          phone: cleanPhone
         }
       });
 
@@ -174,11 +191,20 @@ export default function Profile({ currentUser, isAuthLoading, orders, onLogout, 
     e.preventDefault();
     if (!currentUser || !currentUser.id || isSaving) return;
 
+    // Security Validation
+    const addressCheck = validateAddress(editAddress);
+    if (!addressCheck.isValid) {
+      showCleanAlert(addressCheck.error);
+      return;
+    }
+
+    const cleanAddress = sanitizeInput(editAddress);
+
     setIsSaving(true);
     try {
       // Update profiles table in Supabase
       const { error } = await supabase.from('profiles').update({
-        address: editAddress,
+        address: cleanAddress,
       }).eq('id', currentUser.id);
 
       if (error) throw error;
@@ -186,7 +212,7 @@ export default function Profile({ currentUser, isAuthLoading, orders, onLogout, 
       // Update auth metadata for responsive local state sync
       const { error: authError } = await supabase.auth.updateUser({
         data: {
-          address: editAddress,
+          address: cleanAddress,
         }
       });
 
