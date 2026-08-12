@@ -216,46 +216,39 @@ export default function Home({
               whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: true, margin: "-50px" }}
               transition={{ duration: 0.5, delay: index * 0.04 }}
-              className="bg-white rounded-2xl sm:rounded-3xl p-3 sm:p-4 border border-pink-100/60 shadow-[0_4px_20px_rgba(0,0,0,0.03)] hover:shadow-[0_10px_30px_rgba(255,0,85,0.12)] hover:border-pink-200 transition-all duration-300 flex flex-col justify-between h-full group relative overflow-hidden"
+              className="bg-white rounded-2xl sm:rounded-3xl p-2.5 sm:p-4 border border-gray-200/80 shadow-sm hover:shadow-xl hover:border-amber-500/40 transition-all duration-300 flex flex-col justify-between h-full group relative overflow-hidden"
             >
               <div>
-                {/* Top Right Badge */}
-                {product.islatest && (
-                  <div className="absolute top-2 right-2 sm:top-3 sm:right-3 bg-gradient-to-r from-rose-500 to-pink-600 text-white text-[8px] sm:text-[9px] font-black px-2.5 py-1 rounded-full uppercase tracking-wider z-10 shadow-sm">
-                    Hot
-                  </div>
-                )}
-                
-                {/* Product Image Container */}
-                <Link to={`/product/${product.id}`} className="block relative mb-3">
-                  <div className="relative aspect-square w-full rounded-xl sm:rounded-2xl bg-white overflow-hidden flex items-center justify-center p-2 sm:p-4 group-hover:bg-gray-50/50 transition-colors">
+                {/* Product Image Container - Larger view */}
+                <Link to={`/product/${product.id}`} className="block relative mb-2.5 overflow-hidden rounded-xl sm:rounded-2xl">
+                  <div className="relative aspect-square w-full bg-gray-50 overflow-hidden flex items-center justify-center p-0.5 sm:p-1 group-hover:bg-gray-100/60 transition-colors">
                     <img 
                       src={product.image} 
                       alt={product.name}
-                      className="w-full h-full object-contain group-hover:scale-105 transition-transform duration-500"
+                      className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500 rounded-lg sm:rounded-xl"
                       referrerPolicy="no-referrer"
                     />
                   </div>
                 </Link>
 
                 {/* Product Name */}
-                <Link to={`/product/${product.id}`} className="block mb-2">
-                  <h3 className="text-xs sm:text-sm md:text-base font-semibold text-gray-800 line-clamp-2 min-h-[2.25rem] sm:min-h-[2.5rem] group-hover:text-[#ff0055] transition-colors leading-snug">
+                <Link to={`/product/${product.id}`} className="block mb-0.5">
+                  <h3 className="text-xs sm:text-sm md:text-base font-bold text-gray-900 line-clamp-2 group-hover:text-amber-600 transition-colors leading-snug">
                     {product.name}
                   </h3>
                 </Link>
 
-                {/* Price */}
-                <div className="mb-3">
-                  <span className="text-lg sm:text-xl md:text-2xl font-black text-[#ff0055] tracking-tight">
+                {/* Price - Tight gap under name */}
+                <div className="mb-2.5">
+                  <span className="text-base sm:text-lg md:text-xl font-black text-amber-600 tracking-tight">
                     ৳{Number(product.price || 0).toLocaleString('en-IN')}
                   </span>
                 </div>
               </div>
 
-              {/* Shop now Button */}
+              {/* Shop now Button - Website Black & Amber theme */}
               <Link to={`/product/${product.id}`} className="block w-full mt-1">
-                <button className="w-full py-2.5 sm:py-3 px-4 bg-[#ff0055] hover:bg-[#e0004d] active:bg-[#c90045] text-white font-bold text-xs sm:text-sm rounded-xl sm:rounded-2xl transition-all duration-200 shadow-md shadow-pink-500/20 active:scale-[0.98] flex items-center justify-center">
+                <button className="w-full py-2 sm:py-2.5 px-3 bg-black hover:bg-amber-600 active:bg-amber-700 text-white font-bold text-xs sm:text-sm rounded-xl transition-all duration-300 shadow-sm active:scale-[0.98] flex items-center justify-center">
                   Shop now
                 </button>
               </Link>
