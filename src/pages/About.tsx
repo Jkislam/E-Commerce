@@ -1,16 +1,53 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import { motion } from 'motion/react';
 import { Target, Leaf, Heart, ShieldCheck, Sparkles, History } from 'lucide-react';
 import { AppSettings } from '../types';
+
+const RANDOM_CRAFTSMANSHIP_IMAGES = [
+  'https://images.unsplash.com/photo-1558769132-cb1aea458c5e?auto=format&fit=crop&w=1000&q=80',
+  'https://images.unsplash.com/photo-1590044591235-075047fe1e4e?auto=format&fit=crop&w=1000&q=80',
+  'https://images.unsplash.com/photo-1618221195710-dd6b41faaea6?auto=format&fit=crop&w=1000&q=80',
+  'https://images.unsplash.com/photo-1608571423902-eed4a5ad8108?auto=format&fit=crop&w=1000&q=80',
+  'https://images.unsplash.com/photo-1583743814966-8936f5b7ec2c?auto=format&fit=crop&w=1000&q=80',
+  'https://images.unsplash.com/photo-1544441893-675973e31985?auto=format&fit=crop&w=1000&q=80',
+  'https://images.unsplash.com/photo-1576995853123-5a10305d93c0?auto=format&fit=crop&w=1000&q=80',
+  'https://images.unsplash.com/photo-1607083206869-4c7672e72a8a?auto=format&fit=crop&w=1000&q=80'
+];
+
+const RANDOM_HERO_IMAGES = [
+  'https://images.unsplash.com/photo-1583743814966-8936f5b7ec2c?auto=format&fit=crop&w=2000&q=80',
+  'https://images.unsplash.com/photo-1608571423902-eed4a5ad8108?auto=format&fit=crop&w=2000&q=80',
+  'https://images.unsplash.com/photo-1558769132-cb1aea458c5e?auto=format&fit=crop&w=2000&q=80',
+  'https://images.unsplash.com/photo-1618221195710-dd6b41faaea6?auto=format&fit=crop&w=2000&q=80',
+  'https://images.unsplash.com/photo-1544441893-675973e31985?auto=format&fit=crop&w=2000&q=80',
+  'https://images.unsplash.com/photo-1576995853123-5a10305d93c0?auto=format&fit=crop&w=2000&q=80',
+  'https://images.unsplash.com/photo-1590044591235-075047fe1e4e?auto=format&fit=crop&w=2000&q=80',
+  'https://images.unsplash.com/photo-1607083206869-4c7672e72a8a?auto=format&fit=crop&w=2000&q=80'
+];
 
 interface AboutProps {
   settings: AppSettings;
 }
 
 export default function About({ settings }: AboutProps) {
+  const [currentImage, setCurrentImage] = useState(() => {
+    const randomIndex = Math.floor(Math.random() * RANDOM_CRAFTSMANSHIP_IMAGES.length);
+    return RANDOM_CRAFTSMANSHIP_IMAGES[randomIndex];
+  });
+
+  const [heroImage, setHeroImage] = useState(() => {
+    const randomIndex = Math.floor(Math.random() * RANDOM_HERO_IMAGES.length);
+    return RANDOM_HERO_IMAGES[randomIndex];
+  });
+
   useEffect(() => {
     window.scrollTo(0, 0);
-    console.log('About page mounted');
+    // Select new random images on mount
+    const randomCraftIndex = Math.floor(Math.random() * RANDOM_CRAFTSMANSHIP_IMAGES.length);
+    setCurrentImage(RANDOM_CRAFTSMANSHIP_IMAGES[randomCraftIndex]);
+
+    const randomHeroIndex = Math.floor(Math.random() * RANDOM_HERO_IMAGES.length);
+    setHeroImage(RANDOM_HERO_IMAGES[randomHeroIndex]);
   }, []);
 
   return (
@@ -19,11 +56,12 @@ export default function About({ settings }: AboutProps) {
       <section className="relative h-[60vh] flex items-center justify-center overflow-hidden">
         <div className="absolute inset-0 z-0">
           <img 
-            src="https://images.unsplash.com/photo-1583743814966-8936f5b7ec2c?auto=format&fit=crop&q=80&w=2000" 
+            src={heroImage} 
             alt="About AL-Hurumah" 
-            className="w-full h-full object-cover opacity-20 scale-105"
+            className="w-full h-full object-cover opacity-25 scale-105 transition-opacity duration-700"
+            referrerPolicy="no-referrer"
           />
-          <div className="absolute inset-0 bg-gradient-to-b from-transparent to-[#FDFCFB]" />
+          <div className="absolute inset-0 bg-gradient-to-b from-black/20 via-transparent to-[#FDFCFB]" />
         </div>
         
         <div className="relative z-10 text-center px-4">
@@ -68,9 +106,10 @@ export default function About({ settings }: AboutProps) {
           >
             <div className="aspect-[4/5] rounded-[2.5rem] overflow-hidden border border-black/5 shadow-2xl">
               <img 
-                src="https://images.unsplash.com/photo-1590044591235-075047fe1e4e?auto=format&fit=crop&q=80&w=1000" 
+                src={currentImage} 
                 alt="Craftsmanship" 
-                className="w-full h-full object-cover"
+                className="w-full h-full object-cover transition-opacity duration-500"
+                referrerPolicy="no-referrer"
               />
             </div>
             <div className="absolute -bottom-6 -left-6 bg-white p-6 rounded-2xl shadow-xl border border-black/5 hidden sm:block">
