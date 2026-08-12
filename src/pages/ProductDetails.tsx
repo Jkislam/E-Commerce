@@ -115,7 +115,7 @@ export default function ProductDetails({ products, addToCart }: ProductDetailsPr
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12 [perspective:1200px]">
       <button 
-        onClick={() => navigate('/')}
+        onClick={() => navigate('/#shop', { state: { scrollTo: 'shop' } })}
         className="flex items-center text-sm font-medium text-black/60 hover:text-black mb-8 transition-colors group"
       >
         <ArrowLeft className="w-4 h-4 mr-2 group-hover:-translate-x-1 transition-transform" />

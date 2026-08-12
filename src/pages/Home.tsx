@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { ArrowRight, ArrowUpDown, ChevronDown, RotateCw } from 'lucide-react';
 import { Product, AppSettings } from '../types';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { PRODUCTS } from '../constants';
 
 interface HomeProps {
@@ -27,8 +27,20 @@ export default function Home({
   settings
 }: HomeProps) {
   const navigate = useNavigate();
+  const location = useLocation();
   const [currentProductIndex, setCurrentProductIndex] = useState(0);
   const [rotatingProductId, setRotatingProductId] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (location.state?.scrollTo === 'shop' || location.hash === '#shop') {
+      const shopSection = document.getElementById('shop');
+      if (shopSection) {
+        setTimeout(() => {
+          shopSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        }, 100);
+      }
+    }
+  }, [location]);
 
   const handleProductClick = (e: React.MouseEvent, productId: string) => {
     e.preventDefault();
