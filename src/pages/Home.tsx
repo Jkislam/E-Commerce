@@ -30,13 +30,13 @@ export default function Home({
   const [currentProductIndex, setCurrentProductIndex] = useState(0);
   const [rotatingProductId, setRotatingProductId] = useState<string | null>(null);
 
-  const handleProductNavigate = (e: React.MouseEvent, productId: string) => {
+  const handleProductClick = (e: React.MouseEvent, productId: string) => {
     e.preventDefault();
     if (rotatingProductId === productId) return;
     setRotatingProductId(productId);
     setTimeout(() => {
       navigate(`/product/${productId}`);
-    }, 380);
+    }, 200);
   };
 
   useEffect(() => {
@@ -225,7 +225,7 @@ export default function Home({
         </motion.div>
 
         {/* Product Grid */}
-        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 sm:gap-6 lg:gap-8 [perspective:1000px]">
+        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 sm:gap-6 lg:gap-8 [perspective:1200px]">
           {filteredAndSortedProducts.map((product, index) => {
             const isRotating = rotatingProductId === String(product.id);
             return (
@@ -236,21 +236,20 @@ export default function Home({
                 viewport={{ once: true, margin: "-40px" }}
                 animate={
                   isRotating 
-                    ? { rotateY: 360, rotateX: 12, scale: 1.06, zIndex: 30 } 
+                    ? { rotateY: 45, rotateX: -8, scale: 1.04, zIndex: 30 } 
                     : { rotateY: 0, rotateX: 0, scale: 1 }
                 }
                 transition={
                   isRotating 
-                    ? { duration: 0.38, ease: "easeInOut" } 
-                    : { duration: 0.5, delay: (index % 4) * 0.08 }
+                    ? { duration: 0.2, ease: "easeOut" } 
+                    : { duration: 0.4, delay: (index % 4) * 0.06 }
                 }
-                whileHover={!isRotating ? { rotateY: 6, rotateX: -3, y: -4, scale: 1.02 } : undefined}
                 style={{ transformStyle: 'preserve-3d' }}
-                onClick={(e) => handleProductNavigate(e, String(product.id))}
-                className="bg-white rounded-2xl sm:rounded-3xl p-2.5 sm:p-4 border border-gray-200/80 shadow-sm hover:shadow-xl hover:border-amber-500/40 transition-all duration-300 flex flex-col justify-between h-full group relative overflow-hidden cursor-pointer"
+                onClick={(e) => handleProductClick(e, String(product.id))}
+                className="bg-white rounded-2xl sm:rounded-3xl p-2.5 sm:p-4 border border-gray-200/80 shadow-sm hover:shadow-2xl hover:border-amber-500/50 transition-all duration-300 flex flex-col justify-between h-full group relative overflow-visible cursor-pointer transform-gpu"
               >
-                <div>
-                  {/* Product Image Container with 3D Indicator */}
+                <div style={{ transformStyle: 'preserve-3d' }}>
+                  {/* Product Image Container */}
                   <div className="block relative mb-2.5 overflow-hidden rounded-xl sm:rounded-2xl">
                     <div className="relative aspect-square w-full bg-gray-50 overflow-hidden flex items-center justify-center p-0.5 sm:p-1 group-hover:bg-gray-100/60 transition-colors">
                       <img 
@@ -259,11 +258,6 @@ export default function Home({
                         className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500 rounded-lg sm:rounded-xl"
                         referrerPolicy="no-referrer"
                       />
-                      
-                      {/* Subtle 3D Badge on Hover */}
-                      <div className="absolute top-2 right-2 bg-black/70 backdrop-blur-md text-amber-400 p-1.5 rounded-full opacity-0 group-hover:opacity-100 transition-opacity duration-300 shadow-md">
-                        <RotateCw className="w-3.5 h-3.5 animate-spin-slow" />
-                      </div>
                     </div>
                   </div>
 
@@ -284,9 +278,8 @@ export default function Home({
 
                 {/* Shop now Button */}
                 <div className="block w-full mt-1">
-                  <button className="w-full py-2 sm:py-2.5 px-3 bg-black hover:bg-amber-600 active:bg-amber-700 text-white font-bold text-xs sm:text-sm rounded-xl transition-all duration-300 shadow-sm active:scale-[0.98] flex items-center justify-center gap-1.5">
-                    <span>Shop now</span>
-                    {isRotating && <RotateCw className="w-3.5 h-3.5 animate-spin" />}
+                  <button className="w-full py-2 sm:py-2.5 px-3 bg-black hover:bg-amber-600 active:bg-amber-700 text-white font-bold text-xs sm:text-sm rounded-xl transition-all duration-300 shadow-sm active:scale-[0.98] flex items-center justify-center">
+                    Shop now
                   </button>
                 </div>
               </motion.div>

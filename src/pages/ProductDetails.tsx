@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'motion/react';
-import { ShoppingBag, ArrowLeft, Minus, Plus, MapPin, Truck, Heart, Clock, Shield, Info, X, RotateCw } from 'lucide-react';
+import { ShoppingBag, ArrowLeft, Minus, Plus, MapPin, Truck, Heart, Clock, Shield, Info, X } from 'lucide-react';
 import { Product } from '../types';
 import { useAuth } from '../context/AuthContext';
 import { supabase } from '../lib/supabase';
@@ -35,6 +35,7 @@ export default function ProductDetails({ products, addToCart }: ProductDetailsPr
   const product = products.find(p => String(p.id) === String(id));
 
   useEffect(() => {
+    window.scrollTo({ top: 0, behavior: 'instant' });
     setSelectedImage(null);
     setSelectedAttr(null);
     setQuantity(1);
@@ -112,7 +113,7 @@ export default function ProductDetails({ products, addToCart }: ProductDetailsPr
   const activeImage = selectedImage || product.image;
 
   return (
-    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
+    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12 [perspective:1200px]">
       <button 
         onClick={() => navigate('/')}
         className="flex items-center text-sm font-medium text-black/60 hover:text-black mb-8 transition-colors group"
@@ -121,18 +122,23 @@ export default function ProductDetails({ products, addToCart }: ProductDetailsPr
         Back to Collection
       </button>
 
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-10">
+      <motion.div 
+        initial={{ opacity: 0, rotateY: -45, scale: 0.98 }}
+        animate={{ opacity: 1, rotateY: 0, scale: 1 }}
+        transition={{ duration: 0.35, ease: [0.16, 1, 0.3, 1] }}
+        style={{ transformStyle: 'preserve-3d' }}
+        className="grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-10"
+      >
         {/* Product Image & Gallery */}
         <div className="lg:col-span-4 flex flex-col gap-4 max-w-[420px] w-full mx-auto lg:mx-0 [perspective:1200px]">
           <motion.div 
             key={activeImage}
-            initial={{ opacity: 0, rotateY: -180, scale: 0.8 }}
             animate={
               is3DRotating 
                 ? { rotateY: [0, 180, 360], scale: [1, 1.05, 1], rotateX: [0, 10, 0] } 
-                : { opacity: 1, rotateY: tiltPos.x * 18, rotateX: tiltPos.y * -18, scale: 1 }
+                : { rotateY: tiltPos.x * 16, rotateX: tiltPos.y * -16, scale: 1 }
             }
-            transition={{ duration: is3DRotating ? 0.8 : 0.85, ease: [0.16, 1, 0.3, 1] }}
+            transition={{ duration: is3DRotating ? 0.7 : 0.3, ease: [0.16, 1, 0.3, 1] }}
             style={{ transformStyle: 'preserve-3d' }}
             onMouseMove={(e) => {
               if (is3DRotating) return;
@@ -156,19 +162,6 @@ export default function ProductDetails({ products, addToCart }: ProductDetailsPr
                 Low Stock
               </div>
             )}
-
-            {/* Interactive 3D Spin Button */}
-            <button
-              onClick={(e) => {
-                e.stopPropagation();
-                trigger3DSpin();
-              }}
-              className="absolute bottom-3 right-3 px-3 py-1.5 bg-black/80 hover:bg-black text-amber-400 rounded-full text-[10px] font-bold uppercase tracking-wider backdrop-blur-md flex items-center gap-1.5 shadow-lg transition-all hover:scale-105 active:scale-95 z-10"
-              title="Click for 3D Product Rotation"
-            >
-              <RotateCw className={`w-3.5 h-3.5 ${is3DRotating ? 'animate-spin' : ''}`} />
-              <span>3D Rotate</span>
-            </button>
           </motion.div>
 
           {/* Thumbnail Gallery (Daraz style) */}
@@ -474,7 +467,7 @@ export default function ProductDetails({ products, addToCart }: ProductDetailsPr
             </div>
           </div>
         </div>
-      </div>
+      </motion.div>
 
       {/* Address Edit Modal */}
       <AnimatePresence>
