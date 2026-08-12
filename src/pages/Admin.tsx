@@ -2306,25 +2306,47 @@ function InventoryView({
 }
 
 function UsersView({ setSuccessMessage }: { setSuccessMessage: (msg: string) => void }) {
+  const { currentUser } = useAuth();
   const [users, setUsers] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
   const [currentPage, setCurrentPage] = useState<number>(1);
+  const [totalCount, setTotalCount] = useState<number>(0);
   const ITEMS_PER_PAGE = 20;
 
   useEffect(() => {
-    fetchUsers();
-  }, []);
+    fetchUsers(currentPage, searchTerm);
+  }, [currentPage, searchTerm, currentUser]);
 
-  const fetchUsers = async () => {
+  const fetchUsers = async (page: number, search: string) => {
+    // IDOR & Authorization Protection: Only allow authenticated admin users to fetch user lists
+    if (!currentUser || currentUser.role !== 'admin') {
+      setUsers([]);
+      setLoading(false);
+      return;
+    }
+
+    setLoading(true);
     try {
-      const { data, error } = await supabase
+      const from = (page - 1) * ITEMS_PER_PAGE;
+      const to = page * ITEMS_PER_PAGE - 1;
+
+      let query = supabase
         .from('profiles')
-        .select('*')
-        .order('created_at', { ascending: false });
-      
+        .select('id, name, email, photourl, role, created_at', { count: 'exact' });
+
+      if (search.trim()) {
+        const cleanSearch = search.trim().replace(/[%_]/g, '');
+        query = query.or(`name.ilike.%${cleanSearch}%,email.ilike.%${cleanSearch}%`);
+      }
+
+      const { data, count, error } = await query
+        .order('created_at', { ascending: false })
+        .range(from, to);
+
       if (error) throw error;
       setUsers(data || []);
+      setTotalCount(count || 0);
     } catch (err: any) {
       const msg = err?.message || String(err);
       if (msg.includes('Failed to fetch') || msg.includes('network')) {
@@ -2337,16 +2359,9 @@ function UsersView({ setSuccessMessage }: { setSuccessMessage: (msg: string) => 
     }
   };
 
-  const filteredUsers = users.filter(u => 
-    (u.name || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
-    (u.email || '').toLowerCase().includes(searchTerm.toLowerCase())
-  );
-
-  // Pagination Calculations
-  const totalPages = Math.ceil(filteredUsers.length / ITEMS_PER_PAGE) || 1;
+  const paginatedUsers = users;
+  const totalPages = Math.ceil(totalCount / ITEMS_PER_PAGE) || 1;
   const safeCurrentPage = Math.min(Math.max(currentPage, 1), totalPages);
-  const startIndex = (safeCurrentPage - 1) * ITEMS_PER_PAGE;
-  const paginatedUsers = filteredUsers.slice(startIndex, startIndex + ITEMS_PER_PAGE);
 
   const getPageNumbers = () => {
     const pages: (number | string)[] = [];
@@ -2490,7 +2505,7 @@ function UsersView({ setSuccessMessage }: { setSuccessMessage: (msg: string) => 
       </div>
 
       {/* Pagination Bar (Clean white background, centered) */}
-      {filteredUsers.length > 0 && (
+      {totalCount > 0 && (
         <motion.div 
           initial={{ opacity: 0, y: 15 }}
           animate={{ opacity: 1, y: 0 }}
