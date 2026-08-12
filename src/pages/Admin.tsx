@@ -56,7 +56,7 @@ import { Product, Order, AppSettings, SocialLink } from '../types';
 import OrdersView from '../components/OrdersView';
 import { useAuth } from '../context/AuthContext';
 import { supabase } from '../lib/supabase';
-import { validateAndCompressImage } from '../utils/imageUtils';
+import { validateAndCompressImage, uploadImageToStorage } from '../utils/imageUtils';
 import { secureStorage } from '../utils/secureStorage';
 import { showCleanAlert } from '../utils/errorUtils';
 import { useSearchParams } from 'react-router-dom';
@@ -504,8 +504,8 @@ function SettingsView({ settings, setSettings, setSuccessMessage }: SettingsView
                       const file = e.target.files?.[0];
                       if (file) {
                         try {
-                          const compressed = await validateAndCompressImage(file, { maxWidth: 1200, maxHeight: 1200 });
-                          setHeroSettings(prev => ({ ...prev, image: compressed }));
+                          const imageUrl = await uploadImageToStorage(file, { maxWidth: 1200, maxHeight: 1200 }, 'site-settings');
+                          setHeroSettings(prev => ({ ...prev, image: imageUrl }));
                         } catch (err) {
                           console.error(err);
                         } finally {
@@ -552,8 +552,8 @@ function SettingsView({ settings, setSettings, setSuccessMessage }: SettingsView
                           const file = e.target.files?.[0];
                           if (file) {
                             try {
-                              const compressed = await validateAndCompressImage(file, { maxWidth: 500, maxHeight: 500 });
-                              setLogo(compressed);
+                              const imageUrl = await uploadImageToStorage(file, { maxWidth: 500, maxHeight: 500 }, 'site-settings');
+                              setLogo(imageUrl);
                             } catch (err) {
                               console.error(err);
                             } finally {
@@ -740,8 +740,8 @@ function SettingsView({ settings, setSettings, setSuccessMessage }: SettingsView
                       const file = e.target.files?.[0];
                       if (file) {
                         try {
-                          const compressed = await validateAndCompressImage(file, { maxWidth: 1200, maxHeight: 1200 });
-                          setContactImageTop(compressed);
+                          const imageUrl = await uploadImageToStorage(file, { maxWidth: 1200, maxHeight: 1200 }, 'site-settings');
+                          setContactImageTop(imageUrl);
                         } catch (err) {
                           console.error(err);
                         } finally {
@@ -774,8 +774,8 @@ function SettingsView({ settings, setSettings, setSuccessMessage }: SettingsView
                       const file = e.target.files?.[0];
                       if (file) {
                         try {
-                          const compressed = await validateAndCompressImage(file, { maxWidth: 1200, maxHeight: 1200 });
-                          setContactImageBottom(compressed);
+                          const imageUrl = await uploadImageToStorage(file, { maxWidth: 1200, maxHeight: 1200 }, 'site-settings');
+                          setContactImageBottom(imageUrl);
                         } catch (err) {
                           console.error(err);
                         } finally {
@@ -3001,15 +3001,15 @@ export default function Admin({
     const file = e.target.files?.[0];
     if (file) {
       try {
-        const compressedBase64 = await validateAndCompressImage(file, {
+        const imageUrl = await uploadImageToStorage(file, {
           maxWidth: 1000,
           maxHeight: 1000,
           quality: 0.8
-        });
+        }, 'product-images');
         if (isEdit && editingProduct) {
-          setEditingProduct({ ...editingProduct, image: compressedBase64 });
+          setEditingProduct({ ...editingProduct, image: imageUrl });
         } else {
-          setNewProduct({ ...newProduct, image: compressedBase64 });
+          setNewProduct({ ...newProduct, image: imageUrl });
         }
       } catch (err) {
         console.error(err);
@@ -3023,18 +3023,18 @@ export default function Admin({
     const file = e.target.files?.[0];
     if (file) {
       try {
-        const compressedBase64 = await validateAndCompressImage(file, {
+        const imageUrl = await uploadImageToStorage(file, {
           maxWidth: 1000,
           maxHeight: 1000,
           quality: 0.8
-        });
+        }, 'product-images');
         if (isEdit && editingProduct) {
           const currentImages = [...(editingProduct.images || [])];
-          currentImages[index] = compressedBase64;
+          currentImages[index] = imageUrl;
           setEditingProduct({ ...editingProduct, images: currentImages });
         } else {
           const currentImages = [...(newProduct.images || [])];
-          currentImages[index] = compressedBase64;
+          currentImages[index] = imageUrl;
           setNewProduct({ ...newProduct, images: currentImages });
         }
       } catch (err) {
