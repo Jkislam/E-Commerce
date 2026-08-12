@@ -1270,53 +1270,64 @@ export default function App() {
           )}
         </AnimatePresence>
 
-        <main className="pt-24 sm:pt-28">
-          <Routes>
-            <Route path="/" element={
-              <Home 
-                filteredAndSortedProducts={filteredAndSortedProducts}
-                categories={categories}
-                selectedCategory={selectedCategory}
-                setSelectedCategory={setSelectedCategory}
-                setSortBy={setSortBy}
-                setSearchQuery={setSearchQuery}
-                latestProducts={latestProducts}
-                settings={settings}
-              />
-            } />
-            <Route path="/shop" element={
-              <Home 
-                filteredAndSortedProducts={filteredAndSortedProducts}
-                categories={categories}
-                selectedCategory={selectedCategory}
-                setSelectedCategory={setSelectedCategory}
-                setSortBy={setSortBy}
-                setSearchQuery={setSearchQuery}
-                latestProducts={latestProducts}
-                settings={settings}
-              />
-            } />
-            <Route path="/product/:id" element={<ProductDetails products={products} addToCart={addToCart} />} />
-            <Route path="/checkout" element={<Checkout cart={cart} cartTotal={cartTotal} clearCart={clearCart} placeOrder={placeOrder} currentUser={currentUser} settings={settings} />} />
-            <Route path="/profile" element={<Profile currentUser={currentUser} isAuthLoading={authLoading} orders={orders} onLogout={async () => { await logout(); clearCart(); }} onUpdateUser={refreshUser} />} />
-            <Route path="/login" element={<Login />} />
-            <Route path="/about" element={<About settings={settings} />} />
-            <Route path="/contact" element={<Contact settings={settings} />} />
-            <Route path="/admin" element={
-              <Admin 
-                products={products} 
-                setProducts={setProducts} 
-                onDelete={deleteProduct}
-                onBulkDelete={bulkDeleteProducts}
-                onReset={resetProducts}
-                orders={orders}
-                updateOrderStatus={updateOrderStatus}
-                onDeleteOrder={deleteOrder}
-                settings={settings}
-                setSettings={setSettings}
-              />
-            } />
-          </Routes>
+        <main className="pt-24 sm:pt-28 overflow-x-hidden">
+          <AnimatePresence mode="wait">
+            <motion.div 
+              key={location.pathname}
+              initial={{ opacity: 0, rotateY: 12 }}
+              animate={{ opacity: 1, rotateY: 0 }}
+              exit={{ opacity: 0, rotateY: -12 }}
+              transition={{ duration: 0.35, ease: [0.22, 1, 0.36, 1] }}
+              style={{ transformStyle: 'preserve-3d', perspective: '1200px' }}
+            >
+              <Routes location={location}>
+                <Route path="/" element={
+                  <Home 
+                    filteredAndSortedProducts={filteredAndSortedProducts}
+                    categories={categories}
+                    selectedCategory={selectedCategory}
+                    setSelectedCategory={setSelectedCategory}
+                    setSortBy={setSortBy}
+                    setSearchQuery={setSearchQuery}
+                    latestProducts={latestProducts}
+                    settings={settings}
+                  />
+                } />
+                <Route path="/shop" element={
+                  <Home 
+                    filteredAndSortedProducts={filteredAndSortedProducts}
+                    categories={categories}
+                    selectedCategory={selectedCategory}
+                    setSelectedCategory={setSelectedCategory}
+                    setSortBy={setSortBy}
+                    setSearchQuery={setSearchQuery}
+                    latestProducts={latestProducts}
+                    settings={settings}
+                  />
+                } />
+                <Route path="/product/:id" element={<ProductDetails products={products} addToCart={addToCart} />} />
+                <Route path="/checkout" element={<Checkout cart={cart} cartTotal={cartTotal} clearCart={clearCart} placeOrder={placeOrder} currentUser={currentUser} settings={settings} />} />
+                <Route path="/profile" element={<Profile currentUser={currentUser} isAuthLoading={authLoading} orders={orders} onLogout={async () => { await logout(); clearCart(); }} onUpdateUser={refreshUser} />} />
+                <Route path="/login" element={<Login />} />
+                <Route path="/about" element={<About settings={settings} />} />
+                <Route path="/contact" element={<Contact settings={settings} />} />
+                <Route path="/admin" element={
+                  <Admin 
+                    products={products} 
+                    setProducts={setProducts} 
+                    onDelete={deleteProduct}
+                    onBulkDelete={bulkDeleteProducts}
+                    onReset={resetProducts}
+                    orders={orders}
+                    updateOrderStatus={updateOrderStatus}
+                    onDeleteOrder={deleteOrder}
+                    settings={settings}
+                    setSettings={setSettings}
+                  />
+                } />
+              </Routes>
+            </motion.div>
+          </AnimatePresence>
         </main>
 
         {/* Footer */}

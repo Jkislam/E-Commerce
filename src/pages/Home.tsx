@@ -1,8 +1,8 @@
 import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
-import { ArrowRight, ArrowUpDown, ChevronDown } from 'lucide-react';
+import { ArrowRight, ArrowUpDown, ChevronDown, RotateCw } from 'lucide-react';
 import { Product, AppSettings } from '../types';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { PRODUCTS } from '../constants';
 
 interface HomeProps {
@@ -26,7 +26,18 @@ export default function Home({
   latestProducts,
   settings
 }: HomeProps) {
+  const navigate = useNavigate();
   const [currentProductIndex, setCurrentProductIndex] = useState(0);
+  const [rotatingProductId, setRotatingProductId] = useState<string | null>(null);
+
+  const handleProductNavigate = (e: React.MouseEvent, productId: string) => {
+    e.preventDefault();
+    if (rotatingProductId === productId) return;
+    setRotatingProductId(productId);
+    setTimeout(() => {
+      navigate(`/product/${productId}`);
+    }, 380);
+  };
 
   useEffect(() => {
     if (latestProducts.length === 0) return;
@@ -141,7 +152,13 @@ export default function Home({
 
       {/* Shop Section */}
       <section id="shop" className="py-16 sm:py-24 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="flex flex-col md:flex-row md:items-end justify-between mb-12 gap-6">
+        <motion.div 
+          initial={{ opacity: 0, y: 25 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={{ once: true, margin: "-80px" }}
+          transition={{ duration: 0.7, ease: [0.22, 1, 0.36, 1] }}
+          className="flex flex-col md:flex-row md:items-end justify-between mb-12 gap-6"
+        >
           <div className="text-center md:text-left">
             <h2 className="text-2xl sm:text-3xl font-bold tracking-tight mb-2">Featured Products</h2>
             <p className="text-black/50 text-sm sm:text-base">Explore our latest arrivals and bestsellers.</p>
@@ -205,55 +222,76 @@ export default function Home({
               </div>
             </div>
           </div>
-        </div>
+        </motion.div>
 
         {/* Product Grid */}
-        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 sm:gap-6 lg:gap-8">
-          {filteredAndSortedProducts.map((product, index) => (
-            <motion.div 
-              key={product.id}
-              initial={{ opacity: 0, y: 30 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: true, margin: "-50px" }}
-              transition={{ duration: 0.5, delay: index * 0.04 }}
-              className="bg-white rounded-2xl sm:rounded-3xl p-2.5 sm:p-4 border border-gray-200/80 shadow-sm hover:shadow-xl hover:border-amber-500/40 transition-all duration-300 flex flex-col justify-between h-full group relative overflow-hidden"
-            >
-              <div>
-                {/* Product Image Container - Larger view */}
-                <Link to={`/product/${product.id}`} className="block relative mb-2.5 overflow-hidden rounded-xl sm:rounded-2xl">
-                  <div className="relative aspect-square w-full bg-gray-50 overflow-hidden flex items-center justify-center p-0.5 sm:p-1 group-hover:bg-gray-100/60 transition-colors">
-                    <img 
-                      src={product.image} 
-                      alt={product.name}
-                      className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500 rounded-lg sm:rounded-xl"
-                      referrerPolicy="no-referrer"
-                    />
+        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 sm:gap-6 lg:gap-8 [perspective:1000px]">
+          {filteredAndSortedProducts.map((product, index) => {
+            const isRotating = rotatingProductId === String(product.id);
+            return (
+              <motion.div 
+                key={product.id}
+                initial={{ opacity: 0, y: 35, scale: 0.97 }}
+                whileInView={{ opacity: 1, y: 0, scale: 1 }}
+                viewport={{ once: true, margin: "-40px" }}
+                animate={
+                  isRotating 
+                    ? { rotateY: 360, rotateX: 12, scale: 1.06, zIndex: 30 } 
+                    : { rotateY: 0, rotateX: 0, scale: 1 }
+                }
+                transition={
+                  isRotating 
+                    ? { duration: 0.38, ease: "easeInOut" } 
+                    : { duration: 0.5, delay: (index % 4) * 0.08 }
+                }
+                whileHover={!isRotating ? { rotateY: 6, rotateX: -3, y: -4, scale: 1.02 } : undefined}
+                style={{ transformStyle: 'preserve-3d' }}
+                onClick={(e) => handleProductNavigate(e, String(product.id))}
+                className="bg-white rounded-2xl sm:rounded-3xl p-2.5 sm:p-4 border border-gray-200/80 shadow-sm hover:shadow-xl hover:border-amber-500/40 transition-all duration-300 flex flex-col justify-between h-full group relative overflow-hidden cursor-pointer"
+              >
+                <div>
+                  {/* Product Image Container with 3D Indicator */}
+                  <div className="block relative mb-2.5 overflow-hidden rounded-xl sm:rounded-2xl">
+                    <div className="relative aspect-square w-full bg-gray-50 overflow-hidden flex items-center justify-center p-0.5 sm:p-1 group-hover:bg-gray-100/60 transition-colors">
+                      <img 
+                        src={product.image} 
+                        alt={product.name}
+                        className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500 rounded-lg sm:rounded-xl"
+                        referrerPolicy="no-referrer"
+                      />
+                      
+                      {/* Subtle 3D Badge on Hover */}
+                      <div className="absolute top-2 right-2 bg-black/70 backdrop-blur-md text-amber-400 p-1.5 rounded-full opacity-0 group-hover:opacity-100 transition-opacity duration-300 shadow-md">
+                        <RotateCw className="w-3.5 h-3.5 animate-spin-slow" />
+                      </div>
+                    </div>
                   </div>
-                </Link>
 
-                {/* Product Name */}
-                <Link to={`/product/${product.id}`} className="block mb-0.5">
-                  <h3 className="text-xs sm:text-sm md:text-base font-bold text-gray-900 line-clamp-2 group-hover:text-amber-600 transition-colors leading-snug">
-                    {product.name}
-                  </h3>
-                </Link>
+                  {/* Product Name */}
+                  <div className="block mb-0.5">
+                    <h3 className="text-xs sm:text-sm md:text-base font-bold text-gray-900 line-clamp-2 group-hover:text-amber-600 transition-colors leading-snug">
+                      {product.name}
+                    </h3>
+                  </div>
 
-                {/* Price - Tight gap under name */}
-                <div className="mb-2.5">
-                  <span className="text-base sm:text-lg md:text-xl font-black text-amber-600 tracking-tight">
-                    ৳{Number(product.price || 0).toLocaleString('en-IN')}
-                  </span>
+                  {/* Price */}
+                  <div className="mb-2.5">
+                    <span className="text-base sm:text-lg md:text-xl font-black text-amber-600 tracking-tight">
+                      ৳{Number(product.price || 0).toLocaleString('en-IN')}
+                    </span>
+                  </div>
                 </div>
-              </div>
 
-              {/* Shop now Button - Website Black & Amber theme */}
-              <Link to={`/product/${product.id}`} className="block w-full mt-1">
-                <button className="w-full py-2 sm:py-2.5 px-3 bg-black hover:bg-amber-600 active:bg-amber-700 text-white font-bold text-xs sm:text-sm rounded-xl transition-all duration-300 shadow-sm active:scale-[0.98] flex items-center justify-center">
-                  Shop now
-                </button>
-              </Link>
-            </motion.div>
-          ))}
+                {/* Shop now Button */}
+                <div className="block w-full mt-1">
+                  <button className="w-full py-2 sm:py-2.5 px-3 bg-black hover:bg-amber-600 active:bg-amber-700 text-white font-bold text-xs sm:text-sm rounded-xl transition-all duration-300 shadow-sm active:scale-[0.98] flex items-center justify-center gap-1.5">
+                    <span>Shop now</span>
+                    {isRotating && <RotateCw className="w-3.5 h-3.5 animate-spin" />}
+                  </button>
+                </div>
+              </motion.div>
+            );
+          })}
         </div>
 
         {filteredAndSortedProducts.length === 0 && (

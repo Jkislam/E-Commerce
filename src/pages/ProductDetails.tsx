@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'motion/react';
-import { ShoppingBag, ArrowLeft, Minus, Plus, MapPin, Truck, Heart, Clock, Shield, Info, X } from 'lucide-react';
+import { ShoppingBag, ArrowLeft, Minus, Plus, MapPin, Truck, Heart, Clock, Shield, Info, X, RotateCw } from 'lucide-react';
 import { Product } from '../types';
 import { useAuth } from '../context/AuthContext';
 import { supabase } from '../lib/supabase';
@@ -19,11 +19,18 @@ export default function ProductDetails({ products, addToCart }: ProductDetailsPr
   const [selectedAttr, setSelectedAttr] = useState<string | null>(null);
   const [selectedImage, setSelectedImage] = useState<string | null>(null);
   const [quantity, setQuantity] = useState<number>(1);
+  const [is3DRotating, setIs3DRotating] = useState(false);
+  const [tiltPos, setTiltPos] = useState({ x: 0, y: 0 });
   
   // Delivery address states
   const [showAddressModal, setShowAddressModal] = useState(false);
   const [guestAddress, setGuestAddress] = useState('');
   const [newAddressInput, setNewAddressInput] = useState('');
+
+  const trigger3DSpin = () => {
+    setIs3DRotating(true);
+    setTimeout(() => setIs3DRotating(false), 800);
+  };
 
   const product = products.find(p => String(p.id) === String(id));
 
@@ -116,24 +123,52 @@ export default function ProductDetails({ products, addToCart }: ProductDetailsPr
 
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-10">
         {/* Product Image & Gallery */}
-        <div className="lg:col-span-4 flex flex-col gap-4 max-w-[420px] w-full mx-auto lg:mx-0">
+        <div className="lg:col-span-4 flex flex-col gap-4 max-w-[420px] w-full mx-auto lg:mx-0 [perspective:1200px]">
           <motion.div 
-            initial={{ opacity: 0, scale: 0.95 }}
-            animate={{ opacity: 1, scale: 1 }}
-            transition={{ duration: 0.8, ease: [0.22, 1, 0.36, 1] }}
-            className="relative aspect-square w-full rounded-3xl overflow-hidden bg-gray-50 border border-black/5 shadow-md group"
+            key={activeImage}
+            initial={{ opacity: 0, rotateY: -180, scale: 0.8 }}
+            animate={
+              is3DRotating 
+                ? { rotateY: [0, 180, 360], scale: [1, 1.05, 1], rotateX: [0, 10, 0] } 
+                : { opacity: 1, rotateY: tiltPos.x * 18, rotateX: tiltPos.y * -18, scale: 1 }
+            }
+            transition={{ duration: is3DRotating ? 0.8 : 0.85, ease: [0.16, 1, 0.3, 1] }}
+            style={{ transformStyle: 'preserve-3d' }}
+            onMouseMove={(e) => {
+              if (is3DRotating) return;
+              const rect = e.currentTarget.getBoundingClientRect();
+              const x = (e.clientX - rect.left) / rect.width - 0.5;
+              const y = (e.clientY - rect.top) / rect.height - 0.5;
+              setTiltPos({ x, y });
+            }}
+            onMouseLeave={() => setTiltPos({ x: 0, y: 0 })}
+            className="relative aspect-square w-full rounded-3xl overflow-hidden bg-gray-50 border border-black/5 shadow-xl group cursor-grab active:cursor-grabbing"
           >
             <img 
               src={activeImage} 
               alt={product.name} 
-              className="w-full h-full object-cover transition-transform duration-[2s] hover:scale-105"
+              className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105 pointer-events-none"
               referrerPolicy="no-referrer"
             />
+            
             {product.stock <= 5 && product.stock > 0 && (
-              <div className="absolute top-4 right-4 px-3 py-1.5 bg-red-600 text-white text-[9px] font-black uppercase tracking-widest rounded-full shadow-md animate-pulse">
+              <div className="absolute top-4 right-4 px-3 py-1.5 bg-red-600 text-white text-[9px] font-black uppercase tracking-widest rounded-full shadow-md animate-pulse z-10">
                 Low Stock
               </div>
             )}
+
+            {/* Interactive 3D Spin Button */}
+            <button
+              onClick={(e) => {
+                e.stopPropagation();
+                trigger3DSpin();
+              }}
+              className="absolute bottom-3 right-3 px-3 py-1.5 bg-black/80 hover:bg-black text-amber-400 rounded-full text-[10px] font-bold uppercase tracking-wider backdrop-blur-md flex items-center gap-1.5 shadow-lg transition-all hover:scale-105 active:scale-95 z-10"
+              title="Click for 3D Product Rotation"
+            >
+              <RotateCw className={`w-3.5 h-3.5 ${is3DRotating ? 'animate-spin' : ''}`} />
+              <span>3D Rotate</span>
+            </button>
           </motion.div>
 
           {/* Thumbnail Gallery (Daraz style) */}
