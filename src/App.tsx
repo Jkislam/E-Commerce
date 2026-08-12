@@ -393,28 +393,32 @@ export default function App() {
         console.log('Failed to fetch cart from DB:', cartErr);
       }
 
-      // Fetch user's orders
+      // Fetch user's orders with secure, static query execution
       try {
         let ordersData: any[] | null = null;
-        
-        // Attempt nested query first
-        let query = supabase.from('orders').select('*, order_items(*)');
-        if (currentUser.role !== 'admin' && currentUser.id) {
-          query = query.eq('user_id', currentUser.id);
+        const isAdmin = currentUser.role === 'admin';
+        const userId = currentUser.id;
+
+        if (!isAdmin && !userId) {
+          setOrders([]);
+          return;
         }
 
-        const { data: nestedData, error: nestedError } = await query.order('created_at', { ascending: false });
+        // Static query execution based on authorization role
+        const { data: nestedData, error: nestedError } = isAdmin
+          ? await supabase.from('orders').select('*, order_items(*)').order('created_at', { ascending: false })
+          : await supabase.from('orders').select('*, order_items(*)').eq('user_id', userId).order('created_at', { ascending: false });
         
         if (!nestedError && nestedData) {
           ordersData = nestedData;
         } else {
           // Fallback: Fetch orders and order_items separately to bypass potential PostgREST relation mapping issues
           console.info('Nested orders query failed, attempting separate queries fallback:', nestedError?.message);
-          let fallbackQuery = supabase.from('orders').select('*');
-          if (currentUser.role !== 'admin' && currentUser.id) {
-            fallbackQuery = fallbackQuery.eq('user_id', currentUser.id);
-          }
-          const { data: simpleOrders, error: simpleError } = await fallbackQuery.order('created_at', { ascending: false });
+
+          const { data: simpleOrders, error: simpleError } = isAdmin
+            ? await supabase.from('orders').select('*').order('created_at', { ascending: false })
+            : await supabase.from('orders').select('*').eq('user_id', userId).order('created_at', { ascending: false });
+
           if (simpleError) throw simpleError;
 
           if (simpleOrders && simpleOrders.length > 0) {
