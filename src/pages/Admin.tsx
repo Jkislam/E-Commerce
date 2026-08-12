@@ -2583,6 +2583,52 @@ export default function Admin({
   const [isLoggingIn, setIsLoggingIn] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
 
+  // Server-Verified Admin Access Control
+  const [isServerVerifiedAdmin, setIsServerVerifiedAdmin] = useState<boolean>(false);
+  const [isVerifyingAdmin, setIsVerifyingAdmin] = useState<boolean>(true);
+
+  useEffect(() => {
+    let isMounted = true;
+    const verifyServerAdminRole = async () => {
+      setIsVerifyingAdmin(true);
+      try {
+        const { data: { user: authUser }, error: authErr } = await supabase.auth.getUser();
+        if (authErr || !authUser) {
+          if (isMounted) {
+            setIsServerVerifiedAdmin(false);
+            setIsVerifyingAdmin(false);
+          }
+          return;
+        }
+
+        const { data: profile, error: profileErr } = await supabase
+          .from('profiles')
+          .select('role')
+          .eq('id', authUser.id)
+          .single();
+
+        if (!profileErr && profile && profile.role === 'admin') {
+          if (isMounted) setIsServerVerifiedAdmin(true);
+        } else {
+          if (isMounted) setIsServerVerifiedAdmin(false);
+        }
+      } catch {
+        if (isMounted) setIsServerVerifiedAdmin(false);
+      } finally {
+        if (isMounted) setIsVerifyingAdmin(false);
+      }
+    };
+
+    if (currentUser) {
+      verifyServerAdminRole();
+    } else {
+      setIsServerVerifiedAdmin(false);
+      setIsVerifyingAdmin(false);
+    }
+
+    return () => { isMounted = false; };
+  }, [currentUser]);
+
   const [editingProduct, setEditingProduct] = useState<Product | null>(null);
   const [isAddingNew, setIsAddingNew] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
@@ -3084,12 +3130,13 @@ export default function Admin({
     }
   };
 
-  if (authLoading) {
-    return <div className="min-h-screen flex items-center justify-center font-bold">Checking access...</div>;
+  if (authLoading || (currentUser && isVerifyingAdmin)) {
+    return <div className="min-h-screen flex items-center justify-center font-bold">Verifying Admin Access...</div>;
   }
 
   const isLoggedIn = currentUser !== null;
-  const isAdmin = currentUser?.role === 'admin';
+  // Require BOTH client state role AND server-side database role verification
+  const isAdmin = isLoggedIn && currentUser?.role === 'admin' && isServerVerifiedAdmin;
 
   if (!isAdmin) {
     return (
