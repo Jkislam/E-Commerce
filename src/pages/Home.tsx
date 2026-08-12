@@ -208,43 +208,57 @@ export default function Home({
         </div>
 
         {/* Product Grid */}
-        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-x-4 sm:gap-x-6 lg:gap-x-8 gap-y-10 sm:gap-y-14">
+        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 sm:gap-6 lg:gap-8">
           {filteredAndSortedProducts.map((product, index) => (
             <motion.div 
               key={product.id}
-              initial={{ opacity: 0, y: 40 }}
+              initial={{ opacity: 0, y: 30 }}
               whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: true, margin: "-100px" }}
-              transition={{ duration: 0.8, delay: index * 0.05, ease: [0.22, 1, 0.36, 1] }}
-              className="group cursor-pointer"
+              viewport={{ once: true, margin: "-50px" }}
+              transition={{ duration: 0.5, delay: index * 0.04 }}
+              className="bg-white rounded-2xl sm:rounded-3xl p-3 sm:p-4 border border-pink-100/60 shadow-[0_4px_20px_rgba(0,0,0,0.03)] hover:shadow-[0_10px_30px_rgba(255,0,85,0.12)] hover:border-pink-200 transition-all duration-300 flex flex-col justify-between h-full group relative overflow-hidden"
             >
-              <Link to={`/product/${product.id}`} className="block">
-                <div className="relative aspect-[4/4.6] mb-4 overflow-hidden rounded-3xl sm:rounded-[2rem] bg-gray-100 shadow-sm group-hover:shadow-xl transition-all duration-500">
-                  <img 
-                    src={product.image} 
-                    alt={product.name}
-                    className="w-full h-full object-cover transition-transform duration-[1.5s] group-hover:scale-110"
-                    referrerPolicy="no-referrer"
-                  />
-                  <div className="absolute inset-0 bg-black/0 group-hover:bg-black/15 transition-colors duration-500" />
-                  
-                  {/* Category Tag */}
-                  <div className="absolute top-4 left-4 px-3 py-1 bg-white/95 backdrop-blur-md rounded-full text-[7px] font-black uppercase tracking-widest shadow-sm">
-                    {product.category}
+              <div>
+                {/* Top Right Badge */}
+                {product.islatest && (
+                  <div className="absolute top-2 right-2 sm:top-3 sm:right-3 bg-gradient-to-r from-rose-500 to-pink-600 text-white text-[8px] sm:text-[9px] font-black px-2.5 py-1 rounded-full uppercase tracking-wider z-10 shadow-sm">
+                    Hot
                   </div>
-                </div>
-              </Link>
-              <div className="flex flex-col sm:flex-row sm:justify-between sm:items-end px-1 gap-2">
-                <div className="flex-1 min-w-0">
-                  <Link to={`/product/${product.id}`}>
-                    <h3 className="text-sm sm:text-base md:text-lg font-bold mb-1 truncate group-hover:text-amber-600 transition-colors duration-300">{product.name}</h3>
-                  </Link>
-                  
-                </div>
-                <div className="text-left sm:text-right">
-                  <p className="text-lg sm:text-xl md:text-2xl font-black tracking-tight italic text-amber-600 sm:text-black">৳{Number(product.price || 0).toFixed(0)}</p>
+                )}
+                
+                {/* Product Image Container */}
+                <Link to={`/product/${product.id}`} className="block relative mb-3">
+                  <div className="relative aspect-square w-full rounded-xl sm:rounded-2xl bg-white overflow-hidden flex items-center justify-center p-2 sm:p-4 group-hover:bg-gray-50/50 transition-colors">
+                    <img 
+                      src={product.image} 
+                      alt={product.name}
+                      className="w-full h-full object-contain group-hover:scale-105 transition-transform duration-500"
+                      referrerPolicy="no-referrer"
+                    />
+                  </div>
+                </Link>
+
+                {/* Product Name */}
+                <Link to={`/product/${product.id}`} className="block mb-2">
+                  <h3 className="text-xs sm:text-sm md:text-base font-semibold text-gray-800 line-clamp-2 min-h-[2.25rem] sm:min-h-[2.5rem] group-hover:text-[#ff0055] transition-colors leading-snug">
+                    {product.name}
+                  </h3>
+                </Link>
+
+                {/* Price */}
+                <div className="mb-3">
+                  <span className="text-lg sm:text-xl md:text-2xl font-black text-[#ff0055] tracking-tight">
+                    ৳{Number(product.price || 0).toLocaleString('en-IN')}
+                  </span>
                 </div>
               </div>
+
+              {/* Shop now Button */}
+              <Link to={`/product/${product.id}`} className="block w-full mt-1">
+                <button className="w-full py-2.5 sm:py-3 px-4 bg-[#ff0055] hover:bg-[#e0004d] active:bg-[#c90045] text-white font-bold text-xs sm:text-sm rounded-xl sm:rounded-2xl transition-all duration-200 shadow-md shadow-pink-500/20 active:scale-[0.98] flex items-center justify-center">
+                  Shop now
+                </button>
+              </Link>
             </motion.div>
           ))}
         </div>
