@@ -41,8 +41,13 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         role: profile?.role === 'admin' ? 'admin' : 'customer',
         password: '',
       } as AppUser;
-    } catch (error) {
-      console.error('Error fetching profile:', error);
+    } catch (error: any) {
+      const msg = error?.message || String(error);
+      if (msg.includes('Failed to fetch') || msg.includes('network')) {
+        console.info('Network offline while fetching profile, using session metadata.');
+      } else {
+        console.warn('Error fetching profile:', msg);
+      }
       return {
         id: userId,
         email: email || '',

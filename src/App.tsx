@@ -312,7 +312,7 @@ export default function App() {
           errorMessage.includes('fetch');
         
         if (isNetworkError) {
-          console.info(`Public data connection offline or unavailable (Attempt ${retry + 1}). Using local catalog fallback.`);
+          console.info('Public data connection offline or unavailable. Using local catalog fallback.');
         } else {
           console.error(`Public data fetch error (Attempt ${retry + 1}):`, errorMessage);
         }
@@ -327,7 +327,7 @@ export default function App() {
           })) as Product[]);
         }
 
-        if (isSubscribed && retry < maxRetries - 1) {
+        if (isSubscribed && !isNetworkError && retry < maxRetries - 1) {
           clearTimeout(timeoutId);
           await loadPublicData(retry + 1);
           return;

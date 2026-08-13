@@ -3329,7 +3329,7 @@ export default function Admin({
               
               {/* Content */}
               <div className="flex-1 min-w-0 pr-6">
-                <h4 className="text-sm font-black text-green-900 tracking-tight">কর্মসম্পাদন সফল হয়েছে!</h4>
+                <h4 className="text-sm font-black text-green-900 tracking-tight">Operation Successful!</h4>
                 <p className="text-xs font-bold text-black/50 mt-1 leading-normal break-words">{successMessage}</p>
               </div>
 
@@ -3436,7 +3436,7 @@ export default function Admin({
                   <div className="flex items-center gap-2 pb-3 border-b border-black/5">
                     <Package className="w-4 h-4 text-slate-700" />
                     <h3 className="text-xs font-black uppercase tracking-widest text-slate-800">
-                      1. Basic Information (প্রাথমিক তথ্য)
+                      1. Basic Information
                     </h3>
                   </div>
 
@@ -3514,7 +3514,7 @@ export default function Admin({
                     <div className="flex items-center gap-2">
                       <ImageIcon className="w-4 h-4 text-slate-700" />
                       <h3 className="text-xs font-black uppercase tracking-widest text-slate-800">
-                        2. Images & Gallery (প্রোডাক্ট ছবি ও গ্যালারি)
+                        2. Images & Gallery
                       </h3>
                     </div>
                     <span className="text-[10px] text-black/40 font-bold">High Quality 1:1 Images Recommended</span>
@@ -3640,7 +3640,7 @@ export default function Admin({
                   <div className="flex items-center gap-2 pb-3 border-b border-black/5">
                     <DollarSign className="w-4 h-4 text-slate-700" />
                     <h3 className="text-xs font-black uppercase tracking-widest text-slate-800">
-                      3. Pricing & Stock Inventory (মূল্য ও স্টক)
+                      3. Pricing & Stock Inventory
                     </h3>
                   </div>
 
@@ -3730,7 +3730,7 @@ export default function Admin({
                   <div className="flex items-center gap-2 pb-3 border-b border-black/5">
                     <Truck className="w-4 h-4 text-slate-700" />
                     <h3 className="text-xs font-black uppercase tracking-widest text-slate-800">
-                      4. Delivery & Service Logistics (ডেলিভারি ও সার্ভিস সেটিং)
+                      4. Delivery & Service Logistics
                     </h3>
                   </div>
 
@@ -3853,7 +3853,7 @@ export default function Admin({
                   <div className="flex items-center gap-2 pb-3 border-b border-black/5">
                     <User className="w-4 h-4 text-slate-700" />
                     <h3 className="text-xs font-black uppercase tracking-widest text-slate-800">
-                      5. Warranty & Seller Profile (ওয়ারেন্টি ও সেলার প্রোফাইল)
+                      5. Warranty & Seller Profile
                     </h3>
                   </div>
 
