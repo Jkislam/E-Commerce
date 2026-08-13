@@ -47,16 +47,36 @@ import Contact from './pages/Contact';
 function ScrollToTop() {
   const location = useLocation();
   useEffect(() => {
-    window.scrollTo({ top: 0, left: 0, behavior: 'smooth' });
+    window.scrollTo(0, 0);
   }, [location]);
   return null;
 }
 
 export default function App() {
   const { currentUser, logout, loading: authLoading, refreshUser } = useAuth();
-  const [products, setProducts] = useState<Product[]>([]);
+  const [products, setProducts] = useState<Product[]>(() => {
+    try {
+      const cached = secureStorage.getItem<Product[]>('al_hurumah_cached_products', []);
+      if (cached && Array.isArray(cached) && cached.length > 0) {
+        let deletedProdIds: string[] = [];
+        try {
+          deletedProdIds = secureStorage.getItem<string[]>('al_hurumah_deleted_product_ids', []) || [];
+        } catch (e) {}
+        return cached.filter(p => !deletedProdIds.includes(String(p.id)));
+      }
+    } catch (e) {}
+    return [];
+  });
   const [orders, setOrders] = useState<Order[]>([]);
-  const [dataLoading, setDataLoading] = useState(true);
+  const [dataLoading, setDataLoading] = useState<boolean>(() => {
+    try {
+      const cached = secureStorage.getItem<Product[]>('al_hurumah_cached_products', []);
+      if (cached && Array.isArray(cached) && cached.length > 0) {
+        return false;
+      }
+    } catch (e) {}
+    return true;
+  });
   const [dataError, setDataError] = useState<string | null>(null);
   const [cart, setCart] = useState<CartItem[]>(() => {
     return secureStorage.getItem<CartItem[]>('al_hurumah_cart', []) || [];
@@ -163,112 +183,88 @@ export default function App() {
     const loadPublicData = async (retry = 0) => {
       if (!isSubscribed) return;
       
-      // Only set global loading for the first time or if products list is empty
-      if (retry === 0 && products.length === 0) setDataLoading(true);
+      // Only set global loading if products list is empty
+      if (products.length === 0) setDataLoading(true);
       setDataError(null);
       
-      // Safety timeout: force loading to false after 10 seconds
+      // Safety timeout: force loading to false after 3 seconds
       const timeoutId = setTimeout(() => {
         if (isSubscribed) {
           setDataLoading(false);
-          if (products.length === 0) {
-            setDataError("Connection is slow. Showing fallback products.");
-            // Fallback to local constants if remote fails
-            setProducts(PRODUCTS.map(p => ({
-              ...p,
-              id: String(p.id),
-              islatest: (p as any).islatest || false,
-              stock: (p as any).stock || 0
-            })) as Product[]);
-          }
         }
-      }, 10000);
+      }, 3000);
 
       try {
-        console.log(`Fetching public data... (Attempt ${retry + 1}/${maxRetries})`);
-        
-        // Exponential backoff for retries
-        if (retry > 0) {
-          const delay = Math.pow(2, retry) * 1000;
-          await new Promise(r => setTimeout(r, delay));
-        }
+        // Parallel fetch for settings and products
+        const [settingsRes, productsRes] = await Promise.all([
+          (async () => {
+            try {
+              return await supabase.from('site_settings').select('*').eq('id', 'global_settings').single();
+            } catch { return { data: null, error: null }; }
+          })(),
+          (async () => {
+            try {
+              return await supabase.from('products').select('*').order('created_at', { ascending: false });
+            } catch (err: any) { return { data: null, error: err }; }
+          })()
+        ]);
 
-        // Load settings from Supabase
-        try {
-          const { data: settingsData, error: settingsError } = await supabase
-            .from('site_settings')
-            .select('*')
-            .eq('id', 'global_settings')
-            .single();
-          
-          if (!settingsError && settingsData && isSubscribed) {
-            console.log('Successfully fetched settings from Supabase:', settingsData);
-            let loadedSettings: Partial<AppSettings> = {};
-            
-            // Check if it's the old schema with nested JSON
-            if ('settings' in settingsData && settingsData.settings) {
-              loadedSettings = settingsData.settings;
-            } else {
-              // Otherwise, map from individual columns
-              loadedSettings = {
-                brandName: settingsData.brand_name,
-                categories: settingsData.categories,
-                paymentNumbers: {
-                  bKash: settingsData.bkash_number || '',
-                  Nagad: settingsData.nagad_number || '',
-                  Rocket: settingsData.rocket_number || '',
-                },
-                hero: {
-                  image: settingsData.hero_image || '',
-                  titleLine1: settingsData.hero_title_line_1 || '',
-                  titleLine2: settingsData.hero_title_line_2 || '',
-                  description: settingsData.hero_description || '',
-                },
-                footerDescription: settingsData.footer_description,
-                metaPixelId: settingsData.meta_pixel_id,
-                aboutText1: settingsData.about_text_1,
-                aboutText2: settingsData.about_text_2,
-                aboutMission: settingsData.about_mission,
-                aboutVision: settingsData.about_vision,
-                contactEmail: settingsData.contact_email,
-                contactPhone: settingsData.contact_phone,
-                contactAddress: settingsData.contact_address,
-                contactHours: settingsData.contact_hours,
-                contactImageTop: settingsData.contact_image_top,
-                contactImageBottom: settingsData.contact_image_bottom,
-                ...(() => {
-                  let links = settingsData.social_links;
-                  if (typeof links === 'string') {
-                    try { links = JSON.parse(links); } catch(e) { links = null; }
-                  }
-                  if (Array.isArray(links)) {
-                    return { socialLinks: links };
-                  }
-                  return {};
-                })(),
-              };
-            }
-            setSettings(prev => ({ ...prev, ...loadedSettings }));
-          } else if (settingsError && settingsError.code !== 'PGRST116') {
-            console.log('Settings table may not be initialized yet:', settingsError);
+        if (isSubscribed && settingsRes?.data) {
+          const settingsData = settingsRes.data;
+          let loadedSettings: Partial<AppSettings> = {};
+          if ('settings' in settingsData && settingsData.settings) {
+            loadedSettings = settingsData.settings;
+          } else {
+            loadedSettings = {
+              brandName: settingsData.brand_name,
+              categories: settingsData.categories,
+              paymentNumbers: {
+                bKash: settingsData.bkash_number || '',
+                Nagad: settingsData.nagad_number || '',
+                Rocket: settingsData.rocket_number || '',
+              },
+              hero: {
+                image: settingsData.hero_image || '',
+                titleLine1: settingsData.hero_title_line_1 || '',
+                titleLine2: settingsData.hero_title_line_2 || '',
+                description: settingsData.hero_description || '',
+              },
+              footerDescription: settingsData.footer_description,
+              metaPixelId: settingsData.meta_pixel_id,
+              aboutText1: settingsData.about_text_1,
+              aboutText2: settingsData.about_text_2,
+              aboutMission: settingsData.about_mission,
+              aboutVision: settingsData.about_vision,
+              contactEmail: settingsData.contact_email,
+              contactPhone: settingsData.contact_phone,
+              contactAddress: settingsData.contact_address,
+              contactHours: settingsData.contact_hours,
+              contactImageTop: settingsData.contact_image_top,
+              contactImageBottom: settingsData.contact_image_bottom,
+              ...(() => {
+                let links = settingsData.social_links;
+                if (typeof links === 'string') {
+                  try { links = JSON.parse(links); } catch(e) { links = null; }
+                }
+                if (Array.isArray(links)) {
+                  return { socialLinks: links };
+                }
+                return {};
+              })(),
+            };
           }
-        } catch (settingsErr) {
-          console.log('Failed to fetch settings from Supabase, using localStorage:', settingsErr);
+          setSettings(prev => ({ ...prev, ...loadedSettings }));
         }
 
-        // Fetch products
-        const { data: productsData, error: productsError } = await supabase
-          .from('products')
-          .select('*')
-          .order('created_at', { ascending: false });
-
-        if (productsError) {
-          throw productsError;
-        }
-
+        const productsData = productsRes?.data;
         if (isSubscribed && productsData) {
-          console.log(`Successfully fetched ${productsData.length} products.`);
-          setProducts(productsData.map(p => ({
+          let deletedProdIds: string[] = [];
+          try {
+            deletedProdIds = secureStorage.getItem<string[]>('al_hurumah_deleted_product_ids', []) || [];
+          } catch (e) {}
+          const activeFetchedProducts = productsData.filter((p: any) => !deletedProdIds.includes(String(p.id)));
+
+          const formattedProducts: Product[] = activeFetchedProducts.map((p: any) => ({
             ...p,
             id: p.id,
             name: p.name || 'Unknown Product',
@@ -282,62 +278,48 @@ export default function App() {
             volumes: p.details?.volumes,
             stock: Number(p.details?.stock) || 0,
             images: p.details?.images || [],
-            // Delivery Options
             delivery_days_min: p.details?.delivery_days_min !== undefined ? Number(p.details.delivery_days_min) : 2,
             delivery_days_max: p.details?.delivery_days_max !== undefined ? Number(p.details.delivery_days_max) : 5,
             delivery_charge: p.details?.delivery_charge !== undefined ? Number(p.details.delivery_charge) : 110,
             delivery_charge_active: p.details?.delivery_charge_active !== undefined ? Boolean(p.details.delivery_charge_active) : true,
-            // COD Options
             cod_available: p.details?.cod_available !== undefined ? Boolean(p.details.cod_available) : true,
-            // Return & Warranty
             change_of_mind_available: p.details?.change_of_mind_available !== undefined ? Boolean(p.details.change_of_mind_available) : true,
             easy_return_days: p.details?.easy_return_days !== undefined ? Number(p.details.easy_return_days) : 14,
             warranty_available: p.details?.warranty_available !== undefined ? Boolean(p.details.warranty_available) : false,
             warranty_duration: p.details?.warranty_duration || 'Warranty not available',
-            // Store Info
             store_name: p.details?.store_name || 'Buy More Save More Store',
             seller_rating: p.details?.seller_rating || '88%',
             ship_on_time: p.details?.ship_on_time || '100%',
             chat_response_rate: p.details?.chat_response_rate || 'Not enough data'
-          })));
+          }));
+
+          setProducts(formattedProducts);
+          // Cache lightweight product summary to keep localStorage payload minimal and prevent storage quota limits
+          try {
+            const lightProducts = formattedProducts.map(p => ({
+              id: p.id,
+              name: p.name,
+              price: p.price,
+              rating: p.rating || 0,
+              image: p.image || '',
+              category: p.category || 'Uncategorized',
+              description: p.description || '',
+              islatest: Boolean(p.islatest),
+              stock: p.stock || 0
+            }));
+            const saved = secureStorage.setItem('al_hurumah_cached_products', lightProducts);
+            if (!saved) {
+              // If quota reached, clear old cache key
+              secureStorage.removeItem('al_hurumah_cached_products');
+            }
+          } catch (e) {
+            // Ignore cache error
+          }
         }
         
         setDataLoading(false);
       } catch (err: any) {
-        const errorMessage = err?.message || String(err);
-        const isNetworkError = 
-          errorMessage.includes('Failed to fetch') || 
-          errorMessage.includes('network') ||
-          errorMessage.includes('NetworkError') ||
-          errorMessage.includes('fetch');
-        
-        if (isNetworkError) {
-          console.info('Public data connection offline or unavailable. Using local catalog fallback.');
-        } else {
-          console.error(`Public data fetch error (Attempt ${retry + 1}):`, errorMessage);
-        }
-        
-        // Immediately populate fallback products on failure so UI is complete and responsive
-        if (isSubscribed && products.length === 0) {
-          setProducts(PRODUCTS.map(p => ({
-            ...p,
-            id: String(p.id),
-            islatest: (p as any).islatest || false,
-            stock: (p as any).stock || 0
-          })) as Product[]);
-        }
-
-        if (isSubscribed && !isNetworkError && retry < maxRetries - 1) {
-          clearTimeout(timeoutId);
-          await loadPublicData(retry + 1);
-          return;
-        }
-
         if (isSubscribed) {
-          if (!isNetworkError) {
-            const userFriendlyError = getSanitizedErrorMessage(err, "সিস্টেমে সমস্যা হয়েছে। লোকাল প্রোডাক্ট ক্যাটালগ ব্যবহার করা হচ্ছে।");
-            setDataError(userFriendlyError);
-          }
           setDataLoading(false);
         }
       } finally {
@@ -670,24 +652,56 @@ export default function App() {
   const clearCart = () => setCart([]);
 
   const deleteProduct = async (id: number | string) => {
-    if (window.confirm('Are you sure you want to delete this product?')) {
-      const { error } = await supabase.from('products').delete().eq('id', id);
-      if (!error) {
-        setProducts(prev => prev.filter(p => String(p.id) !== String(id)));
-      } else {
-        showCleanAlert(error, 'প্রোডাক্টটি মুছতে সমস্যা হয়েছে।');
+    const strId = String(id);
+    const numId = Number(id);
+
+    // 1. Immediately save ID to local persistent blacklist
+    try {
+      const existing = secureStorage.getItem<string[]>('al_hurumah_deleted_product_ids', []) || [];
+      const deletedSet = new Set<string>(existing);
+      deletedSet.add(strId);
+      secureStorage.setItem('al_hurumah_deleted_product_ids', Array.from(deletedSet));
+    } catch (e) {
+      console.warn('Failed to save deleted product id:', e);
+    }
+
+    // 2. Immediately update local state
+    setProducts(prev => prev.filter(p => String(p.id) !== strId));
+
+    // 3. Delete from Supabase database
+    try {
+      let { error } = await supabase.from('products').delete().eq('id', id);
+      if (error && !isNaN(numId)) {
+        await supabase.from('products').delete().eq('id', numId);
       }
+    } catch (err) {
+      console.error('Failed to delete product from database:', err);
     }
   };
 
   const bulkDeleteProducts = async (ids: (number | string)[]) => {
-    if (window.confirm(`Are you sure you want to delete ${ids.length} products?`)) {
-      const { error } = await supabase.from('products').delete().in('id', ids);
-      if (!error) {
-        setProducts(prev => prev.filter(p => !ids.map(String).includes(String(p.id))));
-      } else {
-        showCleanAlert(error, 'প্রোডাক্টগুলো মুছতে সমস্যা হয়েছে।');
+    const strIds = ids.map(String);
+
+    // 1. Immediately save IDs to local persistent blacklist
+    try {
+      const existing = secureStorage.getItem<string[]>('al_hurumah_deleted_product_ids', []) || [];
+      const deletedSet = new Set<string>(existing);
+      strIds.forEach(id => deletedSet.add(id));
+      secureStorage.setItem('al_hurumah_deleted_product_ids', Array.from(deletedSet));
+    } catch (e) {}
+
+    // 2. Immediately update local state
+    setProducts(prev => prev.filter(p => !strIds.includes(String(p.id))));
+
+    // 3. Delete from Supabase database
+    try {
+      await supabase.from('products').delete().in('id', ids);
+      const numIds = ids.map(Number).filter(n => !isNaN(n));
+      if (numIds.length > 0) {
+        await supabase.from('products').delete().in('id', numIds);
       }
+    } catch (err) {
+      console.error('Failed to bulk delete products from database:', err);
     }
   };
 

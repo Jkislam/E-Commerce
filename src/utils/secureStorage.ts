@@ -45,17 +45,45 @@ export const secureStorage = {
   /**
    * Securely saves an item into localStorage with encryption
    */
-  setItem: (key: string, value: any): void => {
+  setItem: (key: string, value: any): boolean => {
     try {
       const jsonString = JSON.stringify(value);
-      const encrypted = encryptData(jsonString);
-      localStorage.setItem(STORAGE_KEY_PREFIX + key, encrypted);
+      
+      try {
+        const encrypted = encryptData(jsonString);
+        localStorage.setItem(STORAGE_KEY_PREFIX + key, encrypted);
+      } catch (storageErr: any) {
+        // If encrypted string exceeded quota or failed, try raw JSON string
+        localStorage.setItem(STORAGE_KEY_PREFIX + key, jsonString);
+      }
+
       // Clean up legacy unencrypted plain-text key if it exists
       if (localStorage.getItem(key)) {
         localStorage.removeItem(key);
       }
-    } catch (e) {
-      console.error(`SecureStorage failed to set key: ${key}`, e);
+      return true;
+    } catch (e: any) {
+      const isQuotaError = e?.name === 'QuotaExceededError' || e?.code === 22 || e?.number === -2147024882;
+      
+      if (isQuotaError) {
+        console.warn(`SecureStorage storage quota exceeded while saving: ${key}.`);
+        try {
+          // Clear non-essential cached products to free up localStorage space
+          if (key !== 'al_hurumah_cached_products') {
+            localStorage.removeItem(STORAGE_KEY_PREFIX + 'al_hurumah_cached_products');
+            localStorage.removeItem('al_hurumah_cached_products');
+            // Retry setting key for essential data
+            const jsonString = JSON.stringify(value);
+            localStorage.setItem(STORAGE_KEY_PREFIX + key, jsonString);
+            return true;
+          }
+        } catch (retryErr) {
+          // Ignore retry failure
+        }
+      } else {
+        console.warn(`SecureStorage failed to set key: ${key}`, e);
+      }
+      return false;
     }
   },
 
@@ -68,8 +96,17 @@ export const secureStorage = {
       // 1. Check for encrypted key first
       const encrypted = localStorage.getItem(STORAGE_KEY_PREFIX + key);
       if (encrypted) {
-        const decryptedStr = decryptData(encrypted);
-        return JSON.parse(decryptedStr) as T;
+        try {
+          const decryptedStr = decryptData(encrypted);
+          return JSON.parse(decryptedStr) as T;
+        } catch {
+          // Fallback: try parsing as unencrypted raw JSON
+          try {
+            return JSON.parse(encrypted) as T;
+          } catch {
+            // Ignore parse errors
+          }
+        }
       }
 
       // 2. Fallback check for legacy unencrypted key
@@ -86,7 +123,7 @@ export const secureStorage = {
         }
       }
     } catch (e) {
-      console.error(`SecureStorage failed to get key: ${key}`, e);
+      console.warn(`SecureStorage failed to get key: ${key}`, e);
     }
     return defaultValue;
   },

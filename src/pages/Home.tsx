@@ -238,65 +238,78 @@ export default function Home({
 
         {/* Product Grid */}
         <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 sm:gap-6 lg:gap-8 [perspective:1200px]">
-          {filteredAndSortedProducts.map((product, index) => {
-            const isRotating = rotatingProductId === String(product.id);
-            return (
-              <motion.div 
-                key={product.id}
-                initial={{ opacity: 0, y: 35, scale: 0.97 }}
-                whileInView={{ opacity: 1, y: 0, scale: 1 }}
-                viewport={{ once: true, margin: "-40px" }}
-                animate={
-                  isRotating 
-                    ? { rotateY: 45, rotateX: -8, scale: 1.04, zIndex: 30 } 
-                    : { rotateY: 0, rotateX: 0, scale: 1 }
-                }
-                transition={
-                  isRotating 
-                    ? { duration: 0.2, ease: "easeOut" } 
-                    : { duration: 0.4, delay: (index % 4) * 0.06 }
-                }
-                style={{ transformStyle: 'preserve-3d' }}
-                onClick={(e) => handleProductClick(e, String(product.id))}
-                className="bg-white rounded-2xl sm:rounded-3xl p-2.5 sm:p-4 border border-gray-200/80 shadow-sm hover:shadow-2xl hover:border-amber-500/50 transition-all duration-300 flex flex-col justify-between h-full group relative overflow-visible cursor-pointer transform-gpu"
-              >
-                <div style={{ transformStyle: 'preserve-3d' }}>
-                  {/* Product Image Container */}
-                  <div className="block relative mb-2.5 overflow-hidden rounded-xl sm:rounded-2xl">
-                    <div className="relative aspect-square w-full bg-gray-50 overflow-hidden flex items-center justify-center p-0.5 sm:p-1 group-hover:bg-gray-100/60 transition-colors">
-                      <img 
-                        src={product.image} 
-                        alt={product.name}
-                        className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500 rounded-lg sm:rounded-xl"
-                        referrerPolicy="no-referrer"
-                      />
+          {filteredAndSortedProducts.length > 0 ? (
+            filteredAndSortedProducts.map((product) => {
+              const isRotating = rotatingProductId === String(product.id);
+              return (
+                <motion.div 
+                  key={product.id}
+                  initial={{ opacity: 1, y: 0 }}
+                  animate={
+                    isRotating 
+                      ? { rotateY: 45, rotateX: -8, scale: 1.04, zIndex: 30, opacity: 1, y: 0 } 
+                      : { rotateY: 0, rotateX: 0, scale: 1, opacity: 1, y: 0 }
+                  }
+                  transition={
+                    isRotating 
+                      ? { duration: 0.2, ease: "easeOut" } 
+                      : { duration: 0.15 }
+                  }
+                  style={{ transformStyle: 'preserve-3d' }}
+                  onClick={(e) => handleProductClick(e, String(product.id))}
+                  className="bg-white rounded-2xl sm:rounded-3xl p-2.5 sm:p-4 border border-gray-200/80 shadow-sm hover:shadow-2xl hover:border-amber-500/50 transition-all duration-300 flex flex-col justify-between h-full group relative overflow-visible cursor-pointer transform-gpu"
+                >
+                  <div style={{ transformStyle: 'preserve-3d' }}>
+                    {/* Product Image Container */}
+                    <div className="block relative mb-2.5 overflow-hidden rounded-xl sm:rounded-2xl">
+                      <div className="relative aspect-square w-full bg-gray-50 overflow-hidden flex items-center justify-center p-0.5 sm:p-1 group-hover:bg-gray-100/60 transition-colors">
+                        <img 
+                          src={product.image} 
+                          alt={product.name}
+                          className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500 rounded-lg sm:rounded-xl"
+                          referrerPolicy="no-referrer"
+                          loading="eager"
+                        />
+                      </div>
+                    </div>
+
+                    {/* Product Name */}
+                    <div className="block mb-0.5">
+                      <h3 className="text-xs sm:text-sm md:text-base font-bold text-gray-900 line-clamp-2 group-hover:text-amber-600 transition-colors leading-snug">
+                        {product.name}
+                      </h3>
+                    </div>
+
+                    {/* Price */}
+                    <div className="mb-2.5">
+                      <span className="text-base sm:text-lg md:text-xl font-black text-amber-600 tracking-tight">
+                        ৳{Number(product.price || 0).toLocaleString('en-IN')}
+                      </span>
                     </div>
                   </div>
 
-                  {/* Product Name */}
-                  <div className="block mb-0.5">
-                    <h3 className="text-xs sm:text-sm md:text-base font-bold text-gray-900 line-clamp-2 group-hover:text-amber-600 transition-colors leading-snug">
-                      {product.name}
-                    </h3>
+                  {/* Shop now Button */}
+                  <div className="block w-full mt-1">
+                    <button className="w-full py-2 sm:py-2.5 px-3 bg-black hover:bg-amber-600 active:bg-amber-700 text-white font-bold text-xs sm:text-sm rounded-xl transition-all duration-300 shadow-sm active:scale-[0.98] flex items-center justify-center">
+                      Shop now
+                    </button>
                   </div>
-
-                  {/* Price */}
-                  <div className="mb-2.5">
-                    <span className="text-base sm:text-lg md:text-xl font-black text-amber-600 tracking-tight">
-                      ৳{Number(product.price || 0).toLocaleString('en-IN')}
-                    </span>
-                  </div>
+                </motion.div>
+              );
+            })
+          ) : (
+            /* Skeleton Loading Grid when products are empty/fetching */
+            [1, 2, 3, 4, 5, 6, 7, 8].map((n) => (
+              <div key={n} className="bg-white rounded-2xl sm:rounded-3xl p-2.5 sm:p-4 border border-gray-100 shadow-sm animate-pulse flex flex-col justify-between h-full">
+                <div>
+                  <div className="aspect-square w-full bg-gray-200/70 rounded-xl sm:rounded-2xl mb-3" />
+                  <div className="h-4 bg-gray-200/70 rounded-md w-3/4 mb-2" />
+                  <div className="h-5 bg-gray-200/70 rounded-md w-1/2 mb-3" />
                 </div>
-
-                {/* Shop now Button */}
-                <div className="block w-full mt-1">
-                  <button className="w-full py-2 sm:py-2.5 px-3 bg-black hover:bg-amber-600 active:bg-amber-700 text-white font-bold text-xs sm:text-sm rounded-xl transition-all duration-300 shadow-sm active:scale-[0.98] flex items-center justify-center">
-                    Shop now
-                  </button>
-                </div>
-              </motion.div>
-            );
-          })}
+                <div className="h-9 bg-gray-200/70 rounded-xl w-full" />
+              </div>
+            ))
+          )}
         </div>
 
         {filteredAndSortedProducts.length === 0 && (

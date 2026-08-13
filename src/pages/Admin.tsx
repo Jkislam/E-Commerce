@@ -2933,19 +2933,19 @@ export default function Admin({
   };
 
   const handleDelete = (id: number | string) => {
-    if (window.confirm('Are you sure you want to delete this product?')) {
+    if (window.confirm('আপনি কি নিশ্চিত যে আপনি এই প্রোডাক্টটি ডিলিট করতে চান?')) {
       onDelete(id);
       setSelectedIds(prev => prev.filter(selectedId => String(selectedId) !== String(id)));
-      setSuccessMessage('সফল ভাবে ডিলেট হয়েছে।');
+      setSuccessMessage('প্রোডাক্টটি সফলভাবে ডিলিট করা হয়েছে।');
     }
   };
 
   const handleBulkDelete = () => {
     if (selectedIds.length === 0) return;
-    if (window.confirm(`Are you sure you want to delete ${selectedIds.length} selected products?`)) {
+    if (window.confirm(`আপনি কি নিশ্চিত যে আপনি সিলেক্ট করা ${selectedIds.length} টি প্রোডাক্ট ডিলিট করতে চান?`)) {
       onBulkDelete(selectedIds);
       setSelectedIds([]);
-      setSuccessMessage(`সফল ভাবে ${selectedIds.length} টি ডিলেট হয়েছে।`);
+      setSuccessMessage(`সফলভাবে ${selectedIds.length} টি প্রোডাক্ট ডিলিট করা হয়েছে।`);
     }
   };
 
