@@ -58,6 +58,7 @@ import { useAuth } from '../context/AuthContext';
 import { supabase } from '../lib/supabase';
 import { validateAndCompressImage, uploadImageToStorage } from '../utils/imageUtils';
 import { checkRateLimit, recordAttempt, resetRateLimit } from '../utils/rateLimiter';
+import { getCsrfToken, validateCsrfToken, refreshCsrfToken } from '../utils/csrf';
 import { secureStorage } from '../utils/secureStorage';
 import { showCleanAlert } from '../utils/errorUtils';
 import { useSearchParams } from 'react-router-dom';
@@ -2583,6 +2584,7 @@ export default function Admin({
   const [loginError, setLoginError] = useState('');
   const [isLoggingIn, setIsLoggingIn] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
+  const [adminCsrfToken, setAdminCsrfToken] = useState(() => getCsrfToken());
 
   // Server-Verified Admin Access Control
   const [isServerVerifiedAdmin, setIsServerVerifiedAdmin] = useState<boolean>(false);
@@ -2650,7 +2652,7 @@ export default function Admin({
       try {
         const { count, error } = await supabase
           .from('profiles')
-          .select('*', { count: 'exact', head: true });
+          .select('id', { count: 'exact', head: true });
         if (!error && count !== null) setUserCount(count);
       } catch (err: any) {
         const msg = err?.message || String(err);
@@ -2887,9 +2889,16 @@ export default function Admin({
     }
   }, [successMessage]);
 
-  const handleLogin = async (e: React.FormEvent) => {
+  const handleLogin = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     setLoginError('');
+
+    const formDataObj = new FormData(e.currentTarget);
+    const submittedCsrf = formDataObj.get('csrf_token') as string;
+    if (!validateCsrfToken(submittedCsrf || adminCsrfToken)) {
+      setLoginError('নিরাপত্তা যাচাইকরণে ত্রুটি (CSRF error)। দয়া করে পেজটি রিফ্রেশ করুন।');
+      return;
+    }
 
     const cleanEmail = email.trim().toLowerCase();
     const rateLimit = checkRateLimit(`admin_login_${cleanEmail}`, 5, 2 * 60 * 1000);
@@ -2910,6 +2919,7 @@ export default function Admin({
       if (error) throw error;
       
       resetRateLimit(`admin_login_${cleanEmail}`);
+      setAdminCsrfToken(refreshCsrfToken());
       // Let AuthContext handle the user state update. 
     } catch (err: any) {
       setLoginError(err.message || 'Invalid email or password');
@@ -3034,7 +3044,7 @@ export default function Admin({
           ship_on_time: newProduct.ship_on_time,
           chat_response_rate: newProduct.chat_response_rate
         }
-      }).select().single();
+      }).select('id').single();
 
       if (error) throw error;
 
@@ -3178,6 +3188,7 @@ export default function Admin({
             </div>
           ) : (
             <form onSubmit={handleLogin} className="space-y-6">
+              <input type="hidden" name="csrf_token" value={adminCsrfToken} />
               <div className="space-y-2">
                 <label className="text-xs font-bold uppercase tracking-widest text-black/40 ml-1">Email Address</label>
                 <input 

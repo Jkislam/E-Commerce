@@ -5,6 +5,7 @@ import { ShoppingBag, ArrowLeft, CheckCircle2, Truck, CreditCard, Rocket } from 
 import { CartItem, Order, User, AppSettings } from '../types';
 import { showCleanAlert } from '../utils/errorUtils';
 import { checkRateLimit, recordAttempt, resetRateLimit } from '../utils/rateLimiter';
+import { getCsrfToken, validateCsrfToken, refreshCsrfToken } from '../utils/csrf';
 
 interface CheckoutProps {
   cart: CartItem[];
@@ -47,6 +48,7 @@ export default function Checkout({ cart, cartTotal, clearCart, placeOrder, curre
   const [isProcessing, setIsProcessing] = useState(false);
   const [isOrderPlaced, setIsOrderPlaced] = useState(false);
   const [orderInfo, setOrderInfo] = useState<Order | null>(null);
+  const [csrfToken, setCsrfToken] = useState(() => getCsrfToken());
   const [formData, setFormData] = useState({
     fullName: currentUser?.name || '',
     phone: '',
@@ -98,9 +100,16 @@ export default function Checkout({ cart, cartTotal, clearCart, placeOrder, curre
     window.scrollTo(0, 0);
   };
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     if (isProcessing) return;
+
+    const formDataObj = new FormData(e.currentTarget);
+    const submittedCsrf = formDataObj.get('csrf_token') as string;
+    if (!validateCsrfToken(submittedCsrf || csrfToken)) {
+      showCleanAlert('নিরাপত্তা যাচাইকরণে ত্রুটি (CSRF error)। দয়া করে পেজটি রিফ্রেশ করুন।');
+      return;
+    }
 
     // Rate Limit Order Submissions (Max 3 orders per 2 mins per phone/email)
     const rateLimitKey = `order_${formData.phone || formData.email || 'guest'}`;
@@ -126,6 +135,7 @@ export default function Checkout({ cart, cartTotal, clearCart, placeOrder, curre
 
       if (order) {
         resetRateLimit(rateLimitKey);
+        setCsrfToken(refreshCsrfToken());
         setOrderInfo(order);
         setIsOrderPlaced(true);
         // Scroll to top to see confirmation
@@ -337,6 +347,7 @@ export default function Checkout({ cart, cartTotal, clearCart, placeOrder, curre
               <h2 className="text-xl font-bold text-gray-800">Select Payment Method</h2>
               
               <form onSubmit={handleSubmit} className="space-y-6">
+                <input type="hidden" name="csrf_token" value={csrfToken} />
                 {/* Daraz-style Payment Tabs Grid */}
                 {(() => {
                   const methods = [

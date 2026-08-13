@@ -5,6 +5,7 @@ import { User, Mail, Lock, ArrowRight, MapPin, Eye, EyeOff } from 'lucide-react'
 import { User as UserType } from '../types';
 import { supabase } from '../lib/supabase';
 import { checkRateLimit, recordAttempt, resetRateLimit } from '../utils/rateLimiter';
+import { getCsrfToken, validateCsrfToken, refreshCsrfToken } from '../utils/csrf';
 import {
   validateEmail,
   validatePassword,
@@ -25,15 +26,22 @@ export default function Login() {
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
   const [showPassword, setShowPassword] = useState(false);
+  const [csrfToken, setCsrfToken] = useState(() => getCsrfToken());
   const navigate = useNavigate();
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     setLoading(true);
     setError('');
     setSuccess('');
 
     try {
+      const formData = new FormData(e.currentTarget);
+      const submittedCsrf = formData.get('csrf_token') as string;
+      if (!validateCsrfToken(submittedCsrf || csrfToken)) {
+        throw new Error('নিরাপত্তা যাচাইকরণে ত্রুটি (CSRF error)। দয়া করে পেজটি রিফ্রেশ করুন।');
+      }
+
       // Validate Email & Password with SQL Injection Checks
       const emailCheck = validateEmail(email);
       if (!emailCheck.isValid) {
@@ -123,6 +131,7 @@ export default function Login() {
           }
         }
         resetRateLimit(`signup_${cleanEmail}`);
+        setCsrfToken(refreshCsrfToken());
       } else {
         // Enforce Login Rate Limiting (max 5 attempts per 2 mins)
         const loginRate = checkRateLimit(`login_${cleanEmail}`, 5, 2 * 60 * 1000);
@@ -183,6 +192,7 @@ export default function Login() {
         </div>
 
         <form onSubmit={handleSubmit} className="space-y-6">
+          <input type="hidden" name="csrf_token" value={csrfToken} />
           {isRegistering && (
             <>
               <div className="space-y-2">
