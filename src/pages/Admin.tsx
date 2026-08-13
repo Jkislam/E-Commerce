@@ -57,6 +57,7 @@ import OrdersView from '../components/OrdersView';
 import { useAuth } from '../context/AuthContext';
 import { supabase } from '../lib/supabase';
 import { validateAndCompressImage, uploadImageToStorage } from '../utils/imageUtils';
+import { checkRateLimit, recordAttempt, resetRateLimit } from '../utils/rateLimiter';
 import { secureStorage } from '../utils/secureStorage';
 import { showCleanAlert } from '../utils/errorUtils';
 import { useSearchParams } from 'react-router-dom';
@@ -2889,6 +2890,15 @@ export default function Admin({
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoginError('');
+
+    const cleanEmail = email.trim().toLowerCase();
+    const rateLimit = checkRateLimit(`admin_login_${cleanEmail}`, 5, 2 * 60 * 1000);
+    if (!rateLimit.allowed) {
+      setLoginError(rateLimit.message || 'অত্যধিক চেষ্টার কারণে লগইন কিছুক্ষণের জন্য স্থগিত রাখা হয়েছে।');
+      return;
+    }
+
+    recordAttempt(`admin_login_${cleanEmail}`, 2 * 60 * 1000);
     setIsLoggingIn(true);
     
     try {
@@ -2899,6 +2909,7 @@ export default function Admin({
 
       if (error) throw error;
       
+      resetRateLimit(`admin_login_${cleanEmail}`);
       // Let AuthContext handle the user state update. 
     } catch (err: any) {
       setLoginError(err.message || 'Invalid email or password');

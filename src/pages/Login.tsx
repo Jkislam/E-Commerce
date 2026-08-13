@@ -4,6 +4,7 @@ import { motion } from 'motion/react';
 import { User, Mail, Lock, ArrowRight, MapPin, Eye, EyeOff } from 'lucide-react';
 import { User as UserType } from '../types';
 import { supabase } from '../lib/supabase';
+import { checkRateLimit, recordAttempt, resetRateLimit } from '../utils/rateLimiter';
 import {
   validateEmail,
   validatePassword,
@@ -47,6 +48,13 @@ export default function Login() {
       const cleanEmail = sanitizeInput(email);
 
       if (isRegistering) {
+        // Enforce Signup Rate Limiting (max 3 attempts per 5 mins)
+        const signupRate = checkRateLimit(`signup_${cleanEmail}`, 3, 5 * 60 * 1000);
+        if (!signupRate.allowed) {
+          throw new Error(signupRate.message || 'অত্যধিক চেষ্টার কারণে সাইনআপ কিছুক্ষণের জন্য স্থগিত রাখা হয়েছে।');
+        }
+        recordAttempt(`signup_${cleanEmail}`, 5 * 60 * 1000);
+
         // Full Name Validation
         const nameCheck = validateName(name);
         if (!nameCheck.isValid) {
@@ -114,7 +122,15 @@ export default function Login() {
             setIsRegistering(false);
           }
         }
+        resetRateLimit(`signup_${cleanEmail}`);
       } else {
+        // Enforce Login Rate Limiting (max 5 attempts per 2 mins)
+        const loginRate = checkRateLimit(`login_${cleanEmail}`, 5, 2 * 60 * 1000);
+        if (!loginRate.allowed) {
+          throw new Error(loginRate.message || 'অত্যধিক চেষ্টার কারণে লগইন কিছুক্ষণের জন্য স্থগিত রাখা হয়েছে।');
+        }
+        recordAttempt(`login_${cleanEmail}`, 2 * 60 * 1000);
+
         // Sign In with Supabase
         const { error: signInError } = await supabase.auth.signInWithPassword({
           email: cleanEmail,
@@ -127,6 +143,8 @@ export default function Login() {
           }
           throw new Error(signInError.message);
         }
+
+        resetRateLimit(`login_${cleanEmail}`);
 
         // AuthContext will handle state update via onAuthStateChange
         navigate('/profile');

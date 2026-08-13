@@ -4,6 +4,7 @@ import { motion } from 'motion/react';
 import { ShoppingBag, ArrowLeft, CheckCircle2, Truck, CreditCard, Rocket } from 'lucide-react';
 import { CartItem, Order, User, AppSettings } from '../types';
 import { showCleanAlert } from '../utils/errorUtils';
+import { checkRateLimit, recordAttempt, resetRateLimit } from '../utils/rateLimiter';
 
 interface CheckoutProps {
   cart: CartItem[];
@@ -101,6 +102,15 @@ export default function Checkout({ cart, cartTotal, clearCart, placeOrder, curre
     e.preventDefault();
     if (isProcessing) return;
 
+    // Rate Limit Order Submissions (Max 3 orders per 2 mins per phone/email)
+    const rateLimitKey = `order_${formData.phone || formData.email || 'guest'}`;
+    const rateLimit = checkRateLimit(rateLimitKey, 3, 2 * 60 * 1000);
+    if (!rateLimit.allowed) {
+      showCleanAlert(rateLimit.message || 'অত্যধিক চেষ্টার কারণে অর্ডার প্রক্রিয়াকরণ সাময়িকভাবে স্থগিত রাখা হয়েছে।');
+      return;
+    }
+
+    recordAttempt(rateLimitKey, 2 * 60 * 1000);
     setIsProcessing(true);
     try {
       const order = await placeOrder({
@@ -115,6 +125,7 @@ export default function Checkout({ cart, cartTotal, clearCart, placeOrder, curre
       }, !expressProduct);
 
       if (order) {
+        resetRateLimit(rateLimitKey);
         setOrderInfo(order);
         setIsOrderPlaced(true);
         // Scroll to top to see confirmation
