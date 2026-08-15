@@ -1,23 +1,200 @@
 <!doctype html>
 <html lang="en">
   <head>
+    <!-- ====== META CHARSET & VIEWPORT ====== -->
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <meta name="theme-color" content="#FDFCFB" />
-    <meta name="description" content="Your destination for premium traditional wear and authentic fragrances. We bring you the finest Panjabis and Attars from around the world." />
-    <meta name="keywords" content="AL-Hurumah, Panjabi, Attar, Traditional Wear, Fragrances, Premium Panjabi, Authentic Attar" />
+
+    <!-- ====== SECURITY HEADERS (HTTP-EQUIV) ====== -->
+    <!-- Prevents MIME type sniffing -->
+    <meta http-equiv="X-Content-Type-Options" content="nosniff" />
+    
+    <!-- Prevents clickjacking attacks -->
+    <meta http-equiv="X-Frame-Options" content="SAMEORIGIN" />
+    
+    <!-- Controls referrer information sent with requests -->
+    <meta name="referrer" content="strict-origin-when-cross-origin" />
+    
+    <!-- Restricts browser features/permissions -->
+    <meta name="permissions-policy" content="geolocation=(), microphone=(), camera=(), payment=(), usb=(), bluetooth=(), midi=(), magnetometer=(), gyroscope=(), accelerometer=(), autoplay=(), encrypted-media=(), picture-in-picture=(), fullscreen=(self)" />
+
+    <!-- ====== CONTENT SECURITY POLICY (CSP) ====== -->
+    <!-- Prevents XSS, data injection, and unauthorized resource loading -->
+    <meta http-equiv="Content-Security-Policy" content="
+      default-src 'self';
+      script-src 'self' 'unsafe-inline' https://connect.facebook.net https://www.googletagmanager.com https://www.google-analytics.com;
+      style-src 'self' 'unsafe-inline';
+      img-src 'self' data: https: http:;
+      font-src 'self' https://fonts.gstatic.com https://fonts.googleapis.com;
+      connect-src 'self' https://*.supabase.co wss://*.supabase.co https://*.googleapis.com https://*.google-analytics.com;
+      frame-src 'self' https://*.supabase.co;
+      base-uri 'self';
+      form-action 'self';
+      object-src 'none';
+      upgrade-insecure-requests;
+    " />
+
+    <!-- ====== SEO & SEARCH ENGINE OPTIMIZATION ====== -->
+    <title>AL-Hurumah - Premium Panjabi & Attar | Traditional Wear & Fragrances</title>
+    
+    <meta name="description" content="AL-Hurumah: Your premium destination for exquisite Panjabi collections and authentic Attar fragrances. Discover traditional elegance, crafted for you." />
+    
+    <meta name="keywords" content="AL-Hurumah, Panjabi, Attar, Traditional Wear, Fragrances, Premium Panjabi, Authentic Attar, Bangladeshi Fashion, Traditional Clothing, Islamic Clothing, Designer Panjabi" />
+    
+    <meta name="robots" content="index, follow, max-snippet:-1, max-image-preview:large, max-video-preview:-1" />
+    
+    <!-- Canonical URL prevents duplicate content issues -->
+    <link rel="canonical" href="https://alhurumah.com/" />
+
+    <!-- Language alternates for international SEO -->
+    <link rel="alternate" hreflang="en" href="https://alhurumah.com/en" />
+    <link rel="alternate" hreflang="bn" href="https://alhurumah.com/bn" />
+    <link rel="alternate" hreflang="x-default" href="https://alhurumah.com/" />
+
+    <!-- ====== OPEN GRAPH / SOCIAL MEDIA META TAGS ====== -->
+    <!-- Facebook, WhatsApp, LinkedIn, etc. -->
+    <meta property="og:title" content="AL-Hurumah - Premium Traditional Wear & Authentic Fragrances" />
+    <meta property="og:description" content="Your destination for premium traditional wear and authentic fragrances. We bring you the finest Panjabis and Attars from around the world." />
+    <meta property="og:image" content="https://alhurumah.com/images/og-image.jpg" />
+    <meta property="og:image:width" content="1200" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:image:alt" content="AL-Hurumah - Premium Panjabi and Attar Collection" />
+    <meta property="og:url" content="https://alhurumah.com/" />
+    <meta property="og:type" content="website" />
+    <meta property="og:site_name" content="AL-Hurumah" />
+    <meta property="og:locale" content="en_US" />
+    <meta property="og:locale:alternate" content="bn_BD" />
+    <meta property="og:email" content="concierge@alhurumah.com" />
+    <meta property="og:phone_number" content="+8801234567890" />
+
+    <!-- ====== TWITTER CARD ====== -->
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:title" content="AL-Hurumah - Premium Traditional Wear & Authentic Fragrances" />
+    <meta name="twitter:description" content="Your destination for premium traditional wear and authentic fragrances. We bring you the finest Panjabis and Attars from around the world." />
+    <meta name="twitter:image" content="https://alhurumah.com/images/og-image.jpg" />
+    <meta name="twitter:site" content="@alhurumah" />
+    <meta name="twitter:creator" content="@alhurumah" />
+
+    <!-- ====== STRUCTURED DATA (JSON-LD) ====== -->
+    <!-- For rich snippets in search results -->
+    <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@type": "WebSite",
+      "name": "AL-Hurumah",
+      "description": "Your destination for premium traditional wear and authentic fragrances.",
+      "url": "https://alhurumah.com/",
+      "sameAs": [
+        "https://facebook.com/alhurumah",
+        "https://instagram.com/alhurumah",
+        "https://twitter.com/alhurumah"
+      ],
+      "potentialAction": {
+        "@type": "SearchAction",
+        "target": "https://alhurumah.com/products?q={search_term_string}",
+        "query-input": "required name=search_term_string"
+      }
+    }
+    </script>
+
+    <!-- Organization structured data -->
+    <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@type": "Organization",
+      "name": "AL-Hurumah",
+      "description": "Premium traditional wear and authentic fragrances",
+      "url": "https://alhurumah.com/",
+      "logo": "https://alhurumah.com/images/logo.png",
+      "email": "concierge@alhurumah.com",
+      "telephone": "+8801234567890",
+      "address": {
+        "@type": "PostalAddress",
+        "addressCountry": "BD"
+      },
+      "sameAs": [
+        "https://facebook.com/alhurumah",
+        "https://instagram.com/alhurumah",
+        "https://twitter.com/alhurumah"
+      ]
+    }
+    </script>
+
+    <!-- ====== ICONS & FAVICONS ====== -->
+    <!-- Standard favicon -->
     <link rel="icon" type="image/png" href="/images/favicon.png" />
-    <!-- Preconnect & DNS-Prefetch for high-speed asset delivery -->
+    <link rel="icon" type="image/svg+xml" href="/images/favicon.svg" />
+    
+    <!-- Apple Touch Icon for iOS devices -->
+    <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon.png" />
+    
+    <!-- Android Chrome icons -->
+    <link rel="icon" type="image/png" sizes="192x192" href="/images/android-chrome-192x192.png" />
+    <link rel="icon" type="image/png" sizes="512x512" href="/images/android-chrome-512x512.png" />
+    
+    <!-- Web App Manifest (PWA) -->
+    <link rel="manifest" href="/manifest.json" />
+
+    <!-- ====== PERFORMANCE RESOURCE HINTS ====== -->
+    <!-- Preconnect for critical third-party origins -->
     <link rel="preconnect" href="https://images.unsplash.com" crossorigin />
     <link rel="dns-prefetch" href="https://images.unsplash.com" />
+    
     <link rel="preconnect" href="https://qjuxyevwquubkoxhcvub.supabase.co" crossorigin />
     <link rel="dns-prefetch" href="https://qjuxyevwquubkoxhcvub.supabase.co" />
+    
+    <link rel="preconnect" href="https://fonts.googleapis.com" crossorigin />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link rel="dns-prefetch" href="https://fonts.googleapis.com" />
+    <link rel="dns-prefetch" href="https://fonts.gstatic.com" />
 
-    <title>AL-Hurumah</title>
+    <!-- ====== PRELOAD CRITICAL ASSETS ====== -->
+    <!-- Preload critical fonts -->
+    <link rel="preload" href="/fonts/playfair-display-variable.woff2" as="font" type="font/woff2" crossorigin />
+    <link rel="preload" href="/fonts/inter-variable.woff2" as="font" type="font/woff2" crossorigin />
+    
+    <!-- Preload critical CSS (if applicable) -->
+    <link rel="preload" href="/src/index.css" as="style" />
+    
+    <!-- Preload LCP hero image -->
+    <link rel="preload" href="https://images.unsplash.com/photo-1617114919297-3c8ddb01f599?auto=format&fit=crop&q=80&w=1920" as="image" fetchpriority="high" />
+
+    <!-- ====== PRELOAD SCRIPTS (Non-blocking) ====== -->
+    <link rel="modulepreload" href="/src/main.tsx" />
+
   </head>
   <body class="bg-[#FDFCFB]">
+    <!-- ====== NOSCRIPT FALLBACK ====== -->
+    <noscript>
+      <div style="padding: 20px; text-align: center; font-family: sans-serif; background: #FDFCFB; min-height: 100vh; display: flex; flex-direction: column; align-items: center; justify-content: center;">
+        <h1 style="font-size: 2rem; margin-bottom: 1rem;">AL-Hurumah</h1>
+        <p style="color: #666; max-width: 400px;">
+          JavaScript is disabled in your browser. Please enable JavaScript to experience the full features of our store.
+        </p>
+        <p style="color: #999; font-size: 0.875rem; margin-top: 1rem;">
+          Alternatively, <a href="/shop" style="color: #000; text-decoration: underline;">browse our collection</a> with basic functionality.
+        </p>
+      </div>
+    </noscript>
+
+    <!-- ====== ROOT ELEMENT ====== -->
     <div id="root"></div>
+
+    <!-- ====== MAIN APPLICATION ENTRY ====== -->
     <script type="module" src="/src/main.tsx"></script>
+
+    <!-- ====== ANALYTICS / PIXEL (Deferred Loading) ====== -->
+    <!-- Meta Pixel will be injected dynamically by App.tsx based on settings -->
+    
+    <!-- ====== PERFORMANCE MARK ====== -->
+    <script>
+      // Mark the time when the page becomes interactive
+      if (window.performance && window.performance.mark) {
+        window.performance.mark('alhurumah-interactive');
+      }
+    </script>
+
   </body>
 </html>
 
