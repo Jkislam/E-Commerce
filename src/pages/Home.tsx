@@ -70,6 +70,10 @@ export default function Home({
             alt="Panjabi Fashion Designer Collection"
             className="w-full h-full object-cover object-[center_25%] opacity-70 lg:opacity-85"
             referrerPolicy="no-referrer"
+            decoding="async"
+            loading="eager"
+            // @ts-expect-error fetchpriority attribute
+            fetchpriority="high"
           />
           <div className="absolute inset-0 bg-gradient-to-r from-[#FDFCFB] via-[#FDFCFB]/70 to-transparent lg:from-[#FDFCFB] lg:via-[#FDFCFB]/65 lg:to-transparent" />
         </div>
@@ -147,6 +151,7 @@ export default function Home({
                           <button
                             key={idx}
                             onClick={() => setCurrentProductIndex(idx)}
+                            aria-label={`View slide ${idx + 1}`}
                             className={`w-1 sm:w-1.5 transition-all duration-500 rounded-full ${
                               idx === currentProductIndex ? 'h-6 sm:h-8 bg-black' : 'h-2 sm:h-3 bg-black/20 hover:bg-black/40'
                             }`}
@@ -178,11 +183,12 @@ export default function Home({
           
           <div className="flex flex-col sm:flex-row items-center gap-4">
             {/* Category Filter */}
-            <div className="flex items-center space-x-2 bg-black/5 p-1 rounded-full">
+            <div className="flex items-center space-x-2 bg-black/5 p-1 rounded-full" role="tablist" aria-label="Product Categories">
               {categories.slice(0, 3).map(cat => (
                 <button
                   key={cat}
                   onClick={() => setSelectedCategory(cat)}
+                  aria-label={`Filter products by ${cat}`}
                   className={`px-4 py-1.5 rounded-full text-[10px] sm:text-xs font-medium transition-all whitespace-nowrap ${
                     selectedCategory === cat 
                       ? 'bg-white text-black shadow-sm' 
@@ -195,7 +201,9 @@ export default function Home({
               
               {categories.length > 3 && (
                 <div className="relative group">
-                  <button className={`px-4 py-1.5 rounded-full text-[10px] sm:text-xs font-medium transition-all whitespace-nowrap flex items-center gap-1 ${
+                  <button 
+                    aria-label="Show more categories"
+                    className={`px-4 py-1.5 rounded-full text-[10px] sm:text-xs font-medium transition-all whitespace-nowrap flex items-center gap-1 ${
                     categories.slice(3).includes(selectedCategory)
                       ? 'bg-white text-black shadow-sm'
                       : 'text-black/60 hover:text-black'
@@ -208,6 +216,7 @@ export default function Home({
                       <button 
                         key={cat}
                         onClick={() => setSelectedCategory(cat)} 
+                        aria-label={`Filter by ${cat}`}
                         className={`w-full text-left px-3 py-2 text-xs rounded-lg transition-colors ${
                           selectedCategory === cat ? 'bg-black/5 font-bold' : 'hover:bg-black/5'
                         }`}
@@ -222,7 +231,7 @@ export default function Home({
 
             {/* Sort Dropdown */}
             <div className="relative group w-full sm:w-auto">
-              <button className="flex items-center justify-center space-x-2 px-4 py-2 bg-black/5 rounded-full text-xs font-medium hover:bg-black/10 transition-colors w-full sm:w-auto">
+              <button aria-label="Sort products options" className="flex items-center justify-center space-x-2 px-4 py-2 bg-black/5 rounded-full text-xs font-medium hover:bg-black/10 transition-colors w-full sm:w-auto">
                 <ArrowUpDown className="w-3.5 h-3.5" />
                 <span>Sort By</span>
               </button>
@@ -268,7 +277,8 @@ export default function Home({
                           alt={product.name}
                           className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500 rounded-lg sm:rounded-xl"
                           referrerPolicy="no-referrer"
-                          loading="eager"
+                          loading="lazy"
+                          decoding="async"
                         />
                       </div>
                     </div>
@@ -290,7 +300,10 @@ export default function Home({
 
                   {/* Shop now Button */}
                   <div className="block w-full mt-1">
-                    <button className="w-full py-2 sm:py-2.5 px-3 bg-black hover:bg-amber-600 active:bg-amber-700 text-white font-bold text-xs sm:text-sm rounded-xl transition-all duration-300 shadow-sm active:scale-[0.98] flex items-center justify-center">
+                    <button 
+                      aria-label={`Shop now for ${product.name}`}
+                      className="w-full py-2 sm:py-2.5 px-3 bg-black hover:bg-amber-600 active:bg-amber-700 text-white font-bold text-xs sm:text-sm rounded-xl transition-all duration-300 shadow-sm active:scale-[0.98] flex items-center justify-center"
+                    >
                       Shop now
                     </button>
                   </div>

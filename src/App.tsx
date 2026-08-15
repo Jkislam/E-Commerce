@@ -3,7 +3,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import { useState, useMemo, useEffect } from 'react';
+import { useState, useMemo, useEffect, lazy, Suspense } from 'react';
 import { 
   Routes, 
   Route, 
@@ -36,13 +36,15 @@ import { supabase } from './lib/supabase';
 import { secureStorage } from './utils/secureStorage';
 import { showCleanAlert, getSanitizedErrorMessage } from './utils/errorUtils';
 import Home from './pages/Home';
-import ProductDetails from './pages/ProductDetails';
-import Checkout from './pages/Checkout';
-import Admin from './pages/Admin';
-import Profile from './pages/Profile';
-import Login from './pages/Login';
-import About from './pages/About';
-import Contact from './pages/Contact';
+
+// Lazy-load non-home pages for optimal Speed Index and bundle splitting
+const ProductDetails = lazy(() => import('./pages/ProductDetails'));
+const Checkout = lazy(() => import('./pages/Checkout'));
+const Admin = lazy(() => import('./pages/Admin'));
+const Profile = lazy(() => import('./pages/Profile'));
+const Login = lazy(() => import('./pages/Login'));
+const About = lazy(() => import('./pages/About'));
+const Contact = lazy(() => import('./pages/Contact'));
 
 function ScrollToTop() {
   const location = useLocation();
@@ -877,55 +879,6 @@ export default function App() {
     { name: 'Contact', href: '/contact' }
   ];
 
-  if (authLoading || (dataLoading && products.length === 0)) {
-    return (
-      <div className="min-h-screen bg-[#FDFCFB] flex flex-col items-center justify-center p-6 text-center">
-        <div className="w-16 h-16 border-4 border-black/5 border-t-black rounded-full animate-spin mb-4" />
-        <p className="text-[10px] font-black uppercase tracking-[0.2em] text-black/40 animate-pulse">
-          {authLoading ? 'Initializing Secure Connection...' : `Loading ${settings.brandName || 'AL-Hurumah'}`}
-        </p>
-        
-        <div className="mt-8 max-w-xs animate-in fade-in duration-1000" style={{ animationDelay: '10s', animationFillMode: 'both' }}>
-          <p className="text-xs text-black/30 mb-4">
-            {dataError ? (
-              <span className="text-red-500/60 block font-bold mb-2">{dataError}</span>
-            ) : null}
-            {authLoading 
-              ? 'Authentication is taking longer than expected. This could be due to a slow connection or a service issue.'
-              : 'Wait while we fetch the latest products for you.'}
-          </p>
-          <div className="flex flex-col gap-3">
-            <button 
-              onClick={() => window.location.reload()}
-              className="px-6 py-2 bg-black/5 rounded-full text-[10px] font-bold hover:bg-black/10 transition-colors"
-            >
-              Retry Connection
-            </button>
-            {authLoading && (
-              <button 
-                onClick={() => {
-                  alert('The connection is being forced. Please wait a moment...');
-                }}
-                className="text-[10px] text-black/40 font-bold hover:text-black"
-              >
-                Continue as Guest
-              </button>
-            )}
-          </div>
-        </div>
-        
-        <style>{`
-          @keyframes fadeIn {
-            from { opacity: 0; }
-            to { opacity: 1; }
-          }
-          .animate-in {
-            animation: fadeIn 1s ease-in forwards;
-          }
-        `}</style>
-      </div>
-    );
-  }
   return (
     <>
       <ScrollToTop />
@@ -943,6 +896,7 @@ export default function App() {
                     window.scrollTo({ top: 0, left: 0, behavior: 'smooth' });
                   }} 
                   className="flex items-center gap-2 group cursor-pointer"
+                  aria-label={`${settings.brandName || 'AL-Hurumah'} Homepage`}
                 >
                   {settings.logo && (
                     <img src={settings.logo} alt={settings.brandName || 'Logo'} className="h-10 w-auto object-contain transition-transform group-hover:scale-105" />
@@ -952,7 +906,7 @@ export default function App() {
               </div>
 
               {/* Desktop Nav */}
-              <nav className="hidden lg:flex items-center space-x-10">
+              <nav className="hidden lg:flex items-center space-x-10" aria-label="Main Navigation">
                 {(isAdminPage ? adminNavLinks : mainNavLinks).map((link) => (
                   <Link 
                     key={link.name}
@@ -972,6 +926,7 @@ export default function App() {
                   <input 
                     type="text" 
                     placeholder="SEARCH"
+                    aria-label="Search products"
                     value={searchQuery}
                     onChange={(e) => setSearchQuery(e.target.value)}
                     className="pl-9 pr-4 py-2 bg-black/5 rounded-xl text-[10px] font-bold tracking-widest focus:outline-none focus:ring-1 focus:ring-black/10 w-32 transition-all focus:w-48 placeholder:text-black/20"
@@ -983,6 +938,7 @@ export default function App() {
                   onClick={() => window.scrollTo({ top: 0, left: 0, behavior: 'smooth' })}
                   className="p-2 hover:bg-black/5 rounded-full transition-all active:scale-95 group relative flex items-center justify-center"
                   title={currentUser ? "Profile" : "Login"}
+                  aria-label={currentUser ? "User Profile" : "Login"}
                 >
                   {currentUser?.photourl ? (
                     <img src={currentUser.photourl} alt={currentUser.name} className="w-6 h-6 rounded-full object-cover" referrerPolicy="no-referrer" />
@@ -997,6 +953,7 @@ export default function App() {
                   <button 
                     onClick={() => setIsCartOpen(true)}
                     className="relative p-2 hover:bg-black/5 rounded-full transition-all active:scale-95"
+                    aria-label={`Open shopping cart with ${cartCount} items`}
                   >
                     <ShoppingBag className="w-5 h-5" />
                     {cartCount > 0 && (
@@ -1014,6 +971,7 @@ export default function App() {
                   <button 
                     onClick={() => setIsCartOpen(true)}
                     className="relative p-2 active:scale-90 transition-transform"
+                    aria-label={`Open shopping cart with ${cartCount} items`}
                   >
                     <ShoppingBag className="w-5 h-5" />
                     {cartCount > 0 && (
@@ -1026,6 +984,7 @@ export default function App() {
                 <button 
                   onClick={() => setIsMenuOpen(!isMenuOpen)}
                   className="p-2 active:scale-90 transition-transform"
+                  aria-label={isMenuOpen ? "Close navigation menu" : "Open navigation menu"}
                 >
                   {isMenuOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
                 </button>
@@ -1061,6 +1020,7 @@ export default function App() {
                     <button 
                       onClick={() => setIsMenuOpen(false)}
                       className="p-2 hover:bg-black/5 rounded-full transition-colors"
+                      aria-label="Close navigation menu"
                     >
                       <X className="w-6 h-6" />
                     </button>
@@ -1158,6 +1118,7 @@ export default function App() {
                               rel="noopener noreferrer" 
                               className="p-2 bg-black/5 rounded-full hover:bg-black hover:text-white transition-all"
                               title={platform}
+                              aria-label={`Visit our ${platform} page`}
                             >
                               <IconComponent className="w-4 h-4" />
                             </a>
@@ -1202,6 +1163,7 @@ export default function App() {
                   <button 
                     onClick={() => setIsCartOpen(false)}
                     className="p-2 hover:bg-black/5 rounded-full transition-colors"
+                    aria-label="Close cart"
                   >
                     <X className="w-6 h-6" />
                   </button>
@@ -1228,7 +1190,7 @@ export default function App() {
                     cart.map((item) => (
                       <div key={item.id} className="flex gap-4">
                         <div className="w-24 h-24 bg-black/5 rounded-xl overflow-hidden flex-shrink-0">
-                          <img src={item.image} alt={item.name} className="w-full h-full object-cover" />
+                          <img src={item.image} alt={item.name} className="w-full h-full object-cover" loading="lazy" decoding="async" />
                         </div>
                         <div className="flex-1 flex flex-col justify-between py-1">
                           <div>
@@ -1237,6 +1199,7 @@ export default function App() {
                               <button 
                                 onClick={() => removeFromCart(item.id)}
                                 className="text-black/20 hover:text-red-500 transition-colors"
+                                aria-label={`Remove ${item.name} from cart`}
                               >
                                 <Trash2 className="w-4 h-4" />
                               </button>
@@ -1248,6 +1211,7 @@ export default function App() {
                               <button 
                                 onClick={() => updateQuantity(item.id, -1)}
                                 className="p-1.5 hover:bg-black/5 transition-colors"
+                                aria-label="Decrease quantity"
                               >
                                 <Minus className="w-3 h-3" />
                               </button>
@@ -1255,6 +1219,7 @@ export default function App() {
                               <button 
                                 onClick={() => updateQuantity(item.id, 1)}
                                 className="p-1.5 hover:bg-black/5 transition-colors"
+                                aria-label="Increase quantity"
                               >
                                 <Plus className="w-3 h-3" />
                               </button>
@@ -1289,52 +1254,58 @@ export default function App() {
         </AnimatePresence>
 
         <main className="pt-24 sm:pt-28">
-          <Routes>
-            <Route path="/" element={
-              <Home 
-                filteredAndSortedProducts={filteredAndSortedProducts}
-                categories={categories}
-                selectedCategory={selectedCategory}
-                setSelectedCategory={setSelectedCategory}
-                setSortBy={setSortBy}
-                setSearchQuery={setSearchQuery}
-                latestProducts={latestProducts}
-                settings={settings}
-              />
-            } />
-            <Route path="/shop" element={
-              <Home 
-                filteredAndSortedProducts={filteredAndSortedProducts}
-                categories={categories}
-                selectedCategory={selectedCategory}
-                setSelectedCategory={setSelectedCategory}
-                setSortBy={setSortBy}
-                setSearchQuery={setSearchQuery}
-                latestProducts={latestProducts}
-                settings={settings}
-              />
-            } />
-            <Route path="/product/:id" element={<ProductDetails products={products} addToCart={addToCart} />} />
-            <Route path="/checkout" element={<Checkout cart={cart} cartTotal={cartTotal} clearCart={clearCart} placeOrder={placeOrder} currentUser={currentUser} settings={settings} />} />
-            <Route path="/profile" element={<Profile currentUser={currentUser} isAuthLoading={authLoading} orders={orders} onLogout={async () => { await logout(); clearCart(); }} onUpdateUser={refreshUser} />} />
-            <Route path="/login" element={<Login />} />
-            <Route path="/about" element={<About settings={settings} />} />
-            <Route path="/contact" element={<Contact settings={settings} />} />
-            <Route path="/admin" element={
-              <Admin 
-                products={products} 
-                setProducts={setProducts} 
-                onDelete={deleteProduct}
-                onBulkDelete={bulkDeleteProducts}
-                onReset={resetProducts}
-                orders={orders}
-                updateOrderStatus={updateOrderStatus}
-                onDeleteOrder={deleteOrder}
-                settings={settings}
-                setSettings={setSettings}
-              />
-            } />
-          </Routes>
+          <Suspense fallback={
+            <div className="min-h-[60vh] flex items-center justify-center p-8">
+              <div className="w-10 h-10 border-2 border-black/10 border-t-black rounded-full animate-spin" />
+            </div>
+          }>
+            <Routes>
+              <Route path="/" element={
+                <Home 
+                  filteredAndSortedProducts={filteredAndSortedProducts}
+                  categories={categories}
+                  selectedCategory={selectedCategory}
+                  setSelectedCategory={setSelectedCategory}
+                  setSortBy={setSortBy}
+                  setSearchQuery={setSearchQuery}
+                  latestProducts={latestProducts}
+                  settings={settings}
+                />
+              } />
+              <Route path="/shop" element={
+                <Home 
+                  filteredAndSortedProducts={filteredAndSortedProducts}
+                  categories={categories}
+                  selectedCategory={selectedCategory}
+                  setSelectedCategory={setSelectedCategory}
+                  setSortBy={setSortBy}
+                  setSearchQuery={setSearchQuery}
+                  latestProducts={latestProducts}
+                  settings={settings}
+                />
+              } />
+              <Route path="/product/:id" element={<ProductDetails products={products} addToCart={addToCart} />} />
+              <Route path="/checkout" element={<Checkout cart={cart} cartTotal={cartTotal} clearCart={clearCart} placeOrder={placeOrder} currentUser={currentUser} settings={settings} />} />
+              <Route path="/profile" element={<Profile currentUser={currentUser} isAuthLoading={authLoading} orders={orders} onLogout={async () => { await logout(); clearCart(); }} onUpdateUser={refreshUser} />} />
+              <Route path="/login" element={<Login />} />
+              <Route path="/about" element={<About settings={settings} />} />
+              <Route path="/contact" element={<Contact settings={settings} />} />
+              <Route path="/admin" element={
+                <Admin 
+                  products={products} 
+                  setProducts={setProducts} 
+                  onDelete={deleteProduct}
+                  onBulkDelete={bulkDeleteProducts}
+                  onReset={resetProducts}
+                  orders={orders}
+                  updateOrderStatus={updateOrderStatus}
+                  onDeleteOrder={deleteOrder}
+                  settings={settings}
+                  setSettings={setSettings}
+                />
+              } />
+            </Routes>
+          </Suspense>
         </main>
 
         {/* Footer */}
@@ -1367,8 +1338,8 @@ export default function App() {
                       </Link>
                     </li>
                   ))}
-                  <li><a href="#" className="hover:text-black transition-colors">Gift Sets</a></li>
-                  <li><a href="#" className="hover:text-black transition-colors">New Arrivals</a></li>
+                  <li><a href="#shop" className="hover:text-black transition-colors">Gift Sets</a></li>
+                  <li><a href="#shop" className="hover:text-black transition-colors">New Arrivals</a></li>
                 </ul>
               </div>
 
@@ -1406,12 +1377,13 @@ export default function App() {
                     })();
                     return (
                       <a 
-                        key={index}
+                        key={index} 
                         href={link.url.startsWith('http') ? link.url : `https://${link.url}`} 
                         target="_blank" 
                         rel="noopener noreferrer" 
                         className="p-2 bg-black/5 rounded-full hover:bg-black hover:text-white transition-all"
                         title={platform}
+                        aria-label={`Visit our ${platform} page`}
                       >
                         <IconComponent className="w-4 h-4" />
                       </a>
