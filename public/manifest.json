@@ -1,0 +1,20 @@
+{
+  "short_name": "AL-Hurumah",
+  "name": "AL-Hurumah | Premium Traditional Wear & Authentic Attar",
+  "icons": [
+    {
+      "src": "/images/android-chrome-192x192.png",
+      "type": "image/png",
+      "sizes": "192x192"
+    },
+    {
+      "src": "/images/android-chrome-512x512.png",
+      "type": "image/png",
+      "sizes": "512x512"
+    }
+  ],
+  "start_url": ".",
+  "background_color": "#FDFCFB",
+  "theme_color": "#FDFCFB",
+  "display": "standalone"
+}

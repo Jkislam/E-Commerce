@@ -72,8 +72,7 @@ export default function Home({
             referrerPolicy="no-referrer"
             decoding="async"
             loading="eager"
-            // @ts-expect-error fetchpriority attribute
-            fetchpriority="high"
+            fetchPriority="high"
           />
           <div className="absolute inset-0 bg-gradient-to-r from-[#FDFCFB] via-[#FDFCFB]/70 to-transparent lg:from-[#FDFCFB] lg:via-[#FDFCFB]/65 lg:to-transparent" />
         </div>
