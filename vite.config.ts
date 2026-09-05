@@ -14,12 +14,17 @@ export default defineConfig(({mode}) => {
     build: {
       target: 'es2020',
       cssCodeSplit: true,
-      chunkSizeWarningLimit: 1000,
+      cssMinify: true,
+      assetsInlineLimit: 4096,
+      chunkSizeWarningLimit: 1500,
+      modulePreload: {
+        polyfill: false,
+      },
       rollupOptions: {
         output: {
           manualChunks(id) {
             if (id.includes('node_modules')) {
-              if (id.includes('recharts') || id.includes('d3-') || id.includes('victory') || id.includes('html-to-image') || id.includes('@google/genai')) {
+              if (id.includes('recharts') || id.includes('d3-') || id.includes('html-to-image') || id.includes('@google/genai')) {
                 return 'admin-tools';
               }
               if (id.includes('@supabase')) {
@@ -39,6 +44,7 @@ export default defineConfig(({mode}) => {
         }
       }
     },
+    esbuild: mode === 'production' ? { drop: ['console', 'debugger'] } : {},
     server: {
       // HMR is disabled in AI Studio via DISABLE_HMR env var.
       // Do not modifyâfile watching is disabled to prevent flickering during agent edits.

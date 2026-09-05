@@ -44,11 +44,7 @@ export default function Home({
 
   const handleProductClick = (e: React.MouseEvent, productId: string) => {
     e.preventDefault();
-    if (rotatingProductId === productId) return;
-    setRotatingProductId(productId);
-    setTimeout(() => {
-      navigate(`/product/${productId}`);
-    }, 200);
+    navigate(`/product/${productId}`);
   };
 
   useEffect(() => {
@@ -66,13 +62,15 @@ export default function Home({
         {/* Background Image with Overlay */}
         <div className="absolute inset-0 z-0">
           <img 
-            src={settings.hero?.image || "https://images.unsplash.com/photo-1617114919297-3c8ddb01f599?auto=format&fit=crop&q=80&w=1920"} 
+            src={settings.hero?.image || "https://images.unsplash.com/photo-1617114919297-3c8ddb01f599?auto=format&fit=crop&q=75&w=1200&fm=webp"} 
             alt="Panjabi Fashion Designer Collection"
             className="w-full h-full object-cover object-[center_25%] opacity-70 lg:opacity-85"
             referrerPolicy="no-referrer"
             decoding="async"
             loading="eager"
             fetchPriority="high"
+            width="1200"
+            height="800"
           />
           <div className="absolute inset-0 bg-gradient-to-r from-[#FDFCFB] via-[#FDFCFB]/70 to-transparent lg:from-[#FDFCFB] lg:via-[#FDFCFB]/65 lg:to-transparent" />
         </div>
@@ -81,9 +79,9 @@ export default function Home({
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 lg:gap-16 items-center">
             {/* Left Content */}
             <motion.div 
-              initial={{ opacity: 0, y: 30 }}
+              initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 1, ease: [0.22, 1, 0.36, 1] }}
+              transition={{ duration: 0.6, ease: [0.22, 1, 0.36, 1] }}
               className="text-center lg:text-left"
             >
               <h1 className="text-4xl sm:text-6xl md:text-7xl lg:text-[4.5rem] xl:text-[5.5rem] font-bold tracking-tight text-black mb-6 leading-tight break-words">
@@ -107,16 +105,16 @@ export default function Home({
               </div>
             </motion.div>
 
-            {/* Right Content - Automatic Product Slider */}
-            {latestProducts.length > 0 && latestProducts[currentProductIndex] && (
-              <div className="relative block h-[400px] sm:h-[500px] mt-12 lg:mt-0">
+            {/* Right Content - Reserved Container for 0 Layout Shift */}
+            <div className="relative block h-[400px] sm:h-[500px] min-h-[400px] sm:min-h-[500px] mt-12 lg:mt-0 w-full">
+              {latestProducts.length > 0 && latestProducts[currentProductIndex] ? (
                 <AnimatePresence mode="wait">
                   <motion.div
                     key={latestProducts[currentProductIndex].id}
-                    initial={{ opacity: 0, scale: 0.9, x: 50 }}
+                    initial={{ opacity: 0, scale: 0.95, x: 20 }}
                     animate={{ opacity: 1, scale: 1, x: 0 }}
-                    exit={{ opacity: 0, scale: 1.1, x: -50 }}
-                    transition={{ duration: 0.6, ease: "easeOut" }}
+                    exit={{ opacity: 0, scale: 1.05, x: -20 }}
+                    transition={{ duration: 0.4, ease: "easeOut" }}
                     className="absolute inset-0"
                   >
                     <div className="relative h-full w-full max-w-[340px] sm:max-w-[460px] mx-auto">
@@ -125,16 +123,20 @@ export default function Home({
                       <div className="absolute -bottom-10 -left-10 w-48 h-48 bg-black/5 rounded-full -z-10 blur-3xl" />
                       
                       <Link to={`/product/${latestProducts[currentProductIndex].id}`} className="block h-full group">
-                        <div className="relative h-full rounded-[2.5rem] overflow-hidden shadow-2xl border-4 sm:border-8 border-white">
+                        <div className="relative h-full rounded-[2.5rem] overflow-hidden shadow-2xl border-4 sm:border-8 border-white bg-gray-100">
                           <img 
                             src={latestProducts[currentProductIndex].image} 
                             alt={latestProducts[currentProductIndex].name}
-                            className="w-full h-full object-cover transition-transform duration-1000 group-hover:scale-110"
+                            className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
+                            decoding="async"
+                            loading="eager"
+                            width="460"
+                            height="500"
                           />
-                          <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
+                          <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
                           
                           {/* Floating Info Card */}
-                          <div className="absolute bottom-4 left-4 right-4 sm:bottom-8 sm:left-8 sm:right-8 bg-white/90 backdrop-blur-md p-4 sm:p-6 rounded-2xl sm:rounded-3xl shadow-lg transform translate-y-4 group-hover:translate-y-0 transition-transform duration-500">
+                          <div className="absolute bottom-4 left-4 right-4 sm:bottom-8 sm:left-8 sm:right-8 bg-white/90 backdrop-blur-md p-4 sm:p-6 rounded-2xl sm:rounded-3xl shadow-lg transform translate-y-2 group-hover:translate-y-0 transition-transform duration-300">
                             <p className="text-[8px] sm:text-[10px] font-black uppercase tracking-[0.2em] text-amber-600 mb-1">Latest Arrival</p>
                             <h3 className="text-base sm:text-xl font-bold text-black mb-1 sm:mb-2">{latestProducts[currentProductIndex].name}</h3>
                             <div className="flex justify-between items-center">
@@ -151,7 +153,7 @@ export default function Home({
                             key={idx}
                             onClick={() => setCurrentProductIndex(idx)}
                             aria-label={`View slide ${idx + 1}`}
-                            className={`w-1 sm:w-1.5 transition-all duration-500 rounded-full ${
+                            className={`w-1 sm:w-1.5 transition-all duration-300 rounded-full ${
                               idx === currentProductIndex ? 'h-6 sm:h-8 bg-black' : 'h-2 sm:h-3 bg-black/20 hover:bg-black/40'
                             }`}
                           />
@@ -160,8 +162,10 @@ export default function Home({
                     </div>
                   </motion.div>
                 </AnimatePresence>
-              </div>
-            )}
+              ) : (
+                <div className="relative h-full w-full max-w-[340px] sm:max-w-[460px] mx-auto rounded-[2.5rem] bg-gray-100/80 border-4 sm:border-8 border-white shadow-xl animate-pulse" />
+              )}
+            </div>
           </div>
         </div>
       </section>
@@ -274,10 +278,12 @@ export default function Home({
                         <img 
                           src={product.image} 
                           alt={product.name}
-                          className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500 rounded-lg sm:rounded-xl"
+                          className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300 rounded-lg sm:rounded-xl"
                           referrerPolicy="no-referrer"
                           loading="lazy"
                           decoding="async"
+                          width="400"
+                          height="400"
                         />
                       </div>
                     </div>

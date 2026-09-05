@@ -5,6 +5,20 @@
   --font-serif: "Playfair Display", Georgia, Cambria, "Times New Roman", Times, serif;
 }
 
+@layer base {
+  html {
+    touch-action: manipulation;
+    -webkit-tap-highlight-color: transparent;
+    scroll-behavior: smooth;
+    text-rendering: optimizeSpeed;
+    -webkit-font-smoothing: antialiased;
+  }
+  
+  img {
+    content-visibility: auto;
+  }
+}
+
 @layer utilities {
   .no-scrollbar::-webkit-scrollbar {
     display: none;

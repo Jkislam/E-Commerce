@@ -37,14 +37,22 @@ import { secureStorage } from './utils/secureStorage';
 import { showCleanAlert, getSanitizedErrorMessage } from './utils/errorUtils';
 import Home from './pages/Home';
 
-// Lazy-load non-home pages for optimal Speed Index and bundle splitting
-const ProductDetails = lazy(() => import('./pages/ProductDetails'));
-const Checkout = lazy(() => import('./pages/Checkout'));
-const Admin = lazy(() => import('./pages/Admin'));
-const Profile = lazy(() => import('./pages/Profile'));
-const Login = lazy(() => import('./pages/Login'));
-const About = lazy(() => import('./pages/About'));
-const Contact = lazy(() => import('./pages/Contact'));
+// Lazy-load non-home pages with instant preloading capabilities
+const productDetailsImport = () => import('./pages/ProductDetails');
+const checkoutImport = () => import('./pages/Checkout');
+const adminImport = () => import('./pages/Admin');
+const profileImport = () => import('./pages/Profile');
+const loginImport = () => import('./pages/Login');
+const aboutImport = () => import('./pages/About');
+const contactImport = () => import('./pages/Contact');
+
+const ProductDetails = lazy(productDetailsImport);
+const Checkout = lazy(checkoutImport);
+const Admin = lazy(adminImport);
+const Profile = lazy(profileImport);
+const Login = lazy(loginImport);
+const About = lazy(aboutImport);
+const Contact = lazy(contactImport);
 
 function ScrollToTop() {
   const location = useLocation();
@@ -128,6 +136,21 @@ export default function App() {
     }
     return defaultSettings;
   });
+
+  // Idle background route preloader for sub-millisecond route transitions
+  useEffect(() => {
+    const preloadRouteChunks = () => {
+      productDetailsImport();
+      checkoutImport();
+      aboutImport();
+      contactImport();
+    };
+    if ('requestIdleCallback' in window) {
+      (window as any).requestIdleCallback(preloadRouteChunks);
+    } else {
+      setTimeout(preloadRouteChunks, 800);
+    }
+  }, []);
 
   // Update document title and SEO meta tags when settings change
   useEffect(() => {
