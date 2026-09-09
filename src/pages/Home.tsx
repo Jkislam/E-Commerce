@@ -78,12 +78,7 @@ export default function Home({
         <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 w-full py-12 lg:py-20">
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 lg:gap-16 items-center">
             {/* Left Content */}
-            <motion.div 
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.6, ease: [0.22, 1, 0.36, 1] }}
-              className="text-center lg:text-left"
-            >
+            <div className="text-center lg:text-left">
               <h1 className="text-4xl sm:text-6xl md:text-7xl lg:text-[4.5rem] xl:text-[5.5rem] font-bold tracking-tight text-black mb-6 leading-tight break-words">
                 {settings.hero?.titleLine1 || "Elegance in"} <br />
                 <span className="italic font-serif text-amber-600 block mt-4 transform rotate-[-2deg] origin-left">{settings.hero?.titleLine2 || "Tradition."}</span>
@@ -103,7 +98,7 @@ export default function Home({
                   <div className="absolute inset-0 bg-gradient-to-r from-amber-600 to-amber-400 opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
                 </a>
               </div>
-            </motion.div>
+            </div>
 
             {/* Right Content - Reserved Container for 0 Layout Shift */}
             <div className="relative block h-[400px] sm:h-[500px] min-h-[400px] sm:min-h-[500px] mt-12 lg:mt-0 w-full">
@@ -172,11 +167,7 @@ export default function Home({
 
       {/* Shop Section */}
       <section id="shop" className="py-16 sm:py-24 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <motion.div 
-          initial={{ opacity: 0, y: 25 }}
-          whileInView={{ opacity: 1, y: 0 }}
-          viewport={{ once: true, margin: "-80px" }}
-          transition={{ duration: 0.7, ease: [0.22, 1, 0.36, 1] }}
+        <div 
           className="flex flex-col md:flex-row md:items-end justify-between mb-12 gap-6"
         >
           <div className="text-center md:text-left">
@@ -246,7 +237,7 @@ export default function Home({
               </div>
             </div>
           </div>
-        </motion.div>
+        </div>
 
         {/* Product Grid */}
         <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 sm:gap-6 lg:gap-8 [perspective:1200px]">

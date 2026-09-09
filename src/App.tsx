@@ -72,21 +72,14 @@ export default function App() {
         try {
           deletedProdIds = secureStorage.getItem<string[]>('al_hurumah_deleted_product_ids', []) || [];
         } catch (e) {}
-        return cached.filter(p => !deletedProdIds.includes(String(p.id)));
+        const filtered = cached.filter(p => !deletedProdIds.includes(String(p.id)));
+        if (filtered.length > 0) return filtered;
       }
     } catch (e) {}
-    return [];
+    return PRODUCTS;
   });
   const [orders, setOrders] = useState<Order[]>([]);
-  const [dataLoading, setDataLoading] = useState<boolean>(() => {
-    try {
-      const cached = secureStorage.getItem<Product[]>('al_hurumah_cached_products', []);
-      if (cached && Array.isArray(cached) && cached.length > 0) {
-        return false;
-      }
-    } catch (e) {}
-    return true;
-  });
+  const [dataLoading, setDataLoading] = useState<boolean>(false);
   const [dataError, setDataError] = useState<string | null>(null);
   const [cart, setCart] = useState<CartItem[]>(() => {
     return secureStorage.getItem<CartItem[]>('al_hurumah_cart', []) || [];
